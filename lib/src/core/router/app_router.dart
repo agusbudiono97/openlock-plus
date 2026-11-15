@@ -9,6 +9,7 @@ import 'package:openlock/src/features/auth/screens/setup_pin_screen.dart';
 import 'package:openlock/src/features/auth/screens/unlock_screen.dart';
 import 'package:openlock/src/features/backup/screens/backup_screen.dart';
 import 'package:openlock/src/features/intruder/screens/intruder_log_screen.dart';
+import 'package:openlock/src/features/enforcement/screens/strict_mode_screen.dart';
 import 'package:openlock/src/features/onboarding/screens/onboarding_screen.dart';
 import 'package:openlock/src/features/onboarding/screens/permissions_screen.dart';
 import 'package:openlock/src/features/schedules/screens/schedule_editor_screen.dart';
@@ -35,6 +36,7 @@ abstract final class AppRoutes {
   static const String relock = '/relock';
   static const String about = '/about';
   static const String backup = '/backup';
+  static const String strictMode = '/strict-mode';
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -162,6 +164,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.intruder,
                 builder: (_, __) => const IntruderLogScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.strictMode,
+                builder: (_, __) => const StrictModeScreen(),
               ),
             ],
           ),
