@@ -4,8 +4,10 @@ import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:core_update/core_update.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/core/di.dart';
+import 'package:openlock/src/core/router/app_router.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
 import 'package:openlock/src/core/store_build.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
@@ -107,7 +109,7 @@ class AppPickerScreen extends ConsumerWidget {
     );
   }
 
-  static const _headerCount = 5;
+  static const _headerCount = 6;
 
   Widget _header(
     BuildContext context,
@@ -149,7 +151,7 @@ class AppPickerScreen extends ConsumerWidget {
             ),
           ],
         );
-      default:
+      case 4:
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xs,
@@ -162,6 +164,29 @@ class AppPickerScreen extends ConsumerWidget {
             style: AppTextStyles.label.copyWith(
               color: SuiteColors.of(context).textSecondary,
             ),
+          ),
+        );
+      default:
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => context.push(AppRoutes.strictMode),
+                  icon: const Icon(Icons.lock_clock_rounded),
+                  label: const Text('Mode Ketat'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push(AppRoutes.schedules),
+                  icon: const Icon(Icons.schedule_rounded),
+                  label: const Text('Jadwal'),
+                ),
+              ),
+            ],
           ),
         );
     }
