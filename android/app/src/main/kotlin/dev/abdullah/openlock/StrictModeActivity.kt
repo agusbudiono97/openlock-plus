@@ -36,7 +36,7 @@ class StrictModeActivity : Activity() {
         hideSystemBars()
 
         preferences = getSharedPreferences("strict_block_screen", MODE_PRIVATE)
-        val palette = palettes[0]
+        val palette = palettes[ConfigStore.get(this).strictScreenPalette()]
         val background = palette.background
         val muted = palette.muted
         val accent = palette.accent
