@@ -361,10 +361,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         : Icons.error_outline,
                     title: 'Lindungi layar uninstall',
                     subtitle: screenGuardAccess
-                        ? 'PIN diperlukan pada Info aplikasi dan layar uninstall OpenLock'
-                            'aplikasi'
-                        : 'Aktifkan Aksesibilitas untuk melindungi Info aplikasi dan layar uninstall OpenLock'
-                            'serta uninstall aplikasi',
+                        ? 'PIN diperlukan pada halaman Info aplikasi dan proses uninstall OpenLock.'
+                        : 'Aktifkan Aksesibilitas agar OpenLock dapat mengawal halaman Info aplikasi dan proses uninstall.',
                     showChevron: false,
                     trailing: screenGuardAccess
                         ? null
