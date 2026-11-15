@@ -137,6 +137,24 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     ));
   }
 
+  Future<void> setStrictScreenText({
+    required String title,
+    required String message,
+    required String footer,
+  }) async {
+    await _apply((config) => config.copyWith(
+      strictScreenTitle: title.trim().isEmpty
+          ? LockConfig.empty.strictScreenTitle
+          : title.trim(),
+      strictScreenMessage: message.trim().isEmpty
+          ? LockConfig.empty.strictScreenMessage
+          : message.trim(),
+      strictScreenFooter: footer.trim().isEmpty
+          ? LockConfig.empty.strictScreenFooter
+          : footer.trim(),
+    ));
+  }
+
   Future<void> setPreventUninstall(bool value) async {
     await _apply((config) => config.copyWith(preventUninstall: value));
   }
