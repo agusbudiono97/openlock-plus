@@ -192,6 +192,9 @@ class ConfigStore private constructor(context: Context) {
         )?.takeIf { it.isNotBlank() }
             ?: "Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal."
 
+    fun strictScreenPalette(): Int =
+        (config?.optInt("strictScreenPalette", 0) ?: 0).coerceIn(0, 2)
+
     fun preventUninstall(): Boolean = config?.optBoolean("preventUninstall", false) ?: false
 
     /** Global default for hiding locked apps' notification content. */
