@@ -63,14 +63,14 @@ class OpenLockMonitorService : Service() {
                 tick()
                 if (monitorFaulted) {
                     monitorFaulted = false
-                    refreshNotificationIfNeeded()
+                    runCatching { refreshNotificationIfNeeded() }
                 }
             } catch (_: Exception) {
                 // Keep the monitor loop alive, but never leave a healthy-looking
                 // notification while foreground detection is failing.
                 if (!monitorFaulted) {
                     monitorFaulted = true
-                    refreshNotificationIfNeeded()
+                    runCatching { refreshNotificationIfNeeded() }
                 }
             }
             handler.postDelayed(this, POLL_INTERVAL_MS)
