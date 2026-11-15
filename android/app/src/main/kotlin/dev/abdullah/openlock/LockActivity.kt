@@ -178,7 +178,7 @@ class LockActivity : FragmentActivity() {
             wrapWidth(top = 16),
         )
         column.addView(
-            text("Locked by OpenLock", SUBTITLE_SP, regular, p.textSecondary),
+            text("Dikunci oleh OpenLock", SUBTITLE_SP, regular, p.textSecondary),
             wrapWidth(top = 4),
         )
 
@@ -274,10 +274,10 @@ class LockActivity : FragmentActivity() {
             row((0 until 3).map { c -> digitKey(digits[r * 3 + c]) }, last = false)
         }
         // Bottom row: backspace, last digit, check.
-        backspaceKey = iconKey(R.drawable.ic_lock_backspace, "Delete digit", emphasized = false) {
+        backspaceKey = iconKey(R.drawable.ic_lock_backspace, "Hapus angka", emphasized = false) {
             onBackspace()
         }
-        checkKey = iconKey(R.drawable.ic_lock_check, "Unlock", emphasized = true) { onSubmit() }
+        checkKey = iconKey(R.drawable.ic_lock_check, "Buka kunci", emphasized = true) { onSubmit() }
         row(listOf(backspaceKey, digitKey(digits[9]), checkKey), last = true)
         keys += backspaceKey
         keys += checkKey
@@ -335,7 +335,7 @@ class LockActivity : FragmentActivity() {
         glyph.setTint(palette.accent)
         setImageDrawable(glyph)
         scaleType = ImageView.ScaleType.CENTER
-        contentDescription = "Unlock with fingerprint"
+        contentDescription = "Buka dengan sidik jari"
         val circle = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setColor(palette.accentContainer)
@@ -458,13 +458,13 @@ class LockActivity : FragmentActivity() {
             setPadding(dp(24), dp(24), dp(24), dp(16))
         }
         card.addView(TextView(this).apply {
-            text = "${appLabel(lockedPackage)} keeps stopping"
+            text = "${appLabel(lockedPackage)} terus berhenti"
             setTextColor(color(R.color.lockTextPrimary))
             textSize = 18f
             typeface = Typeface.DEFAULT_BOLD
         })
         card.addView(TextView(this).apply {
-            text = "Close app"
+            text = "Tutup aplikasi"
             setTextColor(color(R.color.lockAccent))
             textSize = 15f
             gravity = Gravity.END
@@ -513,7 +513,7 @@ class LockActivity : FragmentActivity() {
         failedAttempts++
         pin = StringBuilder()
         updateDots()
-        messageView.text = "Wrong PIN"
+        messageView.text = "PIN salah"
 
         if (store.intruderCaptureEnabled() && failedAttempts == store.intruderThreshold()) {
             IntruderCapture.record(this, store, lockedPackage, attemptPhoto = true)
@@ -535,7 +535,7 @@ class LockActivity : FragmentActivity() {
                     updateDots()
                     return
                 }
-                messageView.text = "Too many attempts. Try again in ${countdown(remaining)}."
+                messageView.text = "Terlalu banyak percobaan. Coba lagi dalam ${countdown(remaining)}."
                 remaining--
                 handler.postDelayed(this, 1000)
             }
@@ -594,7 +594,7 @@ class LockActivity : FragmentActivity() {
             BiometricManager.Authenticators.BIOMETRIC_WEAK
         val canAuth = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
-            messageView.text = "Fingerprint unavailable — enter your PIN"
+            messageView.text = "Sidik jari tidak tersedia — masukkan PIN"
             return
         }
 
@@ -625,9 +625,9 @@ class LockActivity : FragmentActivity() {
             },
         )
         val info = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock ${appLabel(lockedPackage)}")
-            .setSubtitle("Use your fingerprint or enter your PIN")
-            .setNegativeButtonText("Use PIN")
+            .setTitle("Buka kunci ${appLabel(lockedPackage)}")
+            .setSubtitle("Gunakan sidik jari atau masukkan PIN")
+            .setNegativeButtonText("Gunakan PIN")
             .setAllowedAuthenticators(authenticators)
             .build()
         runCatching { prompt.authenticate(info) }.onFailure {
@@ -651,7 +651,7 @@ class LockActivity : FragmentActivity() {
             val info = packageManager.getApplicationInfo(pkg, 0)
             packageManager.getApplicationLabel(info).toString()
         } catch (e: Exception) {
-            "this app"
+            "aplikasi ini"
         }
     }
 
