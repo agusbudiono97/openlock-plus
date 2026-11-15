@@ -228,12 +228,12 @@ class StrictModeActivity : Activity() {
     }
 
     private fun updateCountdown() {
-        val end = ConfigStore.get(this).strictModeEndMillis()
-        if (end <= 0L) {
+        timer?.cancel()
+        val remaining = ConfigStore.get(this).strictModeRemainingMillis()
+        if (remaining == null) {
             countdown.text = "Perlindungan aktif tanpa batas waktu"
             return
         }
-        val remaining = end - System.currentTimeMillis()
         if (remaining <= 0L) {
             finish()
             return
@@ -253,7 +253,16 @@ class StrictModeActivity : Activity() {
                     "Sisa waktu: %02d:%02d".format(minutes, secs)
                 }
             }
-            override fun onFinish() { finish() }
+            override fun onFinish() {
+                // Re-check the same monotonic deadline used by enforcement.
+                // A wall-clock edit must not leave this barrier on screen
+                // after the commitment expires or dismiss it prematurely.
+                if (ConfigStore.get(this@StrictModeActivity).strictModeActive()) {
+                    updateCountdown()
+                } else {
+                    finish()
+                }
+            }
         }.start()
     }
 
