@@ -211,11 +211,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           children: [
             const ScreenHeader(eyebrow: 'OpenLock', title: 'Pengaturan'),
             if (strictActive)
-              Card(
+              const Card(
                 child: ListTile(
-                  leading: const Icon(Icons.lock_clock_rounded),
-                  title: const Text('Mode Ketat sedang aktif'),
-                  subtitle: const Text('Pengaturan perlindungan dikunci sampai waktu komitmen berakhir.'),
+                  leading: Icon(Icons.lock_clock_rounded),
+                  title: Text('Mode Ketat sedang aktif'),
+                  subtitle: Text('Pengaturan perlindungan dikunci sampai waktu komitmen berakhir.'),
                 ),
               ),
             RowGroup(
