@@ -410,6 +410,9 @@ class EnforcementPlugin(private val activity: Activity) :
     }
 
     private fun deactivateDeviceAdmin() {
+        // Device-admin removal weakens uninstall protection. Keep it behind
+        // the same native Strict Mode commitment gate as config/service edits.
+        if (store.strictModeActive()) return
         runCatching { devicePolicyManager().removeActiveAdmin(adminComponent()) }
     }
 
