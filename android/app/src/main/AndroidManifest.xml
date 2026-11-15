@@ -88,7 +88,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="App lock: detect the foreground app to lock chosen apps behind a PIN."/>
+                android:value="App lock and Strict Mode: detect the foreground app to block selected apps until the configured commitment expires."/>
         </service>
 
         <!-- Notification-privacy listener. When "hide notification content" is
