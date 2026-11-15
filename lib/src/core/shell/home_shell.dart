@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Bottom-nav shell hosting the four main sections.
+/// Navigasi utama OpenLock.
 class HomeShell extends StatelessWidget {
   const HomeShell({required this.shell, super.key});
 
@@ -12,6 +12,7 @@ class HomeShell extends StatelessWidget {
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         selectedIndex: shell.currentIndex,
         onDestinationSelected: (index) => shell.goBranch(
           index,
@@ -21,7 +22,7 @@ class HomeShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.apps_outlined),
             selectedIcon: Icon(Icons.apps_rounded),
-            label: 'Aplikasi',
+            label: 'Blokir',
           ),
           NavigationDestination(
             icon: Icon(Icons.schedule_outlined),
@@ -31,7 +32,7 @@ class HomeShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.shield_outlined),
             selectedIcon: Icon(Icons.shield_rounded),
-            label: 'Penyusup',
+            label: 'Riwayat',
           ),
           NavigationDestination(
             icon: Icon(Icons.lock_clock_outlined),
@@ -41,7 +42,7 @@ class HomeShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Pengaturan',
+            label: 'Setelan',
           ),
         ],
       ),
