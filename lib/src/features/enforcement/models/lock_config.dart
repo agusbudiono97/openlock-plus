@@ -26,6 +26,7 @@ final class LockConfig {
         'Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.',
     this.strictScreenFooter =
         'Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal.',
+    this.strictScreenPalette = 0,
   });
 
   /// Apps locked at all times (user toggles in the app picker).
@@ -73,6 +74,7 @@ final class LockConfig {
   final String strictScreenTitle;
   final String strictScreenMessage;
   final String strictScreenFooter;
+  final int strictScreenPalette;
 
   bool strictModeActiveAt(DateTime now) =>
       strictModeEnabled &&
@@ -108,6 +110,7 @@ final class LockConfig {
     String? strictScreenTitle,
     String? strictScreenMessage,
     String? strictScreenFooter,
+    int? strictScreenPalette,
   }) =>
       LockConfig(
         lockedPackages: lockedPackages ?? this.lockedPackages,
@@ -131,6 +134,7 @@ final class LockConfig {
         strictScreenTitle: strictScreenTitle ?? this.strictScreenTitle,
         strictScreenMessage: strictScreenMessage ?? this.strictScreenMessage,
         strictScreenFooter: strictScreenFooter ?? this.strictScreenFooter,
+        strictScreenPalette: strictScreenPalette ?? this.strictScreenPalette,
       );
 
   Map<String, dynamic> toJson() => {
@@ -151,6 +155,7 @@ final class LockConfig {
         'strictScreenTitle': strictScreenTitle,
         'strictScreenMessage': strictScreenMessage,
         'strictScreenFooter': strictScreenFooter,
+        'strictScreenPalette': strictScreenPalette,
       };
 
   factory LockConfig.fromJson(Map<String, dynamic> json) => LockConfig(
@@ -188,6 +193,8 @@ final class LockConfig {
             'Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.',
         strictScreenFooter: json['strictScreenFooter'] as String? ??
             'Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal.',
+        strictScreenPalette:
+            (json['strictScreenPalette'] as num?)?.toInt() ?? 0,
       );
 
   /// The exact map handed to the native monitor. [pinHash]/[pinSalt] are the
@@ -217,6 +224,7 @@ final class LockConfig {
         'strictScreenTitle': strictScreenTitle,
         'strictScreenMessage': strictScreenMessage,
         'strictScreenFooter': strictScreenFooter,
+        'strictScreenPalette': strictScreenPalette,
         'pinHash': pinHash,
         'pinSalt': pinSalt,
         'pinIterations': 120000,
