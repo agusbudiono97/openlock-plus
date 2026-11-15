@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'dart:ui' show FontFeature;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
@@ -281,8 +279,8 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                       runSpacing: 8,
                       children: [
                         for (final app in selected)
-                          Chip(
-                            avatar: const Icon(Icons.block_rounded, size: 16),
+                          const Chip(
+                            avatar: Icon(Icons.block_rounded, size: 16),
                             label: Text(app.label),
                           ),
                       ],
