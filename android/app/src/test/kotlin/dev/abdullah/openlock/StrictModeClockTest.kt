@@ -32,4 +32,19 @@ class StrictModeClockTest {
         assertEquals(15000L, StrictModeClock.elapsedDeadline(20000L, 10000L, 5000L))
         assertNull(StrictModeClock.elapsedDeadline(0L, 10000L, 5000L))
     }
+    @Test fun remainingTimeUsesMonotonicClockDuringSameBoot() {
+        assertEquals(1000L, StrictModeClock.remainingMillis(true, 2000L, 20000L, 7, 500L, 19000L, 7))
+        assertEquals(0L, StrictModeClock.remainingMillis(true, 2000L, 20000L, 7, 500L, 20001L, 7))
+    }
+
+    @Test fun remainingTimeUsesWallClockAfterReboot() {
+        assertEquals(1L, StrictModeClock.remainingMillis(true, 2000L, 20000L, 7, 1999L, 100L, 8))
+        assertEquals(0L, StrictModeClock.remainingMillis(true, 2000L, 20000L, 7, 2001L, 100L, 8))
+    }
+
+    @Test fun remainingTimeReturnsNullForIndefiniteAndZeroWhenDisabled() {
+        assertNull(StrictModeClock.remainingMillis(true, 0L, 0L, 7, 9999L, 9999L, 7))
+        assertEquals(0L, StrictModeClock.remainingMillis(false, 0L, 0L, 7, 1L, 1L, 7))
+    }
+
 }
