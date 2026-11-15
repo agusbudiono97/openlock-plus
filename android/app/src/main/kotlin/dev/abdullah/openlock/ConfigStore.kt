@@ -271,6 +271,8 @@ class ConfigStore private constructor(context: Context) {
 
         private const val PREFS_NAME = "openlock_enforcement"
         private const val KEY_CONFIG = "config"
-        private const val KEY_INTRUDERS = "intruders"\n        private const val KEY_STRICT_END_ELAPSED = "strictModeEndElapsedRealtime"\n        private const val KEY_STRICT_BOOT_COUNT = "strictModeBootCount"
+        private const val KEY_INTRUDERS = "intruders"
+        private const val KEY_STRICT_END_ELAPSED = "strictModeEndElapsedRealtime"
+        private const val KEY_STRICT_BOOT_COUNT = "strictModeBootCount"
     }
 }
