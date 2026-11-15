@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.11.3] - 2026-11-15
+
+### Fixed
+- Request the foreground monitor restart synchronously from `onTaskRemoved` instead of relying on a delayed Handler callback that may be lost when an OEM launcher kills the app process after dismissing Recents.
+- Preserve the existing native protection snapshot and original Strict Mode deadline during the restart attempt.
+
+### Notes
+- This improves best-effort recovery when OpenLock is swiped away from Recents; it cannot guarantee protection against Android force-stop, OEM process termination, revoked Usage Access/overlay permissions, or other system-level restrictions.
+- Device testing is still required to verify behavior on Infinix/XOS.
+- This is a debug/test build. Verify update-signature compatibility before installing over an existing APK.
+
+# Changelog
+
 ## [1.11.2] - 2026-11-15
 
 ### Fixed
