@@ -39,7 +39,11 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       case 'hari':
         return now.add(Duration(days: value));
       case 'bulan':
-        return DateTime(now.year, now.month + value, now.day, now.hour, now.minute);
+        final targetMonth = now.month - 1 + value;
+        final year = now.year + targetMonth ~/ 12;
+        final month = targetMonth % 12 + 1;
+        final lastDay = DateTime(year, month + 1, 0).day;
+        return DateTime(year, month, now.day > lastDay ? lastDay : now.day, now.hour, now.minute);
       default:
         return null;
     }
@@ -59,8 +63,15 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       initialTime: TimeOfDay.fromDateTime(_exactEnd ?? now),
     );
     if (time == null || !mounted) return;
+    final selectedEnd = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (!selectedEnd.isAfter(now)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Waktu berakhir harus di masa depan.')),
+      );
+      return;
+    }
     setState(() {
-      _exactEnd = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _exactEnd = selectedEnd;
       _indefinite = false;
     });
   }
@@ -73,7 +84,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       return;
     }
     final end = _deadline();
-    if (!_indefinite && end == null) {
+    if (!_indefinite && (end == null || !end.isAfter(DateTime.now()))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Masukkan durasi atau waktu berakhir yang valid.')),
       );
@@ -118,7 +129,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 const SizedBox(height: 16),
                 const Text('Mode Ketat sedang aktif', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text('${config.strictModePackages.length} apps are blocked.'),
+                Text('${config.strictModePackages.length} aplikasi sedang diblokir.'),
                 const SizedBox(height: 8),
                 Text('Berakhir: $end', textAlign: TextAlign.center),
                 const SizedBox(height: 16),
