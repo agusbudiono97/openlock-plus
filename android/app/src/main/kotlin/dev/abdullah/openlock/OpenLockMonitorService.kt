@@ -34,6 +34,8 @@ class OpenLockMonitorService : Service() {
     private var lastForegroundPkg: String? = null
     private var lastLaunchedPkg: String? = null
     private var lastLaunchAt: Long = 0L
+    private var lastStrictLaunchedPkg: String? = null
+    private var lastStrictLaunchAt: Long = 0L
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -97,6 +99,22 @@ class OpenLockMonitorService : Service() {
         // Never lock ourselves.
         if (current == packageName) return
 
+        // Strict Mode is a hard block, separate from the normal PIN app-lock.
+        // It is active until its wall-clock deadline; a null deadline means
+        // indefinite. The activity itself only displays the block/countdown.
+        if (store.strictModeActive() && store.strictModePackages().contains(current)) {
+            if (current == lastStrictLaunchedPkg &&
+                now - lastStrictLaunchAt < RELAUNCH_GUARD_MS
+            ) return
+            lastStrictLaunchedPkg = current
+            lastStrictLaunchAt = now
+            launchStrictMode(current)
+            return
+        }
+
+        // Clear the strict-mode debounce when the user leaves the blocked app.
+        lastStrictLaunchedPkg = null
+
         // Uninstall protection: guard the OS screens about OpenLock itself
         // (App info, uninstall dialog, device-admin deactivation), as read by
         // OpenLockGuardAccessibilityService. Runs before the normal locked-app
@@ -141,6 +159,15 @@ class OpenLockMonitorService : Service() {
         lastLaunchedPkg = current
         lastLaunchAt = now
         launchLock(current)
+    }
+
+    private fun launchStrictMode(packageName: String) {
+        val intent = Intent(this, StrictModeActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+            putExtra(StrictModeActivity.EXTRA_PACKAGE, packageName)
+        }
+        runCatching { startActivity(intent) }
     }
 
     private fun launchLock(packageName: String) {
