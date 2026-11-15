@@ -141,7 +141,7 @@ class AppPickerScreen extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SectionLead('Aplikasi'),
+            const SectionLead('Daftar aplikasi'),
             AppSearchField(
               hint: 'Cari aplikasi',
               onChanged: (value) =>
@@ -158,7 +158,7 @@ class AppPickerScreen extends ConsumerWidget {
             AppSpacing.sm,
           ),
           child: Text(
-            lockedCount == null ? '' : '$lockedCount locked',
+            lockedCount == null ? '' : '$lockedCount aplikasi dikunci',
             style: AppTextStyles.label.copyWith(
               color: SuiteColors.of(context).textSecondary,
             ),
@@ -308,7 +308,7 @@ class _LockNewAppsTile extends ConsumerWidget {
         AppListRow(
           leading: const IconBadge(icon: Icons.new_releases_outlined),
           title: 'Kunci aplikasi yang baru dipasang',
-          subtitle: 'Guard apps you install later',
+          subtitle: 'Kunci otomatis aplikasi yang baru dipasang',
           trailing: Switch(
             value: config.lockNewApps,
             onChanged: frozen ? null : set,
@@ -373,7 +373,7 @@ class _AppTile extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Hide notifications',
+                    'Sembunyikan notifikasi',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: c.textSecondary,
                     ),
