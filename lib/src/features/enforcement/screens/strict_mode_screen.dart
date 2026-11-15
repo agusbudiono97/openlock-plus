@@ -28,9 +28,20 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
   @override
   void initState() {
     super.initState();
-    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
+  }
+
+  // The one-second repaint is needed only while the active countdown is
+  // visible. Avoid rebuilding the entire app picker every second while the
+  // user is configuring a commitment.
+  void _syncClock(bool active) {
+    if (active && _clock == null) {
+      _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!active && _clock != null) {
+      _clock?.cancel();
+      _clock = null;
+    }
   }
 
   @override
@@ -177,6 +188,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
   Widget build(BuildContext context) {
     final config = ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
     final active = config.strictModeActiveAt(DateTime.now());
+    _syncClock(active);
     final apps = ref.watch(installedAppsProvider);
     final colors = SuiteColors.of(context);
 
