@@ -167,7 +167,10 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 const SizedBox(height: 8),
                 Text('Berakhir: $end', textAlign: TextAlign.center),
                 const SizedBox(height: 16),
-                const Text('Tidak ada tombol untuk menghentikan lebih awal di halaman ini. Namun, celah melalui sistem Android masih mungkin terjadi.', textAlign: TextAlign.center),
+                const Text(
+                  'Daftar aplikasi dan pengaturan perlindungan dikunci sampai waktu berakhir. OpenLock juga memakai Administrator perangkat dan Aksesibilitas untuk menghambat upaya menonaktifkan atau menghapusnya. Android tetap memiliki kendali sistem yang tidak bisa dikunci mutlak oleh aplikasi biasa.',
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
@@ -180,7 +183,9 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Blokir aplikasi pilihan sampai waktunya berakhir. Tentukan durasi, tanggal berakhir, atau aktifkan tanpa batas waktu.'),
+          const Text(
+            'Blokir aplikasi pilihan sampai waktunya berakhir. Tentukan durasi, tanggal berakhir, atau aktifkan tanpa batas waktu. Sebelum mulai, OpenLock akan meminta izin Administrator perangkat dan Aksesibilitas untuk memperkuat perlindungan dari uninstall dan perubahan pengaturan.',
+          ),
           const SizedBox(height: 16),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
