@@ -100,27 +100,29 @@ class OpenLockMonitorService : Service() {
     }
 
     /**
-     * Some Android vendor launchers stop or detach an app task more
-     * aggressively than the platform default. Keep the protection monitor
-     * independent from the Flutter task and request a foreground restart
-     * when the user dismisses OpenLock from Recents.
+     * The monitor must outlive the launcher task. Some OEM launchers kill the
+     * app process shortly after the task is dismissed, so a delayed Handler
+     * callback is unsafe: it disappears with that process. Request the
+     * foreground-service start synchronously while this callback is running.
      *
-     * This is best-effort recovery only: Android force-stop, vendor task
-     * killers, or revoked special access can still prevent a restart.
+     * The service is already configured with stopWithTask=false and returns
+     * START_STICKY. This explicit start is an additional best-effort nudge for
+     * launchers that detach/stop it with the task. Android force-stop, OEM
+     * process killers, or revoked special access can still defeat an ordinary
+     * app's monitor.
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         if (!hasProtectedWork()) return
-        handler.postDelayed({
-            runCatching {
-                val restart = Intent(applicationContext, OpenLockMonitorService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    applicationContext.startForegroundService(restart)
-                } else {
-                    applicationContext.startService(restart)
-                }
+
+        runCatching {
+            val restart = Intent(applicationContext, OpenLockMonitorService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                applicationContext.startForegroundService(restart)
+            } else {
+                applicationContext.startService(restart)
             }
-        }, TASK_REMOVAL_RESTART_DELAY_MS)
+        }
     }
 
     private fun hasProtectedWork(): Boolean {
@@ -373,7 +375,6 @@ class OpenLockMonitorService : Service() {
         private const val CHANNEL_ID = "openlock_monitor"
         private const val NOTIFICATION_ID = 4711
         private const val POLL_INTERVAL_MS = 300L
-        private const val TASK_REMOVAL_RESTART_DELAY_MS = 750L
         private const val LOOKBACK_MS = 10_000L
         private const val RELAUNCH_GUARD_MS = 1_500L
     }
