@@ -90,6 +90,31 @@ void main() {
     );
   });
 
+  test('disableWithAuth refuses while Strict Mode is active', () async {
+    bridge.deviceAdminActive = true;
+    await container.read(configControllerProvider.future);
+    await container.read(configControllerProvider.notifier).setStrictMode(
+          enabled: true,
+          packages: {'com.example.gambling'},
+        );
+    await container.read(preventUninstallControllerProvider.future);
+
+    var authenticationRequested = false;
+    final lifted = await container
+        .read(preventUninstallControllerProvider.notifier)
+        .disableWithAuth(() async {
+          authenticationRequested = true;
+          return true;
+        });
+
+    expect(lifted, isFalse);
+    expect(authenticationRequested, isFalse);
+    expect(bridge.deviceAdminDeactivated, isFalse);
+    expect(bridge.deviceAdminActive, isTrue);
+    expect(container.read(preventUninstallControllerProvider).valueOrNull,
+        isTrue);
+  });
+
   test('preventUninstall flag is pushed to native once a PIN exists', () async {
     await container.read(pinAuthServiceProvider).setupPin('135790');
     await container.read(configControllerProvider.future);
