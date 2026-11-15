@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
@@ -18,9 +20,19 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
   String _unit = 'jam';
   bool _indefinite = false;
   DateTime? _exactEnd;
+  Timer? _clock;
+
+  @override
+  void initState() {
+    super.initState();
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
+    _clock?.cancel();
     _amount.dispose();
     super.dispose();
   }
@@ -147,9 +159,13 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     final apps = ref.watch(installedAppsProvider);
 
     if (active) {
-      final end = config.strictModeEndsAtMillis == null
+      final endAt = config.strictModeEndsAtMillis == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(config.strictModeEndsAtMillis!).toLocal();
+      final remaining = endAt == null ? null : endAt.difference(DateTime.now());
+      final end = endAt == null
           ? 'Tanpa batas waktu'
-          : DateTime.fromMillisecondsSinceEpoch(config.strictModeEndsAtMillis!).toLocal().toString();
+          : '\${endAt.day.toString().padLeft(2, '0')}/\${endAt.month.toString().padLeft(2, '0')}/\${endAt.year} \${endAt.hour.toString().padLeft(2, '0')}:\${endAt.minute.toString().padLeft(2, '0')}';
       return Scaffold(
         appBar: AppBar(title: const Text('Mode Ketat')),
         body: Center(
@@ -165,6 +181,37 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 Text('${config.strictModePackages.length} aplikasi sedang diblokir.'),
                 const SizedBox(height: 8),
                 Text('Berakhir: $end', textAlign: TextAlign.center),
+                if (remaining != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    remaining.isNegative
+                        ? 'Waktu perlindungan habis'
+                        : 'Sisa waktu: \${remaining.inDays} hari \${(remaining.inHours % 24).toString().padLeft(2, '0')}:\${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:\${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+                const SizedBox(height: 12),
+                apps.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (items) {
+                    final selected = items.where((app) =>
+                        config.strictModePackages.contains(app.packageName));
+                    return Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final app in selected)
+                          Chip(
+                            avatar: const Icon(Icons.block, size: 16),
+                            label: Text(app.label),
+                          ),
+                      ],
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Daftar aplikasi dan pengaturan perlindungan dikunci sampai waktu berakhir. OpenLock juga memakai Administrator perangkat dan Aksesibilitas untuk menghambat upaya menonaktifkan atau menghapusnya. Android tetap memiliki kendali sistem yang tidak bisa dikunci mutlak oleh aplikasi biasa.',
