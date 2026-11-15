@@ -209,7 +209,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         bottom: false,
         child: PageList(
           children: [
-            const ScreenHeader(eyebrow: 'OpenLock', title: 'Pengaturan'),
+            const ScreenHeader(eyebrow: 'Akun dan perlindungan', title: 'Profil'),
             if (strictActive)
               const Card(
                 child: ListTile(
