@@ -92,6 +92,20 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   /// monitor so it knows whether to guard the OS deactivate-admin / app-info /
   /// uninstall screens. Does NOT itself activate or deactivate device admin —
   /// that is driven by [PreventUninstallController].
+  /// Starts or stops Strict Mode. A null deadline means indefinite.
+  Future<void> setStrictMode({
+    required bool enabled,
+    required Set<String> packages,
+    int? endsAtMillis,
+  }) async {
+    final config = state.valueOrNull ?? LockConfig.empty;
+    await _apply(config.copyWith(
+      strictModeEnabled: enabled,
+      strictModePackages: packages,
+      strictModeEndsAtMillis: endsAtMillis,
+    ));
+  }
+
   Future<void> setPreventUninstall(bool value) async {
     final config = state.valueOrNull ?? LockConfig.empty;
     if (config.preventUninstall == value) return;
