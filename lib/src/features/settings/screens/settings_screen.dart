@@ -344,7 +344,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   icon: Icons.palette_outlined,
                   title: 'Warna layar blokir',
                   subtitle: const ['Malam mint', 'Senja amber', 'Hutan tenang']
-                      [config.strictScreenPalette.clamp(0, 2)],
+                      [config.strictScreenPalette.clamp(0, 2).toInt()],
                   onTap: strictActive
                       ? null
                       : () => _editStrictScreenPalette(config),
