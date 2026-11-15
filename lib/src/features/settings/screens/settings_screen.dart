@@ -414,7 +414,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 toggle(
                   icon: Icons.warning_amber_outlined,
                   title: 'Tampilan pengalih',
-                  subtitle: 'Fake "app stopped" dialog',
+                  subtitle: 'Dialog tiruan aplikasi berhenti',
                   value: config.fakeCoverEnabled,
                   onChanged: controller.setFakeCover,
                 ),
