@@ -279,8 +279,8 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                       runSpacing: 8,
                       children: [
                         for (final app in selected)
-                          const Chip(
-                            avatar: Icon(Icons.block_rounded, size: 16),
+                          Chip(
+                            avatar: const Icon(Icons.block_rounded, size: 16),
                             label: Text(app.label),
                           ),
                       ],
@@ -288,11 +288,11 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
-                Card(
+                const Card(
                   child: ListTile(
-                    leading: const Icon(Icons.shield_outlined),
-                    title: const Text('Pengaturan dikunci'),
-                    subtitle: const Text(
+                    leading: Icon(Icons.shield_outlined),
+                    title: Text('Pengaturan dikunci'),
+                    subtitle: Text(
                       'Daftar aplikasi dan pengaturan perlindungan tidak dapat diubah sampai komitmen berakhir. Administrator perangkat dan Aksesibilitas membantu menghambat upaya menonaktifkan atau menghapus OpenLock.',
                     ),
                   ),
