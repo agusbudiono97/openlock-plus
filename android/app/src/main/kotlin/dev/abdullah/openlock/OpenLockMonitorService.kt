@@ -128,11 +128,11 @@ class OpenLockMonitorService : Service() {
             // has ever been configured. Outside Strict Mode, retain the
             // existing PIN-authenticated device-admin flow.
             if (strictActive) {
-                if (current != lastStrictLaunchedPkg ||
-                    now - lastStrictLaunchAt >= RELAUNCH_GUARD_MS
+                if (current != lastLaunchedPkg ||
+                    now - lastLaunchAt >= RELAUNCH_GUARD_MS
                 ) {
-                    lastStrictLaunchedPkg = current
-                    lastStrictLaunchAt = now
+                    lastLaunchedPkg = current
+                    lastLaunchAt = now
                     launchStrictMode(current)
                 }
             } else {
