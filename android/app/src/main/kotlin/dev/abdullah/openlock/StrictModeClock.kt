@@ -13,6 +13,27 @@ internal object StrictModeClock {
         return nowElapsedMillis + (endWallMillis - nowWallMillis).coerceAtLeast(0L)
     }
 
+    fun remainingMillis(
+        enabled: Boolean,
+        endWallMillis: Long,
+        endElapsedMillis: Long,
+        savedBootCount: Int,
+        nowWallMillis: Long,
+        nowElapsedMillis: Long,
+        currentBootCount: Int,
+    ): Long? {
+        if (!enabled) return 0L
+        if (endWallMillis == 0L) return null
+        val remaining = if (savedBootCount >= 0 && currentBootCount >= 0 &&
+            savedBootCount == currentBootCount && endElapsedMillis > 0L
+        ) {
+            endElapsedMillis - nowElapsedMillis
+        } else {
+            endWallMillis - nowWallMillis
+        }
+        return remaining.coerceAtLeast(0L)
+    }
+
     fun isActive(
         enabled: Boolean,
         endWallMillis: Long,
