@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.app.AppOpsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -15,6 +16,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.Process
+import android.provider.Settings
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
 
@@ -236,6 +239,36 @@ class OpenLockMonitorService : Service() {
         return observedForegroundPkg
     }
 
+    /**
+     * Detect permissions that are essential for foreground-app enforcement.
+     * Android can revoke these while Strict Mode is active; the persistent
+     * notification must not continue claiming protection is healthy.
+     */
+    private fun missingEnforcementAccess(): String {
+        val missing = ArrayList<String>(2)
+        val usageAllowed = runCatching {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    Process.myUid(),
+                    packageName,
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                appOps.checkOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    Process.myUid(),
+                    packageName,
+                )
+            }
+            mode == AppOpsManager.MODE_ALLOWED
+        }.getOrDefault(false)
+        if (!usageAllowed) missing.add("Akses penggunaan")
+        if (!Settings.canDrawOverlays(this)) missing.add("Tampil di atas aplikasi lain")
+        return missing.joinToString(" dan ")
+    }
+
     private fun buildNotification(): Notification {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -266,9 +299,21 @@ class OpenLockMonitorService : Service() {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
         }
+        val missingAccess = missingEnforcementAccess()
+        val contentText = if (missingAccess.isEmpty()) {
+            "Mode Ketat dan aplikasi terkunci sedang dipantau."
+        } else {
+            "Perlindungan perlu dipulihkan: $missingAccess"
+        }
+        val contentTitle = if (missingAccess.isEmpty()) {
+            "OpenLock sedang melindungi aplikasi"
+        } else {
+            "Perlindungan OpenLock perlu perhatian"
+        }
+
         return builder
-            .setContentTitle("OpenLock is protecting your apps")
-            .setContentText("Locked apps stay behind your PIN.")
+            .setContentTitle(contentTitle)
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setOngoing(true)
             .setContentIntent(pending)
