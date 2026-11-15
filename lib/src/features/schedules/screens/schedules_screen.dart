@@ -89,13 +89,63 @@ class _ScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = schedule.packages.length;
-    return DetailRow(
-      onTap: onToggle == null ? null : () => onTap?.call(),
-      leading: const IconBadge(icon: Icons.schedule_rounded),
-      title: schedule.name,
-      detail: '${ScheduleFormat.summary(schedule)}\n'
-          '$count aplikasi',
-      trailing: Switch(value: schedule.enabled, onChanged: onToggle),
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
+        onTap: onTap,
+        leading: const IconBadge(icon: Icons.schedule_rounded),
+        title: Text(
+          schedule.name,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(ScheduleFormat.summary(schedule)),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    Icons.apps_rounded,
+                    size: 14,
+                    color: colors.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text('$count aplikasi'),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: schedule.enabled
+                          ? colors.primary
+                          : colors.outlineVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(schedule.enabled ? 'Aktif' : 'Nonaktif'),
+                ],
+              ),
+            ],
+          ),
+        ),
+        trailing: Switch(
+          value: schedule.enabled,
+          onChanged: onToggle,
+        ),
+      ),
     );
+  }
   }
 }
