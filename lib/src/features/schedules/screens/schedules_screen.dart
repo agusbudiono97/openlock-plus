@@ -83,7 +83,7 @@ class _ScheduleCard extends StatelessWidget {
   });
 
   final LockSchedule schedule;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final ValueChanged<bool>? onToggle;
 
   @override
@@ -94,7 +94,7 @@ class _ScheduleCard extends StatelessWidget {
       leading: const IconBadge(icon: Icons.schedule_rounded),
       title: schedule.name,
       detail: '${ScheduleFormat.summary(schedule)}\n'
-          '$count ${count == 1 ? 'aplikasi' : 'aplikasi'}',
+          '$count aplikasi',
       trailing: Switch(value: schedule.enabled, onChanged: onToggle),
     );
   }
