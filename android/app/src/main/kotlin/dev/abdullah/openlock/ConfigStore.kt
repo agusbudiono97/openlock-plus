@@ -127,6 +127,23 @@ class ConfigStore private constructor(context: Context) {
     fun strictModeEndMillis(): Long =
         config?.optLong("strictModeEndsAtMillis", 0L) ?: 0L
 
+    fun strictModeRemainingMillis(): Long? {
+        val cfg = config ?: return 0L
+        return StrictModeClock.remainingMillis(
+            enabled = cfg.optBoolean("strictModeEnabled", false),
+            endWallMillis = cfg.optLong("strictModeEndsAtMillis", 0L),
+            endElapsedMillis = cfg.optLong(KEY_STRICT_END_ELAPSED, 0L),
+            savedBootCount = cfg.optInt(KEY_STRICT_BOOT_COUNT, -1),
+            nowWallMillis = System.currentTimeMillis(),
+            nowElapsedMillis = SystemClock.elapsedRealtime(),
+            currentBootCount = Settings.Global.getInt(
+                appContext.contentResolver,
+                Settings.Global.BOOT_COUNT,
+                -1,
+            ),
+        )
+    }
+
     fun strictModeActive(nowMillis: Long = System.currentTimeMillis()): Boolean {
         val cfg = config ?: return false
         return StrictModeClock.isActive(
