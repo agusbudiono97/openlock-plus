@@ -148,12 +148,26 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       return;
     }
 
-    await ref.read(configControllerProvider.notifier).setStrictMode(
-      enabled: true,
-      packages: Set.of(_selected),
-      endsAtMillis: end?.millisecondsSinceEpoch,
-    );
-    await ref.read(enforcementBridgeProvider).startService();
+    try {
+      // Start the foreground monitor before committing the timer. If Android
+      // rejects the service start, Strict Mode must not be saved as active
+      // while no enforcement process is running.
+      await bridge.startService();
+      await ref.read(configControllerProvider.notifier).setStrictMode(
+        enabled: true,
+        packages: Set.of(_selected),
+        endsAtMillis: end?.millisecondsSinceEpoch,
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Mode Ketat belum berhasil diaktifkan: $error'),
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
+    }
   }
 
   @override
