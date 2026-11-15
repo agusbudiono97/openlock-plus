@@ -10,11 +10,14 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   @override
   Future<LockConfig> build() => ref.watch(configRepositoryProvider).load();
 
+  Future<LockConfig> _currentConfig() async =>
+      state.valueOrNull ?? await future;
+
   Future<void> _apply(LockConfig requested) async {
     // Never fall back to an empty config while the async repository load is
     // still in flight: doing so could overwrite an active commitment saved
     // before this screen finished loading.
-    final current = state.valueOrNull ?? await future;
+    final current = await _currentConfig();
     final strictActive = current.strictModeActiveAt(DateTime.now());
 
     // Strict Mode is a full settings freeze, not merely a protected timer.
@@ -49,29 +52,29 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   }
 
   Future<void> toggleApp(String packageName) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     final locked = Set<String>.of(config.lockedPackages);
     if (!locked.add(packageName)) locked.remove(packageName);
     await _apply(config.copyWith(lockedPackages: locked));
   }
 
   Future<void> setLockNewApps(bool value) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     await _apply(config.copyWith(lockNewApps: value));
   }
 
   Future<void> setRelock(RelockPolicy policy) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     await _apply(config.copyWith(relock: policy));
   }
 
   Future<void> setRandomizeKeypad(bool value) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     await _apply(config.copyWith(randomizeKeypad: value));
   }
 
   Future<void> setIntruderCapture({bool? enabled, int? threshold}) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     await _apply(config.copyWith(
       intruderCaptureEnabled: enabled,
       intruderThreshold: threshold,
@@ -79,20 +82,20 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   }
 
   Future<void> setFakeCover(bool value) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     await _apply(config.copyWith(fakeCoverEnabled: value));
   }
 
   /// Sets the global "hide notification content" default for locked apps.
   Future<void> setHideNotifications(bool value) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     await _apply(config.copyWith(hideNotifications: value));
   }
 
   /// Sets or clears a per-app notification-hiding override. Passing null
   /// removes the override so the app follows the global flag again.
   Future<void> setNotificationOverride(String packageName, bool? value) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     final overrides = Map<String, bool>.of(config.notificationOverrides);
     if (value == null) {
       overrides.remove(packageName);
@@ -112,7 +115,7 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     required Set<String> packages,
     int? endsAtMillis,
   }) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     await _apply(config.copyWith(
       strictModeEnabled: enabled,
       strictModePackages: packages,
@@ -122,13 +125,13 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   }
 
   Future<void> setPreventUninstall(bool value) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     if (config.preventUninstall == value) return;
     await _apply(config.copyWith(preventUninstall: value));
   }
 
   Future<void> upsertSchedule(LockSchedule schedule) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     final schedules = List<LockSchedule>.of(config.schedules);
     final index = schedules.indexWhere((s) => s.id == schedule.id);
     if (index >= 0) {
@@ -140,7 +143,7 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   }
 
   Future<void> deleteSchedule(String id) async {
-    final config = state.valueOrNull ?? LockConfig.empty;
+    final config = await _currentConfig();
     final schedules = config.schedules.where((s) => s.id != id).toList();
     await _apply(config.copyWith(schedules: schedules));
   }
