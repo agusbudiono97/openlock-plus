@@ -364,7 +364,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ? 'PIN required on OpenLock\'s App info and uninstall '
                             'aplikasi'
                         : 'Enable in Accessibility to guard OpenLock\'s App '
-                            'dan uninstall OpenLock',
+                            'serta uninstall aplikasi',
                     showChevron: false,
                     trailing: screenGuardAccess
                         ? null
