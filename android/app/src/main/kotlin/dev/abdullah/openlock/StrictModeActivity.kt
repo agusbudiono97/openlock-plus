@@ -24,6 +24,7 @@ class StrictModeActivity : Activity() {
     private var timer: CountDownTimer? = null
     private lateinit var countdown: TextView
     private lateinit var targetMessage: TextView
+    private lateinit var targetIcon: ImageView
     private lateinit var attemptCount: TextView
     private lateinit var preferences: SharedPreferences
     private var paletteIndex = 0
@@ -118,6 +119,14 @@ class StrictModeActivity : Activity() {
             gravity = Gravity.CENTER
         }
         card.addView(blockedLabel, centeredParams())
+        targetIcon = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_lock_lock)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            contentDescription = "Ikon aplikasi yang diblokir"
+        }
+        card.addView(targetIcon, LinearLayout.LayoutParams(dp(52), dp(52)).apply {
+            topMargin = dp(16)
+        })
         targetMessage = TextView(this).apply {
             textSize = 18f
             setTextColor(0xFFFFFFFF.toInt())
@@ -192,6 +201,11 @@ class StrictModeActivity : Activity() {
             ).toString()
         }.getOrDefault("Aplikasi ini")
         targetMessage.text = label
+        targetIcon.setImageDrawable(runCatching {
+            packageManager.getApplicationIcon(target)
+        }.getOrElse {
+            getDrawable(android.R.drawable.ic_lock_lock)!!
+        })
     }
 
     override fun onResume() {
