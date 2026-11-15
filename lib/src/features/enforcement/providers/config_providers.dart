@@ -155,6 +155,12 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     ));
   }
 
+  Future<void> setStrictScreenPalette(int palette) async {
+    await _apply((config) => config.copyWith(
+          strictScreenPalette: palette.clamp(0, 2),
+        ));
+  }
+
   Future<void> setPreventUninstall(bool value) async {
     await _apply((config) => config.copyWith(preventUninstall: value));
   }
