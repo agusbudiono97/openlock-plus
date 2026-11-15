@@ -420,8 +420,8 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             ),
             Row(
               children: [
-                Expanded(
-                  child: const SectionLead('Aplikasi yang diblokir'),
+                const Expanded(
+                  child: SectionLead('Aplikasi yang diblokir'),
                 ),
                 Text('${_selected.length} dipilih', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
               ],
