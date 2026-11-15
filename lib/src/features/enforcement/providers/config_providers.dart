@@ -22,13 +22,15 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     final config = state.valueOrNull;
     if (config == null) return;
     final verifier = await ref.read(pinAuthServiceProvider).verifier();
-    if (verifier == null) return; // no PIN yet — nothing to enforce
+    // Strict Mode is an independent hard block and must work even before an
+    // app-lock PIN has been configured. Empty verifier values disable only
+    // the ordinary PIN lock; the native monitor still receives Strict Mode.
     final biometricEnabled =
         await ref.read(biometricServiceProvider).isEnabled();
     await ref.read(enforcementBridgeProvider).pushConfig(
           config.toNativeMap(
-            pinHash: verifier.hash,
-            pinSalt: verifier.salt,
+            pinHash: verifier?.hash ?? '',
+            pinSalt: verifier?.salt ?? '',
             biometricEnabled: biometricEnabled,
           ),
         );
