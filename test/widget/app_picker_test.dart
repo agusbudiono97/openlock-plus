@@ -45,14 +45,14 @@ void main() {
     // Both apps are listed.
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
-    expect(find.text('0 locked'), findsOneWidget);
+    expect(find.text('0 aplikasi dikunci'), findsOneWidget);
 
     // Toggle the first app's switch on.
     final firstSwitch = find.byType(Switch).at(1); // 0 = "lock new apps"
     await tester.tap(firstSwitch);
     await tester.pumpAndSettle();
 
-    expect(find.text('1 locked'), findsOneWidget);
+    expect(find.text('1 aplikasi dikunci'), findsOneWidget);
   });
 
   Future<void> pumpPicker(WidgetTester tester, FakeEnforcementBridge bridge) {
@@ -178,7 +178,7 @@ void main() {
       // directly below instead.
       tester.takeException();
 
-      expect(find.text('Hide notifications'), findsOneWidget);
+      expect(find.text('Sembunyikan notifikasi'), findsOneWidget);
       // No row inside the app's card lays its children out past its edge.
       final rows = find.descendant(
         of: find.byType(GroupedRowItem),
