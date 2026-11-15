@@ -41,6 +41,7 @@ class OpenLockMonitorService : Service() {
     private var lastStrictLaunchAt: Long = 0L
     @Volatile private var observedForegroundPkg: String? = null
     private var lastNotificationAccessState: String? = null
+    @Volatile private var monitorFaulted = false
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -60,8 +61,17 @@ class OpenLockMonitorService : Service() {
         override fun run() {
             try {
                 tick()
+                if (monitorFaulted) {
+                    monitorFaulted = false
+                    refreshNotificationIfNeeded()
+                }
             } catch (_: Exception) {
-                // Never let a transient failure kill the loop.
+                // Keep the monitor loop alive, but never leave a healthy-looking
+                // notification while foreground detection is failing.
+                if (!monitorFaulted) {
+                    monitorFaulted = true
+                    refreshNotificationIfNeeded()
+                }
             }
             handler.postDelayed(this, POLL_INTERVAL_MS)
         }
@@ -274,7 +284,8 @@ class OpenLockMonitorService : Service() {
 
     private fun refreshNotificationIfNeeded() {
         val missing = missingEnforcementAccess()
-        if (missing == lastNotificationAccessState) return
+        val state = "$missing|$monitorFaulted"
+        if (state == lastNotificationAccessState) return
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(NOTIFICATION_ID, buildNotification())
     }
@@ -310,17 +321,10 @@ class OpenLockMonitorService : Service() {
             Notification.Builder(this)
         }
         val missingAccess = missingEnforcementAccess()
-        lastNotificationAccessState = missingAccess
-        val contentText = if (missingAccess.isEmpty()) {
-            "Mode Ketat dan aplikasi terkunci sedang dipantau."
-        } else {
-            "Perlindungan perlu dipulihkan: $missingAccess"
-        }
-        val contentTitle = if (missingAccess.isEmpty()) {
-            "OpenLock sedang melindungi aplikasi"
-        } else {
-            "Perlindungan OpenLock perlu perhatian"
-        }
+        lastNotificationAccessState = "$missingAccess|$monitorFaulted"
+        val notice = monitorNotice(missingAccess, monitorFaulted)
+        val contentText = notice.second
+        val contentTitle = notice.first
 
         return builder
             .setContentTitle(contentTitle)
