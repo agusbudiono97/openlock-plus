@@ -34,6 +34,11 @@ class HomeShell extends StatelessWidget {
             label: 'Intruders',
           ),
           NavigationDestination(
+            icon: Icon(Icons.lock_clock_outlined),
+            selectedIcon: Icon(Icons.lock_clock_rounded),
+            label: 'Strict',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings_rounded),
             label: 'Settings',
