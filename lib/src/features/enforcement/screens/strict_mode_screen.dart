@@ -181,10 +181,11 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
         final millis? => DateTime.fromMillisecondsSinceEpoch(millis).toLocal(),
         null => null,
       };
-      final remaining = endAt == null ? null : endAt.difference(DateTime.now());
-      final end = endAt == null
-          ? 'Tanpa batas waktu'
-          : '${endAt.day.toString().padLeft(2, '0')}/${endAt.month.toString().padLeft(2, '0')}/${endAt.year} ${endAt.hour.toString().padLeft(2, '0')}:${endAt.minute.toString().padLeft(2, '0')}';
+      final remaining = endAt?.difference(DateTime.now());
+      final end = switch (endAt) {
+        final date? => '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
+        null => 'Tanpa batas waktu',
+      };
       return Scaffold(
         appBar: AppBar(title: const Text('Mode Ketat')),
         body: Center(
