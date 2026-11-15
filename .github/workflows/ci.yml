@@ -1,5 +1,6 @@
 name: CI
 
+# Trigger a fresh run after enabling GitHub Actions on this fork.
 on:
   push:
     branches: [main, feature/premium-strict-mode]
