@@ -10,6 +10,7 @@ import 'package:openlock/src/features/apps/services/app_icon_loader.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/core/di.dart';
+import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
 
 class StrictModeScreen extends ConsumerStatefulWidget {
