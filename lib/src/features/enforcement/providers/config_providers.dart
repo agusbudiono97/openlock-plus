@@ -14,19 +14,11 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     final current = state.valueOrNull ?? LockConfig.empty;
     final strictActive = current.strictModeActiveAt(DateTime.now());
 
-    // Strict Mode is a commitment once started: ordinary settings changes
-    // must not be able to disable it, replace its target apps, or move its
-    // deadline earlier/later. Preserve the active commitment centrally so
-    // every settings screen and future feature gets the same protection.
-    final next = strictActive
-        ? requested.copyWith(
-            strictModeEnabled: true,
-            strictModePackages: current.strictModePackages,
-            strictModeEndsAtMillis: current.strictModeEndsAtMillis,
-            clearStrictModeEndsAtMillis:
-                current.strictModeEndsAtMillis == null,
-          )
-        : requested;
+    // Strict Mode is a full settings freeze, not merely a protected timer.
+    // Keep the complete snapshot unchanged until the native/Dart deadline
+    // expires. This covers app lists, schedules, uninstall settings, and
+    // backup restores regardless of which screen initiated the mutation.
+    final next = strictActive ? current : requested;
 
     state = AsyncData(next);
     await ref.read(configRepositoryProvider).save(next);
