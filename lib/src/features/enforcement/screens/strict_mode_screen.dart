@@ -165,7 +165,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       final remaining = endAt == null ? null : endAt.difference(DateTime.now());
       final end = endAt == null
           ? 'Tanpa batas waktu'
-          : '\${endAt.day.toString().padLeft(2, '0')}/\${endAt.month.toString().padLeft(2, '0')}/\${endAt.year} \${endAt.hour.toString().padLeft(2, '0')}:\${endAt.minute.toString().padLeft(2, '0')}';
+          : '${endAt.day.toString().padLeft(2, '0')}/${endAt.month.toString().padLeft(2, '0')}/${endAt.year} ${endAt.hour.toString().padLeft(2, '0')}:${endAt.minute.toString().padLeft(2, '0')}';
       return Scaffold(
         appBar: AppBar(title: const Text('Mode Ketat')),
         body: Center(
@@ -186,7 +186,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                   Text(
                     remaining.isNegative
                         ? 'Waktu perlindungan habis'
-                        : 'Sisa waktu: \${remaining.inDays} hari \${(remaining.inHours % 24).toString().padLeft(2, '0')}:\${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:\${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
+                        : 'Sisa waktu: ${remaining.inDays} hari ${(remaining.inHours % 24).toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
