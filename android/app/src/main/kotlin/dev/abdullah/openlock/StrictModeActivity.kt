@@ -9,6 +9,7 @@ import android.os.CountDownTimer
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 
@@ -50,12 +51,12 @@ class StrictModeActivity : Activity() {
         }
         root.addView(brand, centeredParams())
 
-        val emblem = TextView(this).apply {
-            text = "🔒"
-            textSize = 42f
-            gravity = Gravity.CENTER
+        val emblem = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_lock_lock)
+            setColorFilter(background)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
             background = rounded(accent, 28)
-            setPadding(dp(24), dp(20), dp(24), dp(20))
+            setPadding(dp(28), dp(24), dp(28), dp(24))
         }
         val emblemWrap = LinearLayout(this).apply {
             gravity = Gravity.CENTER
