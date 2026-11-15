@@ -229,8 +229,6 @@ class _ProtectionHero extends ConsumerWidget {
     final c = SuiteColors.of(context);
     final intruders = ref.watch(intruderControllerProvider).valueOrNull;
     final activeSchedules = config.schedules.where((s) => s.enabled).length;
-    // Until the app list arrives, the configured set is the best answer.
-    final guarded = (lockedCount ?? config.lockedPackages.length) > 0;
     final relockLabel = switch (config.relock.mode) {
       RelockMode.immediately => 'Saat keluar',
       RelockMode.onScreenOff => 'Layar mati',
