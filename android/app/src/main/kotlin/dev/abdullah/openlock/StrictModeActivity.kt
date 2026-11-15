@@ -82,7 +82,7 @@ class StrictModeActivity : Activity() {
         root.addView(emblemWrap, emblemParams)
 
         val title = TextView(this).apply {
-            text = ConfigStore.get(this).strictScreenTitle()
+            text = ConfigStore.get(this@StrictModeActivity).strictScreenTitle()
             textSize = 25f
             setTextColor(0xFFFFFFFF.toInt())
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
@@ -91,7 +91,7 @@ class StrictModeActivity : Activity() {
         root.addView(title, centeredParams())
 
         val subtitle = TextView(this).apply {
-            text = ConfigStore.get(this).strictScreenMessage()
+            text = ConfigStore.get(this@StrictModeActivity).strictScreenMessage()
             textSize = 15f
             setTextColor(muted)
             gravity = Gravity.CENTER
@@ -155,7 +155,7 @@ class StrictModeActivity : Activity() {
         })
 
         val footer = TextView(this).apply {
-            text = ConfigStore.get(this).strictScreenFooter()
+            text = ConfigStore.get(this@StrictModeActivity).strictScreenFooter()
             textSize = 13f
             setTextColor(muted)
             gravity = Gravity.CENTER
