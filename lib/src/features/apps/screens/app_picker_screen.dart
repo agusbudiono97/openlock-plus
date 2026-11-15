@@ -300,6 +300,7 @@ class _LockNewAppsTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final frozen = config.strictModeActiveAt(DateTime.now());
     void set(bool value) =>
         ref.read(configControllerProvider.notifier).setLockNewApps(value);
     return RowGroup(
@@ -308,8 +309,11 @@ class _LockNewAppsTile extends ConsumerWidget {
           leading: const IconBadge(icon: Icons.new_releases_outlined),
           title: 'Kunci aplikasi yang baru dipasang',
           subtitle: 'Guard apps you install later',
-          trailing: Switch(value: config.lockNewApps, onChanged: set),
-          onTap: () => set(!config.lockNewApps),
+          trailing: Switch(
+            value: config.lockNewApps,
+            onChanged: frozen ? null : set,
+          ),
+          onTap: frozen ? null : () => set(!config.lockNewApps),
         ),
       ],
     );
@@ -330,16 +334,20 @@ class _AppTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = SuiteColors.of(context);
+    final frozen = config.strictModeActiveAt(DateTime.now());
     final locked = config.lockedPackages.contains(app.packageName);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppListRow(
-          onTap: onToggle,
+          onTap: frozen ? null : onToggle,
           leading: _AppIcon(app: app),
           title: app.label,
           subtitle: app.packageName,
-          trailing: Switch(value: locked, onChanged: (_) => onToggle()),
+          trailing: Switch(
+            value: locked,
+            onChanged: frozen ? null : (_) => onToggle(),
+          ),
         ),
         // Per-app notification-hiding override, only meaningful once the app is
         // locked. Reflects the effective choice (override, else the global
@@ -374,9 +382,11 @@ class _AppTile extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.smd),
                 Switch(
                   value: config.hidesNotificationsFor(app.packageName),
-                  onChanged: (value) => ref
-                      .read(configControllerProvider.notifier)
-                      .setNotificationOverride(app.packageName, value),
+                  onChanged: frozen
+                      ? null
+                      : (value) => ref
+                          .read(configControllerProvider.notifier)
+                          .setNotificationOverride(app.packageName, value),
                 ),
               ],
             ),
