@@ -42,8 +42,13 @@ class StrictModeActivity : Activity() {
         val background = palette.background
         val muted = palette.muted
         val accent = palette.accent
-        val attempts = preferences.getInt("blocked_attempts", 0) + 1
-        preferences.edit().putInt("blocked_attempts", attempts).apply()
+        val attempts = if (savedInstanceState == null) {
+            (preferences.getInt("blocked_attempts", 0) + 1).also {
+                preferences.edit().putInt("blocked_attempts", it).apply()
+            }
+        } else {
+            preferences.getInt("blocked_attempts", 0)
+        }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
