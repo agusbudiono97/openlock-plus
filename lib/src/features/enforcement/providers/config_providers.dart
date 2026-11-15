@@ -11,7 +11,10 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   Future<LockConfig> build() => ref.watch(configRepositoryProvider).load();
 
   Future<void> _apply(LockConfig requested) async {
-    final current = state.valueOrNull ?? LockConfig.empty;
+    // Never fall back to an empty config while the async repository load is
+    // still in flight: doing so could overwrite an active commitment saved
+    // before this screen finished loading.
+    final current = state.valueOrNull ?? await future;
     final strictActive = current.strictModeActiveAt(DateTime.now());
 
     // Strict Mode is a full settings freeze, not merely a protected timer.
