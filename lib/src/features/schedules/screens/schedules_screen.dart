@@ -90,7 +90,7 @@ class _ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final count = schedule.packages.length;
     return DetailRow(
-      onTap: onToggle == null ? null : onTap,
+      onTap: onToggle == null ? null : () => onTap?.call(),
       leading: const IconBadge(icon: Icons.schedule_rounded),
       title: schedule.name,
       detail: '${ScheduleFormat.summary(schedule)}\n'
