@@ -35,6 +35,7 @@ void main() {
         strictScreenTitle: 'WAKTUNYA FOKUS',
         strictScreenMessage: 'Tahan dulu, fokus pada tujuanmu.',
         strictScreenFooter: 'Kamu bisa melewati ini.',
+        strictScreenPalette: 2,
       );
 
   test('JSON round-trip preserves every field', () {
@@ -61,6 +62,7 @@ void main() {
     expect(restored.strictScreenTitle, 'WAKTUNYA FOKUS');
     expect(restored.strictScreenMessage, 'Tahan dulu, fokus pada tujuanmu.');
     expect(restored.strictScreenFooter, 'Kamu bisa melewati ini.');
+    expect(restored.strictScreenPalette, 2);
   });
 
   test('empty JSON yields sensible defaults', () {
@@ -77,6 +79,7 @@ void main() {
     expect(config.strictScreenTitle, 'WAKTUNYA BERHENTI');
     expect(config.strictScreenMessage,
         'Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.');
+    expect(config.strictScreenPalette, 0);
   });
 
   test('Strict Mode stays active until its deadline and supports indefinite mode', () {
@@ -144,6 +147,7 @@ void main() {
     expect(map['strictScreenTitle'], 'WAKTUNYA FOKUS');
     expect(map['strictScreenMessage'], 'Tahan dulu, fokus pada tujuanmu.');
     expect(map['strictScreenFooter'], 'Kamu bisa melewati ini.');
+    expect(map['strictScreenPalette'], 2);
     expect((map['schedules'] as List).length, 1);
     // The native map must not leak the source-of-truth-only lockNewApps flag.
     expect(map.containsKey('lockNewApps'), isFalse);
