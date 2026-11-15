@@ -119,20 +119,32 @@ class OpenLockMonitorService : Service() {
         // (App info, uninstall dialog, device-admin deactivation), as read by
         // OpenLockGuardAccessibilityService. Runs before the normal locked-app
         // check because Settings is not in the locked set.
-        if (store.pinHash() != null && store.preventUninstall() &&
-            GuardedScreen.isShowing(current)
-        ) {
-            // Respect an in-session unlock so the user can actually reach the
-            // deactivate screen after authenticating; re-lock once the screen
-            // has turned off since.
-            val unlockedAt = LockSession.unlockedAt(current)
-            val stillUnlocked = unlockedAt != 0L && screenOffAt <= unlockedAt
-            if (!stillUnlocked &&
-                !(current == lastLaunchedPkg && now - lastLaunchAt < RELAUNCH_GUARD_MS)
-            ) {
-                lastLaunchedPkg = current
-                lastLaunchAt = now
-                launchLock(current)
+        val strictActive = store.strictModeActive()
+        val uninstallGuardEnabled =
+            strictActive || (store.pinHash() != null && store.preventUninstall())
+        if (uninstallGuardEnabled && GuardedScreen.isShowing(current)) {
+            // During Strict Mode there is no early-unlock path: show the
+            // non-dismissible Strict Mode barrier even when no ordinary PIN
+            // has ever been configured. Outside Strict Mode, retain the
+            // existing PIN-authenticated device-admin flow.
+            if (strictActive) {
+                if (current != lastStrictLaunchedPkg ||
+                    now - lastStrictLaunchAt >= RELAUNCH_GUARD_MS
+                ) {
+                    lastStrictLaunchedPkg = current
+                    lastStrictLaunchAt = now
+                    launchStrictMode(current)
+                }
+            } else {
+                val unlockedAt = LockSession.unlockedAt(current)
+                val stillUnlocked = unlockedAt != 0L && screenOffAt <= unlockedAt
+                if (!stillUnlocked &&
+                    !(current == lastLaunchedPkg && now - lastLaunchAt < RELAUNCH_GUARD_MS)
+                ) {
+                    lastLaunchedPkg = current
+                    lastLaunchAt = now
+                    launchLock(current)
+                }
             }
             return
         }
