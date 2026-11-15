@@ -40,7 +40,10 @@ class OpenLockMonitorService : Service() {
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                Intent.ACTION_SCREEN_OFF -> screenOffAt = System.currentTimeMillis()
+                Intent.ACTION_SCREEN_OFF -> {
+                    screenOffAt = System.currentTimeMillis()
+                    observedForegroundPkg = null
+                }
             }
         }
     }
@@ -196,15 +199,22 @@ class OpenLockMonitorService : Service() {
         val end = System.currentTimeMillis()
         val begin = end - LOOKBACK_MS
         val events = usageStatsManager.queryEvents(begin, end)
-        var pkg: String? = null
         val event = UsageEvents.Event()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
-            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-                pkg = event.packageName
+            // Android 10+ reports ACTIVITY_RESUMED; older releases report
+            // MOVE_TO_FOREGROUND. Keep the latest observed package between
+            // polls: the foreground event is emitted once on app launch, not
+            // continuously, so returning null after LOOKBACK_MS would silently
+            // stop enforcing an app that stays open.
+            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND ||
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    event.eventType == UsageEvents.Event.ACTIVITY_RESUMED)
+            ) {
+                observedForegroundPkg = event.packageName
             }
         }
-        return pkg
+        return observedForegroundPkg
     }
 
     private fun buildNotification(): Notification {
