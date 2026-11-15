@@ -109,7 +109,7 @@ class AppPickerScreen extends ConsumerWidget {
     );
   }
 
-  static const _headerCount = 6;
+  static const _headerCount = 5;
 
   Widget _header(
     BuildContext context,
@@ -135,11 +135,6 @@ class AppPickerScreen extends ConsumerWidget {
           ],
         );
       case 2:
-        return Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.smd),
-          child: _LockNewAppsTile(config: config),
-        );
-      case 3:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -151,7 +146,7 @@ class AppPickerScreen extends ConsumerWidget {
             ),
           ],
         );
-      case 4:
+      case 3:
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xs,
@@ -314,33 +309,6 @@ class _ProtectionHero extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _LockNewAppsTile extends ConsumerWidget {
-  const _LockNewAppsTile({required this.config});
-
-  final LockConfig config;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final frozen = config.strictModeActiveAt(DateTime.now());
-    void set(bool value) =>
-        ref.read(configControllerProvider.notifier).setLockNewApps(value);
-    return RowGroup(
-      children: [
-        AppListRow(
-          leading: const IconBadge(icon: Icons.new_releases_outlined),
-          title: 'Kunci aplikasi yang baru dipasang',
-          subtitle: 'Kunci otomatis aplikasi yang baru dipasang',
-          trailing: Switch(
-            value: config.lockNewApps,
-            onChanged: frozen ? null : set,
-          ),
-          onTap: frozen ? null : () => set(!config.lockNewApps),
-        ),
-      ],
     );
   }
 }
