@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:core_theme/core_theme.dart';
+import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/core/di.dart';
+import 'package:openlock/src/core/widgets/screen_header.dart';
 
 class StrictModeScreen extends ConsumerStatefulWidget {
   const StrictModeScreen({super.key});
@@ -175,224 +178,320 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     final config = ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
     final active = config.strictModeActiveAt(DateTime.now());
     final apps = ref.watch(installedAppsProvider);
+    final colors = SuiteColors.of(context);
 
     if (active) {
-      final endAt = switch (config.strictModeEndsAtMillis) {
-        final millis? => DateTime.fromMillisecondsSinceEpoch(millis).toLocal(),
-        null => null,
-      };
+      final endAt = config.strictModeEndsAtMillis == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+              config.strictModeEndsAtMillis!,
+            ).toLocal();
       final remaining = endAt?.difference(DateTime.now());
-      final end = switch (endAt) {
-        final date? => '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
-        null => 'Tanpa batas waktu',
-      };
+      final endLabel = endAt == null
+          ? 'Tanpa batas waktu'
+          : '${endAt.day.toString().padLeft(2, '0')}/${endAt.month.toString().padLeft(2, '0')}/${endAt.year} • ${endAt.hour.toString().padLeft(2, '0')}:${endAt.minute.toString().padLeft(2, '0')}';
+      final countdown = remaining == null
+          ? '∞'
+          : remaining.isNegative
+              ? '00:00:00'
+              : remaining.inDays > 0
+                  ? '${remaining.inDays}h ${(remaining.inHours % 24).toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}'
+                  : '${remaining.inHours.toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}';
+
       return Scaffold(
-        appBar: AppBar(title: const Text('Mode Ketat')),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
-                    child: Column(
+          bottom: false,
+          child: PageList(
+            children: [
+              const ScreenHeader(
+                eyebrow: 'Komitmen dan fokus',
+                title: 'Mode Ketat',
+              ),
+              VaultCard(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
                         Container(
-                          width: 88,
-                          height: 88,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primaryContainer,
-                            shape: BoxShape.circle,
+                            color: colors.surfaceAlt,
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                           ),
-                          child: Icon(
-                            Icons.lock_rounded,
-                            size: 42,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          child: Icon(Icons.shield_rounded, color: colors.textPrimary, size: 26),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('PERLINDUNGAN AKTIF', style: AppTextStyles.caption.copyWith(color: colors.textSecondary, letterSpacing: 1)),
+                              const SizedBox(height: 3),
+                              Text('Kamu sedang dalam Mode Ketat', style: AppTextStyles.titleMedium.copyWith(color: colors.textPrimary)),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'KOMITMEN SEDANG AKTIF',
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                letterSpacing: 1.2,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Mode Ketat aktif',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${config.strictModePackages.length} aplikasi sedang diblokir',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 22),
-                        if (remaining != null)
-                          Text(
-                            remaining.isNegative
-                                ? 'Waktu perlindungan habis'
-                                : '${remaining.inDays} hari ${(remaining.inHours % 24).toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                ),
-                          )
-                        else
-                          Text(
-                            'TANPA BATAS WAKTU',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        const SizedBox(height: 8),
-                        Text('Berakhir: $end', textAlign: TextAlign.center),
+                        Icon(Icons.check_circle_rounded, color: colors.positive),
                       ],
                     ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'APLIKASI YANG DIBLOKIR',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: AppSpacing.xl),
+                    Center(
+                      child: Text(
+                        countdown,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.numberLarge.copyWith(
+                          color: colors.textPrimary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
                       ),
-                ),
-                const SizedBox(height: 10),
-                apps.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => const Text('Daftar aplikasi tidak dapat dimuat.'),
-                  data: (items) {
-                    final selected = items.where((app) =>
-                        config.strictModePackages.contains(app.packageName));
-                    return Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final app in selected)
-                          Chip(
-                            avatar: const Icon(Icons.block_rounded, size: 16),
-                            label: Text(app.label),
-                          ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 20),
-                const Card(
-                  child: ListTile(
-                    leading: Icon(Icons.shield_outlined),
-                    title: Text('Pengaturan dikunci'),
-                    subtitle: Text(
-                      'Daftar aplikasi dan pengaturan perlindungan tidak dapat diubah sampai komitmen berakhir. Administrator perangkat dan Aksesibilitas membantu menghambat upaya menonaktifkan atau menghapus OpenLock.',
                     ),
-                  ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Center(
+                      child: Text(
+                        endAt == null ? 'TANPA BATAS WAKTU' : 'WAKTU TERSISA',
+                        style: AppTextStyles.caption.copyWith(color: colors.textSecondary, letterSpacing: 1.2),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Divider(color: colors.hairline),
+                    Row(
+                      children: [
+                        Expanded(child: _ActiveMetric(label: 'Aplikasi dikunci', value: '${config.strictModePackages.length}')),
+                        Expanded(child: _ActiveMetric(label: 'Berakhir', value: endLabel)),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Android tetap memiliki kendali sistem yang tidak dapat dikunci mutlak oleh aplikasi biasa.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SectionLead('Aplikasi yang dilindungi'),
+              apps.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const AppEmptyState(
+                  compact: true,
+                  icon: Icons.error_outline_rounded,
+                  title: 'Daftar aplikasi tidak dapat dimuat',
                 ),
-              ],
-            ),
+                data: (items) {
+                  final selected = items.where((app) => config.strictModePackages.contains(app.packageName)).toList();
+                  if (selected.isEmpty) {
+                    return const AppEmptyState(
+                      compact: true,
+                      icon: Icons.apps_rounded,
+                      title: 'Tidak ada aplikasi terdaftar',
+                    );
+                  }
+                  return RowGroup(
+                    children: [
+                      for (final app in selected)
+                        AppListRow(
+                          title: app.label,
+                          subtitle: 'Dikunci sampai komitmen berakhir',
+                          leading: const IconBadge(icon: Icons.lock_rounded),
+                          trailing: Icon(Icons.check_circle_rounded, color: colors.positive),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              VaultCard(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.lock_outline_rounded, color: colors.textSecondary),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Pengaturan sedang dikunci', style: AppTextStyles.labelStrong.copyWith(color: colors.textPrimary)),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Daftar aplikasi dan pengaturan perlindungan tidak dapat diubah sampai komitmen berakhir.',
+                            style: AppTextStyles.bodySmall.copyWith(color: colors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                'Android tetap memiliki kendali sistem yang tidak dapat dikunci mutlak oleh aplikasi biasa.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+              ),
+            ],
           ),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mode Ketat')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Blokir aplikasi pilihan sampai waktunya berakhir. Tentukan durasi, tanggal berakhir, atau aktifkan tanpa batas waktu. Sebelum mulai, OpenLock akan meminta izin Administrator perangkat dan Aksesibilitas untuk memperkuat perlindungan dari uninstall dan perubahan pengaturan.',
-          ),
-          const SizedBox(height: 16),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Tanpa batas waktu'),
-            subtitle: const Text('Tidak ada waktu berakhir otomatis'),
-            value: _indefinite,
-            onChanged: (value) => setState(() {
-              _indefinite = value;
-              if (value) _exactEnd = null;
-            }),
-          ),
-          if (!_indefinite) ...[
+      body: SafeArea(
+        bottom: false,
+        child: PageList(
+          children: [
+            const ScreenHeader(
+              eyebrow: 'Bangun kebiasaan lebih baik',
+              title: 'Mode Ketat',
+            ),
+            VaultCard(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const IconBadge(icon: Icons.shield_outlined),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          'Buat komitmen fokus',
+                          style: AppTextStyles.titleMedium.copyWith(color: colors.textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Pilih aplikasi yang ingin dibatasi, lalu tentukan berapa lama perlindungan berjalan. Mode Ketat tidak bisa diakhiri lebih awal dari dalam aplikasi.',
+                    style: AppTextStyles.bodySmall.copyWith(color: colors.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Tanpa batas waktu'),
+                    subtitle: const Text('Perlindungan tidak berakhir otomatis'),
+                    value: _indefinite,
+                    onChanged: (value) => setState(() {
+                      _indefinite = value;
+                      if (value) _exactEnd = null;
+                    }),
+                  ),
+                  if (!_indefinite) ...[
+                    Text('Durasi perlindungan', style: AppTextStyles.labelStrong.copyWith(color: colors.textPrimary)),
+                    const SizedBox(height: AppSpacing.sm),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: _amount,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              hintText: 'Masukkan durasi',
+                              border: OutlineInputBorder(),
+                            ),
+                            onChanged: (_) => setState(() => _exactEnd = null),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _unit,
+                            decoration: const InputDecoration(border: OutlineInputBorder()),
+                            items: const [
+                              DropdownMenuItem(value: 'menit', child: Text('Menit')),
+                              DropdownMenuItem(value: 'jam', child: Text('Jam')),
+                              DropdownMenuItem(value: 'hari', child: Text('Hari')),
+                              DropdownMenuItem(value: 'bulan', child: Text('Bulan')),
+                            ],
+                            onChanged: (value) => setState(() {
+                              _unit = value ?? 'jam';
+                              _exactEnd = null;
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    OutlinedButton.icon(
+                      onPressed: _pickExactEnd,
+                      icon: const Icon(Icons.event_outlined),
+                      label: Text(_exactEnd == null ? 'Pilih tanggal dan jam berakhir' : 'Berakhir: ${_exactEnd!.day}/${_exactEnd!.month}/${_exactEnd!.year} • ${_exactEnd!.hour.toString().padLeft(2, '0')}:${_exactEnd!.minute.toString().padLeft(2, '0')}'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _amount,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Durasi', border: OutlineInputBorder()),
-                    onChanged: (_) => setState(() => _exactEnd = null),
-                  ),
+                  child: SectionLead('Aplikasi yang diblokir'),
                 ),
-                const SizedBox(width: 12),
-                DropdownButton<String>(
-                  value: _unit,
-                  items: const [
-                    DropdownMenuItem(value: 'menit', child: Text('Menit')),
-                    DropdownMenuItem(value: 'jam', child: Text('Jam')),
-                    DropdownMenuItem(value: 'hari', child: Text('Hari')),
-                    DropdownMenuItem(value: 'bulan', child: Text('Bulan')),
-                  ],
-                  onChanged: (value) => setState(() {
-                    _unit = value ?? 'jam';
-                    _exactEnd = null;
-                  }),
-                ),
+                Text('${_selected.length} dipilih', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
               ],
             ),
-            TextButton.icon(
-              onPressed: _pickExactEnd,
-              icon: const Icon(Icons.event),
-              label: Text(_exactEnd == null ? 'Atau pilih tanggal dan jam berakhir' : 'Berakhir: $_exactEnd'),
+            apps.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, __) => const AppEmptyState(
+                compact: true,
+                icon: Icons.error_outline_rounded,
+                title: 'Tidak dapat memuat daftar aplikasi',
+              ),
+              data: (items) => RowGroup(
+                children: [
+                  for (final app in items)
+                    AppListRow(
+                      title: app.label,
+                      subtitle: app.packageName,
+                      leading: const IconBadge(icon: Icons.apps_rounded),
+                      onTap: () => setState(() {
+                        if (!_selected.add(app.packageName)) {
+                          _selected.remove(app.packageName);
+                        }
+                      }),
+                      trailing: Checkbox(
+                        value: _selected.contains(app.packageName),
+                        onChanged: (value) => setState(() {
+                          if (value == true) {
+                            _selected.add(app.packageName);
+                          } else {
+                            _selected.remove(app.packageName);
+                          }
+                        }),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            VaultButton(
+              label: 'Aktifkan Mode Ketat',
+              onPressed: _start,
+            ),
+            Text(
+              'Sebelum aktif, OpenLock akan meminta izin yang diperlukan untuk menjalankan perlindungan.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
             ),
           ],
-          const Divider(height: 32),
-          Text('Aplikasi yang diblokir (${_selected.length} dipilih)', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          apps.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Text('Tidak dapat memuat daftar aplikasi.'),
-            data: (items) => Column(
-              children: [
-                for (final app in items)
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(app.label),
-                    subtitle: Text(app.packageName, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    value: _selected.contains(app.packageName),
-                    onChanged: (value) => setState(() {
-                      if (value == true) {
-                        _selected.add(app.packageName);
-                      } else {
-                        _selected.remove(app.packageName);
-                      }
-                    }),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _start,
-            icon: const Icon(Icons.lock),
-            label: const Text('Aktifkan Mode Ketat'),
-          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActiveMetric extends StatelessWidget {
+  const _ActiveMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = SuiteColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(value, style: AppTextStyles.labelStrong.copyWith(color: colors.textPrimary)),
         ],
       ),
     );
