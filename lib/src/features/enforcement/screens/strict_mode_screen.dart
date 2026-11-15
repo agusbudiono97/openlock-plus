@@ -107,7 +107,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 const SizedBox(height: 16),
                 const Text('Strict Mode is active', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text('\${config.strictModePackages.length} apps are blocked.'),
+                Text(config.strictModePackages.length.toString() + ' apps are blocked.'),
                 const SizedBox(height: 8),
                 Text('Ends: $end', textAlign: TextAlign.center),
                 const SizedBox(height: 16),
@@ -170,7 +170,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             ),
           ],
           const Divider(height: 32),
-          Text('Apps to block (\${_selected.length} selected)', style: Theme.of(context).textTheme.titleMedium),
+          Text('Apps to block (' + _selected.length.toString() + ' selected)', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           apps.when(
             loading: () => const Center(child: CircularProgressIndicator()),
