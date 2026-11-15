@@ -230,13 +230,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   icon: Icons.verified_user_outlined,
                   title: 'Izin dan status',
                   subtitle: 'Akses penggunaan, tampil di atas aplikasi, layanan pemantau',
-                  onTap: () => context.push(AppRoutes.permissions),
+                  onTap: strictActive ? null : () => context.push(AppRoutes.permissions),
                 ),
                 SettingsTile(
                   icon: Icons.timer_outlined,
                   title: 'Perilaku kunci ulang',
                   subtitle: _relockLabel(config.relock),
-                  onTap: () => context.push(AppRoutes.relock),
+                  onTap: strictActive ? null : () => context.push(AppRoutes.relock),
                 ),
               ],
             ),
@@ -277,12 +277,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   trailing: notificationAccess
                       ? null
                       : TextButton(
-                          onPressed: () => ref
+                          onPressed: strictActive ? null : () => ref
                               .read(permissionsControllerProvider.notifier)
                               .requestNotificationAccess(),
                           child: const Text('Izinkan'),
                         ),
-                  onTap: notificationAccess
+                  onTap: strictActive || notificationAccess
                       ? null
                       : () => ref
                           .read(permissionsControllerProvider.notifier)
@@ -296,13 +296,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 SettingsTile(
                   icon: Icons.pin_outlined,
                   title: 'Ubah PIN',
-                  onTap: () => context.push(AppRoutes.changePin),
+                  onTap: strictActive ? null : () => context.push(AppRoutes.changePin),
                 ),
                 SettingsTile(
                   icon: Icons.key_outlined,
                   title: 'Kunci pemulihan',
                   subtitle: 'Atur ulang PIN jika kamu lupa',
-                  onTap: _recoveryKey,
+                  onTap: strictActive ? null : _recoveryKey,
                 ),
                 toggle(
                   icon: Icons.fingerprint,
@@ -369,12 +369,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     trailing: screenGuardAccess
                         ? null
                         : TextButton(
-                            onPressed: () => ref
+                            onPressed: strictActive ? null : () => ref
                                 .read(permissionsControllerProvider.notifier)
                                 .requestScreenGuardAccess(),
                             child: const Text('Aktifkan'),
                           ),
-                    onTap: screenGuardAccess
+                    onTap: strictActive || screenGuardAccess
                         ? null
                         : () => ref
                             .read(permissionsControllerProvider.notifier)
@@ -421,7 +421,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 SettingsTile(
                   icon: Icons.backup_outlined,
                   title: 'Cadangkan dan pulihkan',
-                  onTap: () => context.push(AppRoutes.backup),
+                  onTap: strictActive ? null : () => context.push(AppRoutes.backup),
                 ),
               ],
             ),
