@@ -174,6 +174,24 @@ class ConfigStore private constructor(context: Context) {
 
     fun fakeCoverEnabled(): Boolean = config?.optBoolean("fakeCoverEnabled", false) ?: false
 
+    fun strictScreenTitle(): String =
+        config?.optString("strictScreenTitle", "WAKTUNYA BERHENTI")
+            ?.takeIf { it.isNotBlank() } ?: "WAKTUNYA BERHENTI"
+
+    fun strictScreenMessage(): String =
+        config?.optString(
+            "strictScreenMessage",
+            "Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.",
+        )?.takeIf { it.isNotBlank() }
+            ?: "Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan."
+
+    fun strictScreenFooter(): String =
+        config?.optString(
+            "strictScreenFooter",
+            "Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal.",
+        )?.takeIf { it.isNotBlank() }
+            ?: "Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal."
+
     fun preventUninstall(): Boolean = config?.optBoolean("preventUninstall", false) ?: false
 
     /** Global default for hiding locked apps' notification content. */
