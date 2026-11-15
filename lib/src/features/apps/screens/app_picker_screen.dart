@@ -175,7 +175,7 @@ class AppPickerScreen extends ConsumerWidget {
                 child: FilledButton.icon(
                   onPressed: () => context.push(AppRoutes.strictMode),
                   icon: const Icon(Icons.lock_clock_rounded),
-                  label: const Text('Mode Ketat'),
+                  label: const Text('Blokir Cepat'),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -183,7 +183,7 @@ class AppPickerScreen extends ConsumerWidget {
                 child: OutlinedButton.icon(
                   onPressed: () => context.push(AppRoutes.schedules),
                   icon: const Icon(Icons.schedule_rounded),
-                  label: const Text('Jadwal'),
+                  label: const Text('Jadwal baru'),
                 ),
               ),
             ],
