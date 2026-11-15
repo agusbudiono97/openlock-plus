@@ -90,7 +90,8 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       );
       return;
     }
-    final permissions = await ref.read(enforcementBridgeProvider).getPermissionStates();
+    final bridge = ref.read(enforcementBridgeProvider);
+    var permissions = await bridge.getPermissionStates();
     if (!permissions.canEnforce) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -99,6 +100,39 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       }
       return;
     }
+
+    // Strict Mode also protects OpenLock itself. Activate Android's standard
+    // device-admin uninstall barrier and the accessibility screen recogniser
+    // before starting, so the user is not led to believe those layers are on
+    // when Android has not granted them.
+    var adminActive = await bridge.isDeviceAdminActive();
+    if (!adminActive) {
+      await bridge.requestDeviceAdmin();
+      adminActive = await bridge.isDeviceAdminActive();
+    }
+    if (!adminActive) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mode Ketat belum dimulai. Izinkan Administrator perangkat agar OpenLock tidak bisa langsung di-uninstall.')),
+        );
+      }
+      return;
+    }
+
+    permissions = await bridge.getPermissionStates();
+    if (!permissions.screenGuardAccess) {
+      await bridge.requestScreenGuardAccess();
+      permissions = await bridge.getPermissionStates();
+    }
+    if (!permissions.screenGuardAccess) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mode Ketat belum dimulai. Aktifkan layanan Aksesibilitas OpenLock untuk melindungi halaman pengaturan dan penghapusan aplikasi.')),
+        );
+      }
+      return;
+    }
+
     await ref.read(configControllerProvider.notifier).setStrictMode(
       enabled: true,
       packages: Set.of(_selected),
