@@ -135,6 +135,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
+  Future<void> _editStrictScreenPalette(LockConfig config) async {
+    const labels = ['Malam mint', 'Senja amber', 'Hutan tenang'];
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Warna layar blokir'),
+        children: [
+          for (var index = 0; index < labels.length; index++)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, index),
+              child: Row(
+                children: [
+                  Icon(
+                    config.strictScreenPalette == index
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    color: config.strictScreenPalette == index
+                        ? const Color(0xFF007E9C)
+                        : null,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(labels[index]),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (selected != null && mounted) {
+      await ref
+          .read(configControllerProvider.notifier)
+          .setStrictScreenPalette(selected);
+    }
+  }
+
   /// Re-auth, confirm replacing any existing key, then show a new recovery
   /// key until the user confirms saving it.
   Future<void> _recoveryKey() async {
@@ -301,9 +336,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               children: [
                 SettingsTile(
                   icon: Icons.text_fields_rounded,
-                  title: 'Tampilan layar blokir',
+                  title: 'Teks layar blokir',
                   subtitle: 'Atur judul, pesan utama, dan pesan penutup',
                   onTap: strictActive ? null : () => _editStrictScreenText(config),
+                ),
+                SettingsTile(
+                  icon: Icons.palette_outlined,
+                  title: 'Warna layar blokir',
+                  subtitle: const ['Malam mint', 'Senja amber', 'Hutan tenang']
+                      [config.strictScreenPalette.clamp(0, 2)],
+                  onTap: strictActive
+                      ? null
+                      : () => _editStrictScreenPalette(config),
                 ),
               ],
             ),
