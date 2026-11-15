@@ -48,7 +48,8 @@ void main() {
     expect(find.text('0 aplikasi dikunci'), findsOneWidget);
 
     // Toggle the first app's switch on.
-    final firstSwitch = find.byType(Switch).at(1); // 0 = "lock new apps"
+    expect(find.text('Kunci aplikasi yang baru dipasang'), findsNothing);
+    final firstSwitch = find.byType(Switch).first;
     await tester.tap(firstSwitch);
     await tester.pumpAndSettle();
 
@@ -195,8 +196,8 @@ void main() {
       }
       // The hide switch sits under the lock switch, inside the row padding.
       final card = tester.getRect(find.byType(GroupedRowItem));
-      final lock = tester.getRect(find.byType(Switch).at(1)); // 0 = new apps
-      final hide = tester.getRect(find.byType(Switch).at(2));
+      final lock = tester.getRect(find.byType(Switch).at(0));
+      final hide = tester.getRect(find.byType(Switch).at(1));
       expect(hide.right, lock.right);
       expect(hide.right, lessThanOrEqualTo(card.right - AppSpacing.md));
       expect(hide.bottom, lessThanOrEqualTo(card.bottom));
