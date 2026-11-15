@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
@@ -13,11 +15,22 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   Future<LockConfig> _currentConfig() async =>
       state.valueOrNull ?? await future;
 
-  Future<void> _apply(LockConfig requested) async {
+  // Serialize config mutations. Each update is derived from the latest saved
+  // snapshot only after the previous write/push has completed, preventing two
+  // rapid UI actions from overwriting one another with stale copies.
+  Future<void> _mutationQueue = Future<void>.value();
+
+  Future<void> _apply(LockConfig Function(LockConfig current) update) async {
+    final previous = _mutationQueue;
+    final release = Completer<void>();
+    _mutationQueue = release.future;
+    try {
+      await previous;
     // Never fall back to an empty config while the async repository load is
     // still in flight: doing so could overwrite an active commitment saved
     // before this screen finished loading.
     final current = await _currentConfig();
+    final requested = update(current);
     final strictActive = current.strictModeActiveAt(DateTime.now());
 
     // Strict Mode is a full settings freeze, not merely a protected timer.
@@ -29,6 +42,9 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     state = AsyncData(next);
     await ref.read(configRepositoryProvider).save(next);
     await pushToNative();
+    } finally {
+      release.complete();
+    }
   }
 
   /// Rebuilds the native enforcement map from the current config plus the
@@ -52,57 +68,53 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   }
 
   Future<void> toggleApp(String packageName) async {
-    final config = await _currentConfig();
-    final locked = Set<String>.of(config.lockedPackages);
-    if (!locked.add(packageName)) locked.remove(packageName);
-    await _apply(config.copyWith(lockedPackages: locked));
+    await _apply((config) {
+      final locked = Set<String>.of(config.lockedPackages);
+      if (!locked.add(packageName)) locked.remove(packageName);
+      return config.copyWith(lockedPackages: locked);
+    });
   }
 
   Future<void> setLockNewApps(bool value) async {
-    final config = await _currentConfig();
-    await _apply(config.copyWith(lockNewApps: value));
+    await _apply((config) => config.copyWith(lockNewApps: value));
   }
 
   Future<void> setRelock(RelockPolicy policy) async {
-    final config = await _currentConfig();
-    await _apply(config.copyWith(relock: policy));
+    await _apply((config) => config.copyWith(relock: policy));
   }
 
   Future<void> setRandomizeKeypad(bool value) async {
-    final config = await _currentConfig();
-    await _apply(config.copyWith(randomizeKeypad: value));
+    await _apply((config) => config.copyWith(randomizeKeypad: value));
   }
 
   Future<void> setIntruderCapture({bool? enabled, int? threshold}) async {
-    final config = await _currentConfig();
-    await _apply(config.copyWith(
+    await _apply((config) => config.copyWith(
       intruderCaptureEnabled: enabled,
       intruderThreshold: threshold,
     ));
   }
 
   Future<void> setFakeCover(bool value) async {
-    final config = await _currentConfig();
-    await _apply(config.copyWith(fakeCoverEnabled: value));
+    await _apply((config) => config.copyWith(fakeCoverEnabled: value));
   }
 
   /// Sets the global "hide notification content" default for locked apps.
   Future<void> setHideNotifications(bool value) async {
-    final config = await _currentConfig();
-    await _apply(config.copyWith(hideNotifications: value));
+    await _apply((config) => config.copyWith(hideNotifications: value));
   }
 
   /// Sets or clears a per-app notification-hiding override. Passing null
   /// removes the override so the app follows the global flag again.
   Future<void> setNotificationOverride(String packageName, bool? value) async {
-    final config = await _currentConfig();
-    final overrides = Map<String, bool>.of(config.notificationOverrides);
-    if (value == null) {
-      overrides.remove(packageName);
-    } else {
-      overrides[packageName] = value;
-    }
-    await _apply(config.copyWith(notificationOverrides: overrides));
+    await _apply((config) {
+      final overrides = Map<String, bool>.of(config.notificationOverrides);
+      if (value == null) {
+        overrides.remove(packageName);
+      } else {
+        overrides[packageName] = value;
+      }
+      return config.copyWith(notificationOverrides: overrides);
+    });
   }
 
   /// Persists the "prevent uninstall" intent and re-pushes it to the native
@@ -115,8 +127,7 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     required Set<String> packages,
     int? endsAtMillis,
   }) async {
-    final config = await _currentConfig();
-    await _apply(config.copyWith(
+    await _apply((config) => config.copyWith(
       strictModeEnabled: enabled,
       strictModePackages: packages,
       strictModeEndsAtMillis: endsAtMillis,
@@ -125,31 +136,30 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
   }
 
   Future<void> setPreventUninstall(bool value) async {
-    final config = await _currentConfig();
-    if (config.preventUninstall == value) return;
-    await _apply(config.copyWith(preventUninstall: value));
+    await _apply((config) => config.copyWith(preventUninstall: value));
   }
 
   Future<void> upsertSchedule(LockSchedule schedule) async {
-    final config = await _currentConfig();
-    final schedules = List<LockSchedule>.of(config.schedules);
-    final index = schedules.indexWhere((s) => s.id == schedule.id);
-    if (index >= 0) {
-      schedules[index] = schedule;
-    } else {
-      schedules.add(schedule);
-    }
-    await _apply(config.copyWith(schedules: schedules));
+    await _apply((config) {
+      final schedules = List<LockSchedule>.of(config.schedules);
+      final index = schedules.indexWhere((s) => s.id == schedule.id);
+      if (index >= 0) {
+        schedules[index] = schedule;
+      } else {
+        schedules.add(schedule);
+      }
+      return config.copyWith(schedules: schedules);
+    });
   }
 
   Future<void> deleteSchedule(String id) async {
-    final config = await _currentConfig();
-    final schedules = config.schedules.where((s) => s.id != id).toList();
-    await _apply(config.copyWith(schedules: schedules));
+    await _apply((config) => config.copyWith(
+      schedules: config.schedules.where((s) => s.id != id).toList(),
+    ));
   }
 
   /// Replaces the whole config (used by backup restore).
-  Future<void> replace(LockConfig config) => _apply(config);
+  Future<void> replace(LockConfig config) => _apply((_) => config);
 }
 
 final configControllerProvider =
