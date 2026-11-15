@@ -40,6 +40,7 @@ class OpenLockMonitorService : Service() {
     private var lastStrictLaunchedPkg: String? = null
     private var lastStrictLaunchAt: Long = 0L
     @Volatile private var observedForegroundPkg: String? = null
+    private var lastNotificationAccessState: String? = null
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -91,6 +92,7 @@ class OpenLockMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun tick() {
+        refreshNotificationIfNeeded()
         val current = foregroundApp() ?: return
         val now = System.currentTimeMillis()
 
@@ -269,6 +271,13 @@ class OpenLockMonitorService : Service() {
         return missing.joinToString(" dan ")
     }
 
+    private fun refreshNotificationIfNeeded() {
+        val missing = missingEnforcementAccess()
+        if (missing == lastNotificationAccessState) return
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(NOTIFICATION_ID, buildNotification())
+    }
+
     private fun buildNotification(): Notification {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -300,6 +309,7 @@ class OpenLockMonitorService : Service() {
             Notification.Builder(this)
         }
         val missingAccess = missingEnforcementAccess()
+        lastNotificationAccessState = missingAccess
         val contentText = if (missingAccess.isEmpty()) {
             "Mode Ketat dan aplikasi terkunci sedang dipantau."
         } else {
