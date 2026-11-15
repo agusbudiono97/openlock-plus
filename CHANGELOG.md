@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.4] - 2026-11-15
+
+### Fixed
+- Import the shared InstalledApp model explicitly in the Strict Mode screen so the launcher-icon widget passes Dart analysis and CI can continue to tests and APK build.
+
+### Notes
+- Includes the v1.11.3 best-effort immediate foreground-monitor restart when the app task is dismissed.
+- Device testing on Infinix/XOS is still required; Android force-stop, OEM process termination, or revoked special access can still interrupt enforcement.
+- This is a debug/test build. Verify update-signature compatibility before installing over an existing APK.
+
+# Changelog
+
 ## [1.11.3] - 2026-11-15
 
 ### Fixed
