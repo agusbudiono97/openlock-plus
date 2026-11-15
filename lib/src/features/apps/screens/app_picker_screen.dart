@@ -293,41 +293,6 @@ class _ProtectionHero extends ConsumerWidget {
   }
 }
 
-class _GuardPill extends StatelessWidget {
-  const _GuardPill({required this.guarded});
-  final bool guarded;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = SuiteColors.of(context);
-    final color = guarded ? c.positive : c.textSecondary;
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: guarded ? c.positiveContainer : c.surfaceAlt,
-        shape: const StadiumBorder(),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              guarded ? Icons.lock_rounded : Icons.lock_open_rounded,
-              size: 16,
-              color: color,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              guarded ? 'Terlindungi' : 'Belum ada yang dikunci',
-              style: AppTextStyles.labelStrong.copyWith(color: color),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _LockNewAppsTile extends ConsumerWidget {
   const _LockNewAppsTile({required this.config});
 
