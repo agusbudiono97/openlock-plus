@@ -33,7 +33,7 @@ class StrictModeActivity : Activity() {
         val target = intent.getStringExtra(EXTRA_PACKAGE).orEmpty()
         val label = runCatching {
             packageManager.getApplicationLabel(packageManager.getApplicationInfo(target, 0)).toString()
-        }.getOrDefault("This app")
+        }.getOrDefault("Aplikasi ini")
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -42,13 +42,13 @@ class StrictModeActivity : Activity() {
             setBackgroundColor(0xFF101820.toInt())
         }
         root.addView(TextView(this).apply {
-            text = "Strict Mode is active"
+            text = "MODE KETAT AKTIF"
             textSize = 26f
             setTextColor(0xFFFFFFFF.toInt())
             gravity = Gravity.CENTER
         })
         root.addView(TextView(this).apply {
-            text = "$label is blocked until the timer ends."
+            text = "$label sedang diblokir sampai waktu perlindungan berakhir."
             textSize = 16f
             setTextColor(0xFFCBD5E1.toInt())
             gravity = Gravity.CENTER
@@ -64,10 +64,29 @@ class StrictModeActivity : Activity() {
         updateCountdown()
     }
 
+    override fun onResume() {
+        super.onResume()
+        hideSystemBars()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemBars()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun hideSystemBars() {
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            )
+    }
+
     private fun updateCountdown() {
         val end = ConfigStore.get(this).strictModeEndMillis()
         if (end <= 0L) {
-            countdown.text = "No end time — indefinite"
+            countdown.text = "Perlindungan aktif tanpa batas waktu"
             return
         }
         val remaining = end - System.currentTimeMillis()
@@ -78,13 +97,16 @@ class StrictModeActivity : Activity() {
         timer = object : CountDownTimer(remaining, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
                 val seconds = millisUntilFinished / 1000L
-                val hours = seconds / 3600
-                val minutes = (seconds % 3600) / 60
+                val days = seconds / 86_400
+                val hours = (seconds % 86_400) / 3_600
+                val minutes = (seconds % 3_600) / 60
                 val secs = seconds % 60
-                countdown.text = if (hours > 0) {
-                    "Remaining: %02d:%02d:%02d".format(hours, minutes, secs)
+                countdown.text = if (days > 0) {
+                    "Sisa waktu: %d hari %02d:%02d:%02d".format(days, hours, minutes, secs)
+                } else if (hours > 0) {
+                    "Sisa waktu: %02d:%02d:%02d".format(hours, minutes, secs)
                 } else {
-                    "Remaining: %02d:%02d".format(minutes, secs)
+                    "Sisa waktu: %02d:%02d".format(minutes, secs)
                 }
             }
             override fun onFinish() { finish() }
