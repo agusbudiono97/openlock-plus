@@ -16,7 +16,9 @@ class BootReceiver : BroadcastReceiver() {
         }
 
         val store = ConfigStore.get(context)
-        val hasWork = store.lockedPackages().isNotEmpty() || store.schedules().length() > 0
+        val hasWork = store.lockedPackages().isNotEmpty() ||
+            store.schedules().length() > 0 ||
+            (store.strictModeActive() && store.strictModePackages().isNotEmpty())
         if (store.pinHash() == null || !hasWork) return
 
         val serviceIntent = Intent(context, OpenLockMonitorService::class.java)
