@@ -362,12 +362,13 @@ class EnforcementPlugin(private val activity: Activity) :
 
     private fun startService() {
         val intent = Intent(activity, OpenLockMonitorService::class.java)
-        runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                activity.startForegroundService(intent)
-            } else {
-                activity.startService(intent)
-            }
+        // Do not swallow Android's foreground-service start failures. Flutter
+        // must be told when the monitor could not start, otherwise the UI can
+        // report a successful lock while no process is enforcing it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity.startForegroundService(intent)
+        } else {
+            activity.startService(intent)
         }
     }
 
