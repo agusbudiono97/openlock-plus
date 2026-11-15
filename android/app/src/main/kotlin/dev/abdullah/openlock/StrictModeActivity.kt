@@ -2,6 +2,8 @@ package dev.abdullah.openlock
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.Gravity
@@ -11,9 +13,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 /**
- * Strict Mode notice. The monitor reopens it whenever a selected target
- * returns to foreground. Android Home/Safe Mode/force-stop remain OS-level
- * escape routes for an ordinary application.
+ * Full-screen Strict Mode barrier. It intentionally has no dismiss or unlock
+ * action: the monitor reopens it whenever a selected app returns to foreground.
+ * Android Home/Safe Mode/force-stop remain OS-level escape routes for ordinary apps.
  */
 class StrictModeActivity : Activity() {
     private var timer: CountDownTimer? = null
@@ -26,39 +28,114 @@ class StrictModeActivity : Activity() {
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
         )
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_FULLSCREEN or
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            )
+        hideSystemBars()
 
+        val background = 0xFF0B1220.toInt()
+        val muted = 0xFFB8C4D6.toInt()
+        val accent = 0xFF72E4C2.toInt()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(48, 48, 48, 48)
-            setBackgroundColor(0xFF101820.toInt())
+            setPadding(dp(28), dp(36), dp(28), dp(36))
+            setBackgroundColor(background)
         }
-        root.addView(TextView(this).apply {
-            text = "MODE KETAT AKTIF"
-            textSize = 26f
+
+        val brand = TextView(this).apply {
+            text = "OPENLOCK"
+            textSize = 13f
+            letterSpacing = 0.22f
+            setTextColor(muted)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            gravity = Gravity.CENTER
+        }
+        root.addView(brand, centeredParams())
+
+        val emblem = TextView(this).apply {
+            text = "🔒"
+            textSize = 42f
+            gravity = Gravity.CENTER
+            background = rounded(accent, 28)
+            setPadding(dp(24), dp(20), dp(24), dp(20))
+        }
+        val emblemWrap = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            addView(emblem)
+        }
+        val emblemParams = centeredParams().apply {
+            topMargin = dp(42)
+            bottomMargin = dp(28)
+        }
+        root.addView(emblemWrap, emblemParams)
+
+        val title = TextView(this).apply {
+            text = "WAKTUNYA BERHENTI"
+            textSize = 25f
             setTextColor(0xFFFFFFFF.toInt())
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
             gravity = Gravity.CENTER
+        }
+        root.addView(title, centeredParams())
+
+        val subtitle = TextView(this).apply {
+            text = "Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan."
+            textSize = 15f
+            setTextColor(muted)
+            gravity = Gravity.CENTER
+            setLineSpacing(dp(4).toFloat(), 1f)
+        }
+        root.addView(subtitle, centeredParams().apply {
+            topMargin = dp(12)
+            bottomMargin = dp(28)
         })
+
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(22), dp(22), dp(22), dp(22))
+            background = rounded(0xFF172337.toInt(), 22)
+        }
+        val blockedLabel = TextView(this).apply {
+            text = "APLIKASI YANG DIBLOKIR"
+            textSize = 11f
+            letterSpacing = 0.12f
+            setTextColor(muted)
+            gravity = Gravity.CENTER
+        }
+        card.addView(blockedLabel, centeredParams())
         targetMessage = TextView(this).apply {
-            textSize = 16f
-            setTextColor(0xFFCBD5E1.toInt())
+            textSize = 18f
+            setTextColor(0xFFFFFFFF.toInt())
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             gravity = Gravity.CENTER
-            setPadding(0, 24, 0, 24)
+            setPadding(0, dp(10), 0, dp(20))
         }
-        root.addView(targetMessage)
-        updateTargetLabel(intent)
+        card.addView(targetMessage, centeredParams())
         countdown = TextView(this).apply {
-            textSize = 22f
-            setTextColor(0xFF5EEAD4.toInt())
+            textSize = 20f
+            setTextColor(accent)
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             gravity = Gravity.CENTER
         }
-        root.addView(countdown)
+        card.addView(countdown, centeredParams())
+        root.addView(card, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            topMargin = dp(8)
+        })
+
+        val footer = TextView(this).apply {
+            text = "Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal."
+            textSize = 13f
+            setTextColor(muted)
+            gravity = Gravity.CENTER
+        }
+        root.addView(footer, centeredParams().apply {
+            topMargin = dp(28)
+        })
+
         setContentView(root)
+        updateTargetLabel(intent)
         updateCountdown()
     }
 
@@ -71,9 +148,11 @@ class StrictModeActivity : Activity() {
     private fun updateTargetLabel(intent: Intent) {
         val target = intent.getStringExtra(EXTRA_PACKAGE).orEmpty()
         val label = runCatching {
-            packageManager.getApplicationLabel(packageManager.getApplicationInfo(target, 0)).toString()
+            packageManager.getApplicationLabel(
+                packageManager.getApplicationInfo(target, 0)
+            ).toString()
         }.getOrDefault("Aplikasi ini")
-        targetMessage.text = "$label sedang diblokir sampai waktu perlindungan berakhir."
+        targetMessage.text = label
     }
 
     override fun onResume() {
@@ -124,6 +203,18 @@ class StrictModeActivity : Activity() {
             override fun onFinish() { finish() }
         }.start()
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private fun rounded(color: Int, radius: Int) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = dp(radius).toFloat()
+    }
+
+    private fun centeredParams() = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+    )
 
     override fun onDestroy() {
         timer?.cancel()
