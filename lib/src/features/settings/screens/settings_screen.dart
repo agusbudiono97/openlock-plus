@@ -62,6 +62,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Future<bool> _authenticateForDisable() =>
       _reauthenticate('Masukkan PIN untuk menonaktifkan perlindungan uninstall.');
 
+  Future<void> _editStrictScreenText(LockConfig config) async {
+    final title = TextEditingController(text: config.strictScreenTitle);
+    final message = TextEditingController(text: config.strictScreenMessage);
+    final footer = TextEditingController(text: config.strictScreenFooter);
+    try {
+      final save = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Personalisasi layar blokir'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: title,
+                  maxLength: 48,
+                  decoration: const InputDecoration(
+                    labelText: 'Judul utama',
+                    hintText: 'WAKTUNYA BERHENTI',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: message,
+                  maxLength: 140,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Pesan utama',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: footer,
+                  maxLength: 100,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Pesan penutup',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      );
+      if (save == true && mounted) {
+        await ref.read(configControllerProvider.notifier).setStrictScreenText(
+              title: title.text,
+              message: message.text,
+              footer: footer.text,
+            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Teks layar blokir berhasil disimpan.')),
+          );
+        }
+      }
+    } finally {
+      title.dispose();
+      message.dispose();
+      footer.dispose();
+    }
+  }
+
   /// Re-auth, confirm replacing any existing key, then show a new recovery
   /// key until the user confirms saving it.
   Future<void> _recoveryKey() async {
@@ -221,6 +294,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             RowGroup(
               children: [
                 AppearanceSetting(controller: ref.watch(appearanceProvider)),
+              ],
+            ),
+            const SectionLead('Personalisasi'),
+            RowGroup(
+              children: [
+                SettingsTile(
+                  icon: Icons.text_fields_rounded,
+                  title: 'Tampilan layar blokir',
+                  subtitle: 'Atur judul, pesan utama, dan pesan penutup',
+                  onTap: strictActive ? null : () => _editStrictScreenText(config),
+                ),
               ],
             ),
             const SectionLead('Perlindungan'),
