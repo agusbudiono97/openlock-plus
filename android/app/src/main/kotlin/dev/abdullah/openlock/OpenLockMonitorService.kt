@@ -203,6 +203,11 @@ class OpenLockMonitorService : Service() {
         val event = UsageEvents.Event()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
+            // Ignore history from before the display was turned off. Otherwise
+            // a poll immediately after screen-off could resurrect the last
+            // app from the lookback window and show a block over the lockscreen.
+            if (event.timeStamp <= screenOffAt) continue
+
             // Android 10+ reports ACTIVITY_RESUMED; older releases report
             // MOVE_TO_FOREGROUND. Keep the latest observed package between
             // polls: the foreground event is emitted once on app launch, not
