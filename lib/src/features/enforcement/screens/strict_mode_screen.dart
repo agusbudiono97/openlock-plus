@@ -65,8 +65,12 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     final now = DateTime.now();
     final date = await showDatePicker(
       context: context,
-      initialDate: _exactEnd ?? now.add(const Duration(days: 1)),
-      firstDate: now,
+      // DatePicker compares calendar dates, not timestamps. Use today's
+      // midnight as firstDate and clamp the initial date to that boundary.
+      initialDate: _exactEnd != null && !_exactEnd!.isBefore(DateTime(now.year, now.month, now.day))
+          ? _exactEnd!
+          : now.add(const Duration(days: 1)),
+      firstDate: DateTime(now.year, now.month, now.day),
       lastDate: DateTime(now.year + 10),
     );
     if (date == null || !mounted) return;
