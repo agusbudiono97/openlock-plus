@@ -53,6 +53,10 @@ class AppPickerScreen extends ConsumerWidget {
               // Header blocks first, then one lazily built row per app. The
               // header never waits for the app list; only the rows do.
               itemCount: _headerCount + rowCount,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               itemBuilder: (context, index) {
                 if (index < _headerCount) {
                   return _header(
