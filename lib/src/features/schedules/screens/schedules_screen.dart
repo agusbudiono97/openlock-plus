@@ -19,30 +19,39 @@ class SchedulesScreen extends ConsumerWidget {
     final schedules = config.schedules;
 
     final active = schedules.where((s) => s.enabled).length;
+    final strictActive = config.strictModeActiveAt(DateTime.now());
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(AppRoutes.newSchedule),
+        onPressed: strictActive ? null : () => context.push(AppRoutes.newSchedule),
         icon: const Icon(Icons.add),
-        label: const Text('New'),
+        label: const Text('Buat jadwal'),
       ),
       body: SafeArea(
         bottom: false,
         child: PageList(
           bottomPadding: 96,
           children: [
+            if (strictActive)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.lock_clock_rounded),
+                  title: Text('Mode Ketat aktif'),
+                  subtitle: Text('Jadwal tidak dapat diubah sampai komitmen berakhir.'),
+                ),
+              ),
             ScreenHeader(
               eyebrow: schedules.isEmpty
-                  ? 'Lock by the clock'
-                  : '$active of ${schedules.length} on',
-              title: 'Schedules',
+                  ? 'Kunci sesuai waktu'
+                  : '$active dari ${schedules.length} aktif',
+              title: 'Jadwal',
             ),
             if (schedules.isEmpty)
               const AppEmptyState(
                 icon: Icons.schedule_rounded,
-                title: 'No schedules yet',
-                message: 'Lock chosen apps during set hours, like social apps '
-                    '9-5 on weekdays.',
+                title: 'Belum ada jadwal',
+                message: 'Kunci aplikasi pilihan pada jam tertentu, misalnya aplikasi sosial '
+                    'pada hari kerja.',
               )
             else
               RowGroup(
@@ -50,10 +59,10 @@ class SchedulesScreen extends ConsumerWidget {
                   for (final schedule in schedules)
                     _ScheduleCard(
                       schedule: schedule,
-                      onTap: () => context.push(
+                      onTap: strictActive ? null : () => context.push(
                         '${AppRoutes.editSchedule}/${schedule.id}',
                       ),
-                      onToggle: (value) => ref
+                      onToggle: strictActive ? null : (value) => ref
                           .read(configControllerProvider.notifier)
                           .upsertSchedule(schedule.copyWith(enabled: value)),
                     ),
@@ -75,17 +84,17 @@ class _ScheduleCard extends StatelessWidget {
 
   final LockSchedule schedule;
   final VoidCallback onTap;
-  final ValueChanged<bool> onToggle;
+  final ValueChanged<bool>? onToggle;
 
   @override
   Widget build(BuildContext context) {
     final count = schedule.packages.length;
     return DetailRow(
-      onTap: onTap,
+      onTap: onToggle == null ? null : onTap,
       leading: const IconBadge(icon: Icons.schedule_rounded),
       title: schedule.name,
       detail: '${ScheduleFormat.summary(schedule)}\n'
-          '$count ${count == 1 ? 'app' : 'apps'}',
+          '$count ${count == 1 ? 'aplikasi' : 'aplikasi'}',
       trailing: Switch(value: schedule.enabled, onChanged: onToggle),
     );
   }
