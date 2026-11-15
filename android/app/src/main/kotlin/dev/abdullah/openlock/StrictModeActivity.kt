@@ -1,11 +1,13 @@
 package dev.abdullah.openlock
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.content.SharedPreferences
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -22,6 +24,9 @@ class StrictModeActivity : Activity() {
     private var timer: CountDownTimer? = null
     private lateinit var countdown: TextView
     private lateinit var targetMessage: TextView
+    private lateinit var attemptCount: TextView
+    private lateinit var preferences: SharedPreferences
+    private var paletteIndex = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,9 +36,14 @@ class StrictModeActivity : Activity() {
         )
         hideSystemBars()
 
-        val background = 0xFF0B1220.toInt()
-        val muted = 0xFFB8C4D6.toInt()
-        val accent = 0xFF72E4C2.toInt()
+        preferences = getSharedPreferences("strict_block_screen", MODE_PRIVATE)
+        paletteIndex = preferences.getInt("palette", 0).coerceIn(0, 2)
+        val palette = palettes[paletteIndex]
+        val background = palette.background
+        val muted = palette.muted
+        val accent = palette.accent
+        val attempts = preferences.getInt("blocked_attempts", 0) + 1
+        preferences.edit().putInt("blocked_attempts", attempts).apply()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -118,6 +128,14 @@ class StrictModeActivity : Activity() {
             gravity = Gravity.CENTER
         }
         card.addView(countdown, centeredParams())
+        attemptCount = TextView(this).apply {
+            text = "Percobaan membuka diblokir: $attempts"
+            textSize = 12f
+            setTextColor(muted)
+            gravity = Gravity.CENTER
+            setPadding(0, dp(14), 0, 0)
+        }
+        card.addView(attemptCount, centeredParams())
         root.addView(card, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -132,10 +150,25 @@ class StrictModeActivity : Activity() {
             gravity = Gravity.CENTER
         }
         root.addView(footer, centeredParams().apply {
-            topMargin = dp(28)
+            topMargin = dp(24)
         })
 
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        actions.addView(actionButton("Tutup", background, 0xFFFFFFFF.toInt()) {
+            openHome()
+        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
+        actions.addView(actionButton("Sesuaikan", accent, background) {
+            showAppearancePicker()
+        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
+        root.addView(actions, centeredParams().apply { topMargin = dp(24) })
+
         setContentView(root)
+        emblem.animate().alpha(0.72f).setDuration(650).withEndAction {
+            emblem.animate().alpha(1f).setDuration(650).start()
+        }.start()
         updateTargetLabel(intent)
         updateCountdown()
     }
@@ -203,6 +236,51 @@ class StrictModeActivity : Activity() {
             }
             override fun onFinish() { finish() }
         }.start()
+    }
+
+
+    private data class ScreenPalette(val background: Int, val muted: Int, val accent: Int)
+
+    private val palettes = listOf(
+        ScreenPalette(0xFF0B1220.toInt(), 0xFFB8C4D6.toInt(), 0xFF72E4C2.toInt()),
+        ScreenPalette(0xFF171329.toInt(), 0xFFC8BEDF.toInt(), 0xFFFFC36B.toInt()),
+        ScreenPalette(0xFF102321.toInt(), 0xFFB7D5CC.toInt(), 0xFF8CE0B5.toInt()),
+    )
+
+    private fun actionButton(label: String, fill: Int, foreground: Int, action: () -> Unit): TextView =
+        TextView(this).apply {
+            text = label
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(foreground)
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            background = rounded(fill, 14)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { action() }
+        }
+
+    private fun showAppearancePicker() {
+        val labels = arrayOf("Malam mint", "Senja amber", "Hutan tenang")
+        AlertDialog.Builder(this)
+            .setTitle("Sesuaikan tampilan")
+            .setSingleChoiceItems(labels, paletteIndex) { dialog, which ->
+                paletteIndex = which
+                preferences.edit().putInt("palette", which).apply()
+                dialog.dismiss()
+                recreate()
+            }
+            .setNegativeButton("Batal", null)
+            .show()
+    }
+
+    private fun openHome() {
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
