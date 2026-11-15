@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
@@ -188,54 +190,120 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       };
       return Scaffold(
         appBar: AppBar(title: const Text('Mode Ketat')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_clock, size: 64),
-                const SizedBox(height: 16),
-                const Text('Mode Ketat sedang aktif', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text('${config.strictModePackages.length} aplikasi sedang diblokir.'),
-                const SizedBox(height: 8),
-                Text('Berakhir: $end', textAlign: TextAlign.center),
-                if (remaining != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    remaining.isNegative
-                        ? 'Waktu perlindungan habis'
-                        : 'Sisa waktu: ${remaining.inDays} hari ${(remaining.inHours % 24).toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 88,
+                          height: 88,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.lock_rounded,
+                            size: 42,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'KOMITMEN SEDANG AKTIF',
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                letterSpacing: 1.2,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Mode Ketat aktif',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${config.strictModePackages.length} aplikasi sedang diblokir',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 22),
+                        if (remaining != null)
+                          Text(
+                            remaining.isNegative
+                                ? 'Waktu perlindungan habis'
+                                : '${remaining.inDays} hari ${(remaining.inHours % 24).toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
+                          )
+                        else
+                          Text(
+                            'TANPA BATAS WAKTU',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        const SizedBox(height: 8),
+                        Text('Berakhir: $end', textAlign: TextAlign.center),
+                      ],
+                    ),
                   ),
-                ],
-                const SizedBox(height: 12),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'APLIKASI YANG DIBLOKIR',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 10),
                 apps.when(
                   loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (_, __) => const Text('Daftar aplikasi tidak dapat dimuat.'),
                   data: (items) {
                     final selected = items.where((app) =>
                         config.strictModePackages.contains(app.packageName));
                     return Wrap(
-                      alignment: WrapAlignment.center,
                       spacing: 8,
                       runSpacing: 8,
                       children: [
                         for (final app in selected)
                           Chip(
-                            avatar: const Icon(Icons.block, size: 16),
+                            avatar: const Icon(Icons.block_rounded, size: 16),
                             label: Text(app.label),
                           ),
                       ],
                     );
                   },
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Daftar aplikasi dan pengaturan perlindungan dikunci sampai waktu berakhir. OpenLock juga memakai Administrator perangkat dan Aksesibilitas untuk menghambat upaya menonaktifkan atau menghapusnya. Android tetap memiliki kendali sistem yang tidak bisa dikunci mutlak oleh aplikasi biasa.',
+                const SizedBox(height: 20),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.shield_outlined),
+                    title: const Text('Pengaturan dikunci'),
+                    subtitle: const Text(
+                      'Daftar aplikasi dan pengaturan perlindungan tidak dapat diubah sampai komitmen berakhir. Administrator perangkat dan Aksesibilitas membantu menghambat upaya menonaktifkan atau menghapus OpenLock.',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Android tetap memiliki kendali sistem yang tidak dapat dikunci mutlak oleh aplikasi biasa.',
                   textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
