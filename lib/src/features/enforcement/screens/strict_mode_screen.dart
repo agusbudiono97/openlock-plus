@@ -351,7 +351,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                       Expanded(
                         child: Text(
                           'Buat komitmen fokus',
-                          style: AppTextStyles.titleMedium.copyWith(color: colors.textPrimary),
+                          style: AppTextStyles.h3.copyWith(color: colors.textPrimary),
                         ),
                       ),
                     ],
@@ -392,7 +392,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _unit,
+                            initialValue: _unit,
                             decoration: const InputDecoration(border: OutlineInputBorder()),
                             items: const [
                               DropdownMenuItem(value: 'menit', child: Text('Menit')),
@@ -421,7 +421,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             Row(
               children: [
                 Expanded(
-                  child: SectionLead('Aplikasi yang diblokir'),
+                  child: const SectionLead('Aplikasi yang diblokir'),
                 ),
                 Text('${_selected.length} dipilih', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
               ],
