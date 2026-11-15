@@ -1,7 +1,6 @@
 package dev.abdullah.openlock
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -27,7 +26,6 @@ class StrictModeActivity : Activity() {
     private lateinit var targetIcon: ImageView
     private lateinit var attemptCount: TextView
     private lateinit var preferences: SharedPreferences
-    private var paletteIndex = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,8 +36,7 @@ class StrictModeActivity : Activity() {
         hideSystemBars()
 
         preferences = getSharedPreferences("strict_block_screen", MODE_PRIVATE)
-        paletteIndex = preferences.getInt("palette", 0).coerceIn(0, 2)
-        val palette = palettes[paletteIndex]
+        val palette = palettes[0]
         val background = palette.background
         val muted = palette.muted
         val accent = palette.accent
@@ -85,7 +82,7 @@ class StrictModeActivity : Activity() {
         root.addView(emblemWrap, emblemParams)
 
         val title = TextView(this).apply {
-            text = "WAKTUNYA BERHENTI"
+            text = ConfigStore.get(this).strictScreenTitle()
             textSize = 25f
             setTextColor(0xFFFFFFFF.toInt())
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
@@ -94,7 +91,7 @@ class StrictModeActivity : Activity() {
         root.addView(title, centeredParams())
 
         val subtitle = TextView(this).apply {
-            text = "Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan."
+            text = ConfigStore.get(this).strictScreenMessage()
             textSize = 15f
             setTextColor(muted)
             gravity = Gravity.CENTER
@@ -158,7 +155,7 @@ class StrictModeActivity : Activity() {
         })
 
         val footer = TextView(this).apply {
-            text = "Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal."
+            text = ConfigStore.get(this).strictScreenFooter()
             textSize = 13f
             setTextColor(muted)
             gravity = Gravity.CENTER
@@ -171,12 +168,11 @@ class StrictModeActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
+        // Keep the barrier focused: only a close-to-home action is shown.
+        // Its copy is customized from OpenLock settings, not from this screen.
         actions.addView(actionButton("Tutup", background, 0xFFFFFFFF.toInt()) {
             openHome()
-        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
-        actions.addView(actionButton("Sesuaikan", accent, background) {
-            showAppearancePicker()
-        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
+        }, LinearLayout.LayoutParams(dp(180), dp(48)))
         root.addView(actions, centeredParams().apply { topMargin = dp(24) })
 
         setContentView(root)
@@ -287,20 +283,6 @@ class StrictModeActivity : Activity() {
             isFocusable = true
             setOnClickListener { action() }
         }
-
-    private fun showAppearancePicker() {
-        val labels = arrayOf("Malam mint", "Senja amber", "Hutan tenang")
-        AlertDialog.Builder(this)
-            .setTitle("Sesuaikan tampilan")
-            .setSingleChoiceItems(labels, paletteIndex) { dialog, which ->
-                paletteIndex = which
-                preferences.edit().putInt("palette", which).apply()
-                dialog.dismiss()
-                recreate()
-            }
-            .setNegativeButton("Batal", null)
-            .show()
-    }
 
     private fun openHome() {
         val intent = Intent(Intent.ACTION_MAIN).apply {
