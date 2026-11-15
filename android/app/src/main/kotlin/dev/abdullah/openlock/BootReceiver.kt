@@ -5,6 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 
+/**
+ * Returns whether persisted work requires the monitor to be restored.
+ * Strict Mode is deliberately independent of the normal app-lock PIN.
+ */
+internal fun shouldRestoreMonitor(hasStrictModeWork: Boolean, hasPinProtectedWork: Boolean): Boolean =
+    hasStrictModeWork || hasPinProtectedWork
+
 /** Restarts the monitor service after a reboot or app update. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -23,7 +30,7 @@ class BootReceiver : BroadcastReceiver() {
 
         // Strict Mode does not depend on a configured PIN. Do not let the
         // normal app-lock PIN gate silently disable Strict Mode after reboot.
-        if (!hasStrictModeWork && !hasPinProtectedWork) return
+        if (!shouldRestoreMonitor(hasStrictModeWork, hasPinProtectedWork)) return
 
         val serviceIntent = Intent(context, OpenLockMonitorService::class.java)
         runCatching {
