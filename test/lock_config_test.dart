@@ -29,6 +29,9 @@ void main() {
             endMinutes: 1020,
           ),
         ],
+        strictModeEnabled: true,
+        strictModePackages: {'com.game', 'com.social'},
+        strictModeEndsAtMillis: 1800000000000,
       );
 
   test('JSON round-trip preserves every field', () {
@@ -49,6 +52,9 @@ void main() {
     expect(restored.schedules.length, 1);
     expect(restored.schedules.first.name, 'Work');
     expect(restored.schedules.first.weekdays, {1, 2, 3, 4, 5});
+    expect(restored.strictModeEnabled, isTrue);
+    expect(restored.strictModePackages, {'com.game', 'com.social'});
+    expect(restored.strictModeEndsAtMillis, 1800000000000);
   });
 
   test('empty JSON yields sensible defaults', () {
@@ -59,6 +65,25 @@ void main() {
     expect(config.preventUninstall, isFalse);
     expect(config.hideNotifications, isFalse);
     expect(config.notificationOverrides, isEmpty);
+    expect(config.strictModeEnabled, isFalse);
+    expect(config.strictModePackages, isEmpty);
+    expect(config.strictModeEndsAtMillis, isNull);
+  });
+
+  test('Strict Mode stays active until its deadline and supports indefinite mode', () {
+    const timed = LockConfig(
+      strictModeEnabled: true,
+      strictModePackages: {'com.game'},
+      strictModeEndsAtMillis: 2000,
+    );
+    expect(timed.strictModeActiveAt(DateTime.fromMillisecondsSinceEpoch(1999)), isTrue);
+    expect(timed.strictModeActiveAt(DateTime.fromMillisecondsSinceEpoch(2000)), isFalse);
+
+    const indefinite = LockConfig(
+      strictModeEnabled: true,
+      strictModePackages: {'com.game'},
+    );
+    expect(indefinite.strictModeActiveAt(DateTime(2100)), isTrue);
   });
 
   test('hidesNotificationsFor honours lock state, global flag, and override',
@@ -104,6 +129,9 @@ void main() {
     expect(map['pinHash'], 'HASH');
     expect(map['pinSalt'], 'SALT');
     expect(map['pinIterations'], 120000);
+    expect(map['strictModeEnabled'], isTrue);
+    expect(map['strictModePackages'], ['com.game', 'com.social']);
+    expect(map['strictModeEndsAtMillis'], 1800000000000);
     expect((map['schedules'] as List).length, 1);
     // The native map must not leak the source-of-truth-only lockNewApps flag.
     expect(map.containsKey('lockNewApps'), isFalse);
