@@ -8,7 +8,6 @@ import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/core/perf_log.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/auth/providers/auth_providers.dart';
-import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
 
