@@ -48,11 +48,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   String _relockLabel(RelockPolicy policy) {
     switch (policy.mode) {
       case RelockMode.immediately:
-        return 'When you leave the app';
+        return 'Saat keluar dari aplikasi';
       case RelockMode.onScreenOff:
-        return 'When the screen turns off';
+        return 'Saat layar mati';
       case RelockMode.afterTimeout:
-        return 'After ${policy.timeout.inMinutes} min';
+        return 'Setelah ${policy.timeout.inMinutes} menit';
     }
   }
 
@@ -60,12 +60,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// biometrics first (if enabled), then falls back to a PIN prompt. Returns
   /// true only on a successful check.
   Future<bool> _authenticateForDisable() =>
-      _reauthenticate('Enter your PIN to turn off uninstall protection.');
+      _reauthenticate('Masukkan PIN untuk menonaktifkan perlindungan uninstall.');
 
   /// Re-auth, confirm replacing any existing key, then show a new recovery
   /// key until the user confirms saving it.
   Future<void> _recoveryKey() async {
-    if (!await _reauthenticate('Enter your PIN to create a recovery key.')) {
+    if (!await _reauthenticate('Masukkan PIN untuk membuat kunci pemulihan.')) {
       return;
     }
     final auth = ref.read(pinAuthServiceProvider);
@@ -73,19 +73,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       final replace = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Replace your recovery key?'),
+          title: const Text('Ganti kunci pemulihan?'),
           content: const Text(
-            'Your current recovery key will stop working. Recovery keys are '
-            'never stored, so the current one cannot be shown again.',
+            'Kunci pemulihan lama tidak akan berlaku. Kunci pemulihan '
+            'tidak pernah disimpan, jadi kunci lama tidak dapat ditampilkan lagi.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
+              child: const Text('Batal'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Create new key'),
+              child: const Text('Buat kunci baru'),
             ),
           ],
         ),
@@ -127,7 +127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         var error = false;
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) => AlertDialog(
-            title: const Text('Confirm your PIN'),
+            title: const Text('Konfirmasi PIN'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -139,14 +139,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   obscureText: true,
                   autofocus: true,
                   keyboardType: TextInputType.number,
-                  errorText: error ? 'Wrong PIN' : null,
+                  errorText: error ? 'PIN salah' : null,
                 ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Cancel'),
+                child: const Text('Batal'),
               ),
               FilledButton(
                 onPressed: () async {
@@ -161,7 +161,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     setDialogState(() => error = true);
                   }
                 },
-                child: const Text('Confirm'),
+                child: const Text('Konfirmasi'),
               ),
             ],
           ),
@@ -186,6 +186,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final permissions = ref.watch(permissionsControllerProvider).valueOrNull;
     final notificationAccess = permissions?.notificationAccess ?? false;
     final screenGuardAccess = permissions?.screenGuardAccess ?? false;
+    final strictActive = config.strictModeActiveAt(DateTime.now());
 
     Widget toggle({
       required IconData icon,
@@ -199,8 +200,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           title: title,
           subtitle: subtitle,
           showChevron: false,
-          trailing: Switch(value: value, onChanged: onChanged),
-          onTap: onChanged == null ? null : () => onChanged(!value),
+          trailing: Switch(value: value, onChanged: strictActive ? null : onChanged),
+          onTap: strictActive || onChanged == null ? null : () => onChanged(!value),
         );
 
     return Scaffold(
@@ -208,37 +209,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         bottom: false,
         child: PageList(
           children: [
-            const ScreenHeader(eyebrow: 'OpenLock', title: 'Settings'),
+            const ScreenHeader(eyebrow: 'OpenLock', title: 'Pengaturan'),
+            if (strictActive)
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.lock_clock_rounded),
+                  title: const Text('Mode Ketat sedang aktif'),
+                  subtitle: const Text('Pengaturan perlindungan dikunci sampai waktu komitmen berakhir.'),
+                ),
+              ),
             RowGroup(
               children: [
                 AppearanceSetting(controller: ref.watch(appearanceProvider)),
               ],
             ),
-            const SectionLead('Protection'),
+            const SectionLead('Perlindungan'),
             RowGroup(
               children: [
                 SettingsTile(
                   icon: Icons.verified_user_outlined,
-                  title: 'Permissions & status',
-                  subtitle: 'Usage access, overlay, monitor service',
+                  title: 'Izin dan status',
+                  subtitle: 'Akses penggunaan, tampil di atas aplikasi, layanan pemantau',
                   onTap: () => context.push(AppRoutes.permissions),
                 ),
                 SettingsTile(
                   icon: Icons.timer_outlined,
-                  title: 'Relock behavior',
+                  title: 'Perilaku kunci ulang',
                   subtitle: _relockLabel(config.relock),
                   onTap: () => context.push(AppRoutes.relock),
                 ),
               ],
             ),
-            const SectionLead('Notifications'),
+            const SectionLead('Notifikasi'),
             RowGroup(
               children: [
                 toggle(
                   icon: Icons.notifications_off_outlined,
-                  title: 'Hide notification content',
+                  title: 'Sembunyikan isi notifikasi',
                   subtitle: config.hideNotifications
-                      ? 'Locked apps show a redacted notice'
+                      ? 'Notifikasi aplikasi terkunci akan disamarkan'
                       : 'Replace locked apps\' notifications with a count',
                   value: config.hideNotifications,
                   onChanged: (value) async {
@@ -248,8 +257,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       messenger.showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Grant Notification access so OpenLock can hide '
-                            'notification content.',
+                            'Berikan akses notifikasi agar OpenLock dapat menyembunyikan '
+                            'isi notifikasi.',
                           ),
                         ),
                       );
@@ -260,10 +269,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   icon: notificationAccess
                       ? Icons.check_circle_outline
                       : Icons.error_outline,
-                  title: 'Notification access',
+                  title: 'Akses notifikasi',
                   subtitle: notificationAccess
-                      ? 'Granted'
-                      : 'Required to hide notification content',
+                      ? 'Diizinkan'
+                      : 'Diperlukan untuk menyembunyikan isi notifikasi',
                   showChevron: false,
                   trailing: notificationAccess
                       ? null
@@ -271,7 +280,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           onPressed: () => ref
                               .read(permissionsControllerProvider.notifier)
                               .requestNotificationAccess(),
-                          child: const Text('Grant'),
+                          child: const Text('Izinkan'),
                         ),
                   onTap: notificationAccess
                       ? null
@@ -281,26 +290,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
               ],
             ),
-            const SectionLead('Security'),
+            const SectionLead('Keamanan'),
             RowGroup(
               children: [
                 SettingsTile(
                   icon: Icons.pin_outlined,
-                  title: 'Change PIN',
+                  title: 'Ubah PIN',
                   onTap: () => context.push(AppRoutes.changePin),
                 ),
                 SettingsTile(
                   icon: Icons.key_outlined,
-                  title: 'Recovery key',
-                  subtitle: 'Resets your PIN if you forget it',
+                  title: 'Kunci pemulihan',
+                  subtitle: 'Atur ulang PIN jika kamu lupa',
                   onTap: _recoveryKey,
                 ),
                 toggle(
                   icon: Icons.fingerprint,
-                  title: 'Fingerprint unlock',
+                  title: 'Buka dengan sidik jari',
                   subtitle: biometricSupported
-                      ? 'Unlock with your fingerprint'
-                      : 'Not available on this device',
+                      ? 'Gunakan sidik jari untuk membuka'
+                      : 'Tidak tersedia di perangkat ini',
                   value: biometricEnabled,
                   onChanged: biometricSupported
                       ? (value) async {
@@ -318,10 +327,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
                 toggle(
                   icon: Icons.app_blocking_outlined,
-                  title: 'Prevent uninstall',
+                  title: 'Cegah uninstall',
                   subtitle: preventUninstall
-                      ? 'Uninstall needs your PIN'
-                      : 'Require your PIN to uninstall',
+                      ? 'Uninstall memerlukan PIN'
+                      : 'Wajibkan PIN untuk uninstall',
                   value: preventUninstall,
                   onChanged: (value) async {
                     final security =
@@ -336,8 +345,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         messenger.showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'PIN or fingerprint required to turn off '
-                              'uninstall protection.',
+                              'PIN atau sidik jari diperlukan untuk mematikan '
+                              'perlindungan uninstall.',
                             ),
                           ),
                         );
@@ -350,12 +359,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     icon: screenGuardAccess
                         ? Icons.check_circle_outline
                         : Icons.error_outline,
-                    title: 'Uninstall screen guard',
+                    title: 'Lindungi layar uninstall',
                     subtitle: screenGuardAccess
                         ? 'PIN required on OpenLock\'s App info and uninstall '
-                            'screens'
+                            'aplikasi'
                         : 'Enable in Accessibility to guard OpenLock\'s App '
-                            'info and uninstall screens',
+                            'dan uninstall OpenLock',
                     showChevron: false,
                     trailing: screenGuardAccess
                         ? null
@@ -363,7 +372,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             onPressed: () => ref
                                 .read(permissionsControllerProvider.notifier)
                                 .requestScreenGuardAccess(),
-                            child: const Text('Enable'),
+                            child: const Text('Aktifkan'),
                           ),
                     onTap: screenGuardAccess
                         ? null
@@ -373,56 +382,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 toggle(
                   icon: Icons.shuffle,
-                  title: 'Randomize keypad',
-                  subtitle: 'Shuffle digits on the keypad',
+                  title: 'Acak susunan tombol PIN',
+                  subtitle: 'Acak posisi angka pada papan PIN',
                   value: config.randomizeKeypad,
                   onChanged: controller.setRandomizeKeypad,
                 ),
               ],
             ),
-            const SectionLead('Intruder detection'),
+            const SectionLead('Deteksi penyusup'),
             RowGroup(
               children: [
                 toggle(
                   icon: Icons.photo_camera_outlined,
-                  title: 'Capture intruder photos',
+                  title: 'Ambil foto penyusup',
                   subtitle:
-                      'Photo after ${config.intruderThreshold} failed attempts',
+                      'Ambil foto setelah ${config.intruderThreshold} percobaan gagal',
                   value: config.intruderCaptureEnabled,
                   onChanged: (value) =>
                       controller.setIntruderCapture(enabled: value),
                 ),
                 SettingsTile(
                   icon: Icons.list_alt_outlined,
-                  title: 'View intruder log',
+                  title: 'Lihat riwayat penyusup',
                   onTap: () => context.go(AppRoutes.intruder),
                 ),
               ],
             ),
-            const SectionLead('Advanced'),
+            const SectionLead('Lanjutan'),
             RowGroup(
               children: [
                 toggle(
                   icon: Icons.warning_amber_outlined,
-                  title: 'Decoy cover',
+                  title: 'Tampilan pengalih',
                   subtitle: 'Fake "app stopped" dialog',
                   value: config.fakeCoverEnabled,
                   onChanged: controller.setFakeCover,
                 ),
                 SettingsTile(
                   icon: Icons.backup_outlined,
-                  title: 'Backup & restore',
+                  title: 'Cadangkan dan pulihkan',
                   onTap: () => context.push(AppRoutes.backup),
                 ),
               ],
             ),
-            const SectionLead('Updates'),
+            const SectionLead('Pembaruan'),
             RowGroup(
               children: [
                 if (!kStoreBuild) const _UpdateTiles(),
                 SettingsTile(
                   icon: Icons.info_outline,
-                  title: 'About',
+                  title: 'Tentang aplikasi',
                   onTap: () => context.push(AppRoutes.about),
                 ),
               ],
@@ -454,14 +463,14 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
     final messenger = ScaffoldMessenger.of(context);
     if (info == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text("You're on the latest version.")),
+        const SnackBar(content: Text('Kamu sudah menggunakan versi terbaru.')),
       );
     } else {
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Update available · v${info.version}'),
+          content: Text('Pembaruan tersedia · v${info.version}'),
           action: SnackBarAction(
-            label: 'Update',
+            label: 'Perbarui',
             onPressed: () => ref.read(updateServiceProvider).openDownload(info),
           ),
         ),
@@ -485,8 +494,8 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
       children: [
         SettingsTile(
           icon: Icons.system_update_alt,
-          title: 'Auto-check for updates',
-          subtitle: 'Checks GitHub, uploads nothing',
+          title: 'Periksa pembaruan otomatis',
+          subtitle: 'Memeriksa pembaruan dari GitHub',
           showChevron: false,
           trailing: Switch(value: autoCheck, onChanged: setAuto),
           onTap: () => setAuto(!autoCheck),
@@ -494,7 +503,7 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
         const Divider(height: 1, indent: 68),
         SettingsTile(
           icon: Icons.refresh,
-          title: 'Check now',
+          title: 'Periksa sekarang',
           showChevron: false,
           trailing: _checking
               ? const SizedBox(
