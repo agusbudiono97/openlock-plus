@@ -248,7 +248,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   title: 'Sembunyikan isi notifikasi',
                   subtitle: config.hideNotifications
                       ? 'Notifikasi aplikasi terkunci akan disamarkan'
-                      : 'Replace locked apps\' notifications with a count',
+                      : 'Notifikasi aplikasi terkunci diganti dengan jumlah notifikasi',
                   value: config.hideNotifications,
                   onChanged: (value) async {
                     final messenger = ScaffoldMessenger.of(context);
@@ -361,9 +361,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         : Icons.error_outline,
                     title: 'Lindungi layar uninstall',
                     subtitle: screenGuardAccess
-                        ? 'PIN required on OpenLock\'s App info and uninstall '
+                        ? 'PIN diperlukan pada Info aplikasi dan layar uninstall OpenLock'
                             'aplikasi'
-                        : 'Enable in Accessibility to guard OpenLock\'s App '
+                        : 'Aktifkan Aksesibilitas untuk melindungi Info aplikasi dan layar uninstall OpenLock'
                             'serta uninstall aplikasi',
                     showChevron: false,
                     trailing: screenGuardAccess
