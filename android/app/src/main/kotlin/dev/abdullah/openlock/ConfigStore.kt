@@ -80,6 +80,9 @@ class ConfigStore private constructor(context: Context) {
         }
     }
 
+    fun strictModeEndMillis(): Long =
+        config?.optLong("strictModeEndsAtMillis", 0L) ?: 0L
+
     fun strictModeActive(nowMillis: Long = System.currentTimeMillis()): Boolean {
         val cfg = config ?: return false
         if (!cfg.optBoolean("strictModeEnabled", false)) return false
