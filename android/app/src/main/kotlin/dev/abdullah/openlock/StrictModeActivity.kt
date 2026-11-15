@@ -1,6 +1,7 @@
 package dev.abdullah.openlock
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.Gravity
@@ -17,6 +18,7 @@ import android.widget.TextView
 class StrictModeActivity : Activity() {
     private var timer: CountDownTimer? = null
     private lateinit var countdown: TextView
+    private lateinit var targetMessage: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,11 +32,6 @@ class StrictModeActivity : Activity() {
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
             )
 
-        val target = intent.getStringExtra(EXTRA_PACKAGE).orEmpty()
-        val label = runCatching {
-            packageManager.getApplicationLabel(packageManager.getApplicationInfo(target, 0)).toString()
-        }.getOrDefault("Aplikasi ini")
-
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -47,13 +44,14 @@ class StrictModeActivity : Activity() {
             setTextColor(0xFFFFFFFF.toInt())
             gravity = Gravity.CENTER
         })
-        root.addView(TextView(this).apply {
-            text = "$label sedang diblokir sampai waktu perlindungan berakhir."
+        targetMessage = TextView(this).apply {
             textSize = 16f
             setTextColor(0xFFCBD5E1.toInt())
             gravity = Gravity.CENTER
             setPadding(0, 24, 0, 24)
-        })
+        }
+        root.addView(targetMessage)
+        updateTargetLabel(intent)
         countdown = TextView(this).apply {
             textSize = 22f
             setTextColor(0xFF5EEAD4.toInt())
@@ -62,6 +60,20 @@ class StrictModeActivity : Activity() {
         root.addView(countdown)
         setContentView(root)
         updateCountdown()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        updateTargetLabel(intent)
+    }
+
+    private fun updateTargetLabel(intent: Intent) {
+        val target = intent.getStringExtra(EXTRA_PACKAGE).orEmpty()
+        val label = runCatching {
+            packageManager.getApplicationLabel(packageManager.getApplicationInfo(target, 0)).toString()
+        }.getOrDefault("Aplikasi ini")
+        targetMessage.text = "$label sedang diblokir sampai waktu perlindungan berakhir."
     }
 
     override fun onResume() {
