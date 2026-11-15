@@ -47,9 +47,26 @@ class ConfigStore private constructor(context: Context) {
         }
     }
 
+    @Synchronized
     fun saveConfig(json: String) {
-        prefs.edit().putString(KEY_CONFIG, json).apply()
-        config = parse(json)
+        val incoming = parse(json) ?: return
+        val current = config
+        if (current != null && strictModeActive()) {
+            // Second enforcement boundary: even if another Flutter screen or
+            // a future code path submits a changed config, the native monitor
+            // keeps the original active Strict Mode commitment.
+            incoming.put("strictModeEnabled", true)
+            current.optJSONArray("strictModePackages")?.let { packages ->
+                incoming.put("strictModePackages", JSONArray(packages.toString()))
+            }
+            incoming.put(
+                "strictModeEndsAtMillis",
+                current.optLong("strictModeEndsAtMillis", 0L),
+            )
+        }
+        val persisted = incoming.toString()
+        prefs.edit().putString(KEY_CONFIG, persisted).apply()
+        config = incoming
     }
 
     private fun parse(raw: String?): JSONObject? {
