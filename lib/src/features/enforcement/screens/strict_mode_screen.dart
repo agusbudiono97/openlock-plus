@@ -219,7 +219,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                           height: 48,
                           decoration: BoxDecoration(
                             color: colors.surfaceAlt,
-                            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                           ),
                           child: Icon(Icons.shield_rounded, color: colors.textPrimary, size: 26),
                         ),
@@ -230,11 +230,11 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                             children: [
                               Text('PERLINDUNGAN AKTIF', style: AppTextStyles.caption.copyWith(color: colors.textSecondary, letterSpacing: 1)),
                               const SizedBox(height: 3),
-                              Text('Kamu sedang dalam Mode Ketat', style: AppTextStyles.titleMedium.copyWith(color: colors.textPrimary)),
+                              Text('Kamu sedang dalam Mode Ketat', style: AppTextStyles.labelStrong.copyWith(color: colors.textPrimary)),
                             ],
                           ),
                         ),
-                        Icon(Icons.check_circle_rounded, color: colors.positive),
+                        Icon(Icons.check_circle_rounded, color: colors.textPrimary),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xl),
@@ -242,7 +242,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                       child: Text(
                         countdown,
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.numberLarge.copyWith(
+                        style: AppTextStyles.numberMedium.copyWith(
                           color: colors.textPrimary,
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
@@ -311,7 +311,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                           const SizedBox(height: AppSpacing.xs),
                           Text(
                             'Daftar aplikasi dan pengaturan perlindungan tidak dapat diubah sampai komitmen berakhir.',
-                            style: AppTextStyles.bodySmall.copyWith(color: colors.textSecondary),
+                            style: AppTextStyles.label.copyWith(color: colors.textSecondary),
                           ),
                         ],
                       ),
