@@ -23,18 +23,18 @@ class IntruderLogScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const AppEmptyState(
             icon: Icons.error_outline_rounded,
-            title: 'Could not load the log',
+            title: 'Riwayat tidak dapat dimuat',
           ),
           data: (records) => PageList(
             children: [
               ScreenHeader(
-                eyebrow: 'Failed unlocks',
-                title: 'Intruders',
+                eyebrow: 'Percobaan membuka gagal',
+                title: 'Riwayat penyusup',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      tooltip: 'Refresh',
+                      tooltip: 'Muat ulang',
                       onPressed: () => ref
                           .read(intruderControllerProvider.notifier)
                           .refresh(),
@@ -42,7 +42,7 @@ class IntruderLogScreen extends ConsumerWidget {
                     ),
                     if (records.isNotEmpty)
                       IconButton(
-                        tooltip: 'Clear all',
+                        tooltip: 'Hapus semua',
                         onPressed: () => ref
                             .read(intruderControllerProvider.notifier)
                             .clearAll(),
@@ -54,9 +54,9 @@ class IntruderLogScreen extends ConsumerWidget {
               if (records.isEmpty)
                 const AppEmptyState(
                   icon: Icons.verified_user_outlined,
-                  title: 'No intruder events',
-                  message: 'If someone fails your PIN too many times, a '
-                      'snapshot appears here.',
+                  title: 'Belum ada aktivitas penyusup',
+                  message: 'Jika seseorang terlalu sering salah memasukkan PIN, foto '
+                      'dan catatan percobaannya akan muncul di sini.',
                 )
               else
                 RowGroup(
@@ -111,7 +111,7 @@ class _IntruderRow extends StatelessWidget {
       title: record.packageName,
       subtitle: when,
       trailing: IconButton(
-        tooltip: 'Delete',
+        tooltip: 'Hapus catatan',
         onPressed: onDelete,
         icon: const Icon(Icons.close_rounded),
       ),
