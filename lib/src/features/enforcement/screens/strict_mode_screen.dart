@@ -159,9 +159,10 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     final apps = ref.watch(installedAppsProvider);
 
     if (active) {
-      final endAt = config.strictModeEndsAtMillis == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(config.strictModeEndsAtMillis!).toLocal();
+      final endAt = switch (config.strictModeEndsAtMillis) {
+        final millis? => DateTime.fromMillisecondsSinceEpoch(millis).toLocal(),
+        null => null,
+      };
       final remaining = endAt == null ? null : endAt.difference(DateTime.now());
       final end = endAt == null
           ? 'Tanpa batas waktu'
