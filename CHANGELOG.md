@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.11.1] - 2026-11-15
+
+### Fixed
+- Prevent the Strict Mode setup form from appearing temporarily while saved configuration is still loading.
+- Reduce the duration dropdown's horizontal overflow on narrow screens.
+
+### Improved
+- Show each installed app's launcher icon in both the Strict Mode selection list and the active protected-app list, reusing the native icon cache.
+- Keep a clear fallback icon and placeholder when an app icon is unavailable.
+
+### Notes
+- Strict Mode recovery after dismissing OpenLock from Recents still requires device testing; this build does not claim to defeat Android or manufacturer process-killing policies.
+- This is a debug/test build. Verify update-signature compatibility before installing over an existing APK.
+
+# Changelog
+
 ## [1.11.0] - 2026-11-15
 
 ### Added
