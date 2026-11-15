@@ -8,8 +8,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
-import java.text.DateFormat
-import java.util.Date
 
 /**
  * Strict Mode notice. The monitor reopens it whenever a selected target
