@@ -94,6 +94,7 @@ final class LockConfig {
     bool? strictModeEnabled,
     Set<String>? strictModePackages,
     int? strictModeEndsAtMillis,
+    bool clearStrictModeEndsAtMillis = false,
   }) =>
       LockConfig(
         lockedPackages: lockedPackages ?? this.lockedPackages,
@@ -111,7 +112,9 @@ final class LockConfig {
         schedules: schedules ?? this.schedules,
         strictModeEnabled: strictModeEnabled ?? this.strictModeEnabled,
         strictModePackages: strictModePackages ?? this.strictModePackages,
-        strictModeEndsAtMillis: strictModeEndsAtMillis ?? this.strictModeEndsAtMillis,
+        strictModeEndsAtMillis: clearStrictModeEndsAtMillis
+            ? null
+            : strictModeEndsAtMillis ?? this.strictModeEndsAtMillis,
       );
 
   Map<String, dynamic> toJson() => {
