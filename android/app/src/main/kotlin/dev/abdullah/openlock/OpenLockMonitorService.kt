@@ -36,6 +36,7 @@ class OpenLockMonitorService : Service() {
     private var lastLaunchAt: Long = 0L
     private var lastStrictLaunchedPkg: String? = null
     private var lastStrictLaunchAt: Long = 0L
+    @Volatile private var observedForegroundPkg: String? = null
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -207,11 +208,21 @@ class OpenLockMonitorService : Service() {
             // polls: the foreground event is emitted once on app launch, not
             // continuously, so returning null after LOOKBACK_MS would silently
             // stop enforcing an app that stays open.
-            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND ||
-                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                    event.eventType == UsageEvents.Event.ACTIVITY_RESUMED)
-            ) {
+            val entersForeground =
+                event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                        event.eventType == UsageEvents.Event.ACTIVITY_RESUMED)
+            val leavesForeground =
+                event.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                        event.eventType == UsageEvents.Event.ACTIVITY_PAUSED)
+
+            if (entersForeground) {
                 observedForegroundPkg = event.packageName
+            } else if (leavesForeground && observedForegroundPkg == event.packageName) {
+                // Clear only the package that actually left. A later resumed
+                // event in the same query window will set the new foreground.
+                observedForegroundPkg = null
             }
         }
         return observedForegroundPkg
