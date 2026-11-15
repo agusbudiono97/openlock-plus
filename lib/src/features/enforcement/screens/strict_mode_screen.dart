@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
+import 'package:openlock/src/core/di.dart';
 
 class StrictModeScreen extends ConsumerStatefulWidget {
   const StrictModeScreen({super.key});
@@ -83,6 +84,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       packages: Set.of(_selected),
       endsAtMillis: end?.millisecondsSinceEpoch,
     );
+    await ref.read(enforcementBridgeProvider).startService();
   }
 
   @override
