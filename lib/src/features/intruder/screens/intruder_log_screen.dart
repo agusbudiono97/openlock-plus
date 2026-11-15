@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
 import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
+import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 
 class IntruderLogScreen extends ConsumerWidget {
   const IntruderLogScreen({super.key});
@@ -15,6 +16,7 @@ class IntruderLogScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(intruderControllerProvider);
+    final config = ref.watch(configControllerProvider).valueOrNull;
 
     return Scaffold(
       body: SafeArea(
@@ -28,8 +30,8 @@ class IntruderLogScreen extends ConsumerWidget {
           data: (records) => PageList(
             children: [
               ScreenHeader(
-                eyebrow: 'Percobaan membuka gagal',
-                title: 'Riwayat penyusup',
+                eyebrow: 'Ringkasan perlindungan',
+                title: 'Statistik',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -51,6 +53,34 @@ class IntruderLogScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  _StatsTile(
+                    label: 'Aplikasi dikunci',
+                    value: '${config?.lockedPackages.length ?? 0}',
+                    icon: Icons.lock_outline_rounded,
+                  ),
+                  _StatsTile(
+                    label: 'Jadwal aktif',
+                    value: '${config?.schedules.where((s) => s.enabled).length ?? 0}',
+                    icon: Icons.schedule_rounded,
+                  ),
+                  _StatsTile(
+                    label: 'Percobaan gagal',
+                    value: '${records.length}',
+                    icon: Icons.warning_amber_rounded,
+                  ),
+                  _StatsTile(
+                    label: 'Foto tersimpan',
+                    value: '${records.where((r) => r.photoPath != null).length}',
+                    icon: Icons.photo_camera_back_outlined,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const SectionLead('Riwayat percobaan gagal'),
               if (records.isEmpty)
                 const AppEmptyState(
                   icon: Icons.verified_user_outlined,
@@ -114,6 +144,52 @@ class _IntruderRow extends StatelessWidget {
         tooltip: 'Hapus catatan',
         onPressed: onDelete,
         icon: const Icon(Icons.close_rounded),
+      ),
+    );
+  }
+}
+
+class _StatsTile extends StatelessWidget {
+  const _StatsTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = SuiteColors.of(context);
+    return SizedBox(
+      width: 154,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: colors.textSecondary),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                value,
+                style: AppTextStyles.numberMedium.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
+              Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.caption.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
