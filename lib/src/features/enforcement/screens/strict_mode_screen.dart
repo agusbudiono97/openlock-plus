@@ -15,7 +15,7 @@ class StrictModeScreen extends ConsumerStatefulWidget {
 class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
   final _amount = TextEditingController(text: '1');
   final Set<String> _selected = {};
-  String _unit = 'hours';
+  String _unit = 'jam';
   bool _indefinite = false;
   DateTime? _exactEnd;
 
@@ -32,13 +32,13 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     if (value == null || value < 1) return null;
     final now = DateTime.now();
     switch (_unit) {
-      case 'minutes':
+      case 'menit':
         return now.add(Duration(minutes: value));
-      case 'hours':
+      case 'jam':
         return now.add(Duration(hours: value));
-      case 'days':
+      case 'hari':
         return now.add(Duration(days: value));
-      case 'months':
+      case 'bulan':
         return DateTime(now.year, now.month + value, now.day, now.hour, now.minute);
       default:
         return null;
@@ -68,14 +68,14 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
   Future<void> _start() async {
     if (_selected.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose at least one app to block.')),
+        const SnackBar(content: Text('Pilih minimal satu aplikasi untuk diblokir.')),
       );
       return;
     }
     final end = _deadline();
     if (!_indefinite && end == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid duration or end date.')),
+        const SnackBar(content: Text('Masukkan durasi atau waktu berakhir yang valid.')),
       );
       return;
     }
@@ -83,7 +83,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     if (!permissions.canEnforce) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Grant Usage Access and Display over other apps in Permissions before starting.')),
+          const SnackBar(content: Text('Aktifkan Akses penggunaan dan Tampil di atas aplikasi lain pada menu Izin sebelum memulai.')),
         );
       }
       return;
@@ -104,10 +104,10 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
 
     if (active) {
       final end = config.strictModeEndsAtMillis == null
-          ? 'Indefinitely'
+          ? 'Tanpa batas waktu'
           : DateTime.fromMillisecondsSinceEpoch(config.strictModeEndsAtMillis!).toLocal().toString();
       return Scaffold(
-        appBar: AppBar(title: const Text('Strict Mode')),
+        appBar: AppBar(title: const Text('Mode Ketat')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -116,13 +116,13 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
               children: [
                 const Icon(Icons.lock_clock, size: 64),
                 const SizedBox(height: 16),
-                const Text('Strict Mode is active', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text('Mode Ketat sedang aktif', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text('${config.strictModePackages.length} apps are blocked.'),
                 const SizedBox(height: 8),
-                Text('Ends: $end', textAlign: TextAlign.center),
+                Text('Berakhir: $end', textAlign: TextAlign.center),
                 const SizedBox(height: 16),
-                const Text('This screen does not provide an early-stop button. Android system-level bypasses may still exist.', textAlign: TextAlign.center),
+                const Text('Tidak ada tombol untuk menghentikan lebih awal di halaman ini. Namun, celah melalui sistem Android masih mungkin terjadi.', textAlign: TextAlign.center),
               ],
             ),
           ),
@@ -131,16 +131,16 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Strict Mode')),
+      appBar: AppBar(title: const Text('Mode Ketat')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Block selected apps until the timer ends. Choose an end time or run indefinitely.'),
+          const Text('Blokir aplikasi pilihan sampai waktunya berakhir. Tentukan durasi, tanggal berakhir, atau aktifkan tanpa batas waktu.'),
           const SizedBox(height: 16),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Indefinite'),
-            subtitle: const Text('No automatic end time'),
+            title: const Text('Tanpa batas waktu'),
+            subtitle: const Text('Tidak ada waktu berakhir otomatis'),
             value: _indefinite,
             onChanged: (value) => setState(() {
               _indefinite = value;
@@ -154,7 +154,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                   child: TextField(
                     controller: _amount,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Duration', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'Durasi', border: OutlineInputBorder()),
                     onChanged: (_) => setState(() => _exactEnd = null),
                   ),
                 ),
@@ -162,13 +162,13 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 DropdownButton<String>(
                   value: _unit,
                   items: const [
-                    DropdownMenuItem(value: 'minutes', child: Text('Minutes')),
-                    DropdownMenuItem(value: 'hours', child: Text('Hours')),
-                    DropdownMenuItem(value: 'days', child: Text('Days')),
-                    DropdownMenuItem(value: 'months', child: Text('Months')),
+                    DropdownMenuItem(value: 'menit', child: Text('Menit')),
+                    DropdownMenuItem(value: 'jam', child: Text('Jam')),
+                    DropdownMenuItem(value: 'hari', child: Text('Hari')),
+                    DropdownMenuItem(value: 'bulan', child: Text('Bulan')),
                   ],
                   onChanged: (value) => setState(() {
-                    _unit = value ?? 'hours';
+                    _unit = value ?? 'jam';
                     _exactEnd = null;
                   }),
                 ),
@@ -177,15 +177,15 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             TextButton.icon(
               onPressed: _pickExactEnd,
               icon: const Icon(Icons.event),
-              label: Text(_exactEnd == null ? 'Or choose exact end date & time' : 'End: $_exactEnd'),
+              label: Text(_exactEnd == null ? 'Atau pilih tanggal dan jam berakhir' : 'Berakhir: $_exactEnd'),
             ),
           ],
           const Divider(height: 32),
-          Text('Apps to block (${_selected.length} selected)', style: Theme.of(context).textTheme.titleMedium),
+          Text('Aplikasi yang diblokir (${_selected.length} dipilih)', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           apps.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Text('Could not load installed apps.'),
+            error: (_, __) => const Text('Tidak dapat memuat daftar aplikasi.'),
             data: (items) => Column(
               children: [
                 for (final app in items)
@@ -209,7 +209,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
           FilledButton.icon(
             onPressed: _start,
             icon: const Icon(Icons.lock),
-            label: const Text('Start Strict Mode'),
+            label: const Text('Aktifkan Mode Ketat'),
           ),
         ],
       ),
