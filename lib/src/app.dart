@@ -18,6 +18,11 @@ class OpenLockApp extends ConsumerWidget {
         theme: AppTheme.build(Brightness.light, accent: AppAccents.openlock),
         darkTheme: AppTheme.build(Brightness.dark, accent: AppAccents.openlock),
         themeMode: appearance.mode,
+        scrollBehavior: const MaterialScrollBehavior().copyWith(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+        ),
         routerConfig: router,
         debugShowCheckedModeBanner: false,
       ),
