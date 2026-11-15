@@ -373,6 +373,11 @@ class EnforcementPlugin(private val activity: Activity) :
     }
 
     private fun stopService() {
+        // The monitor is part of the Strict Mode enforcement boundary. Never
+        // honour an in-app stop request while a commitment is active; Android
+        // force-stop / permission revocation remain OS-level bypasses that an
+        // ordinary app cannot fully prevent.
+        if (store.strictModeActive()) return
         runCatching {
             activity.stopService(Intent(activity, OpenLockMonitorService::class.java))
         }
