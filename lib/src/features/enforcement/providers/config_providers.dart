@@ -26,22 +26,24 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     _mutationQueue = release.future;
     try {
       await previous;
-    // Never fall back to an empty config while the async repository load is
-    // still in flight: doing so could overwrite an active commitment saved
-    // before this screen finished loading.
-    final current = await _currentConfig();
-    final requested = update(current);
-    final strictActive = current.strictModeActiveAt(DateTime.now());
+      // Never fall back to an empty config while the async repository load is
+      // still in flight: doing so could overwrite an active commitment saved
+      // before this screen finished loading.
+      final current = await _currentConfig();
+      final requested = update(current);
+      final strictActive = current.strictModeActiveAt(DateTime.now());
 
-    // Strict Mode is a full settings freeze, not merely a protected timer.
-    // Keep the complete snapshot unchanged until the native/Dart deadline
-    // expires. This covers app lists, schedules, uninstall settings, and
-    // backup restores regardless of which screen initiated the mutation.
-    final next = strictActive ? current : requested;
+      // Strict Mode is a full settings freeze, not merely a protected timer.
+      // Keep the complete snapshot unchanged until the native/Dart deadline
+      // expires. This covers app lists, schedules, uninstall settings, and
+      // backup restores regardless of which screen initiated the mutation.
+      final next = strictActive ? current : requested;
 
-    state = AsyncData(next);
-    await ref.read(configRepositoryProvider).save(next);
-    await pushToNative();
+      // Persist before publishing the new state. A storage failure must not
+      // leave the UI showing a configuration that was never saved.
+      await ref.read(configRepositoryProvider).save(next);
+      state = AsyncData(next);
+      await pushToNative();
     } finally {
       release.complete();
     }
