@@ -70,7 +70,7 @@ class StrictModeActivity : Activity() {
             setImageResource(android.R.drawable.ic_lock_lock)
             setColorFilter(background)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
-            background = rounded(accent, 28)
+            this.background = rounded(accent, 28)
             setPadding(dp(28), dp(24), dp(28), dp(24))
         }
         val emblemWrap = LinearLayout(this).apply {
@@ -108,7 +108,7 @@ class StrictModeActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(dp(22), dp(22), dp(22), dp(22))
-            background = rounded(0xFF172337.toInt(), 22)
+            this.background = rounded(0xFF172337.toInt(), 22)
         }
         val blockedLabel = TextView(this).apply {
             text = "APLIKASI YANG DIBLOKIR"
@@ -259,7 +259,7 @@ class StrictModeActivity : Activity() {
             gravity = Gravity.CENTER
             setTextColor(foreground)
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            background = rounded(fill, 14)
+            this.background = rounded(fill, 14)
             isClickable = true
             isFocusable = true
             setOnClickListener { action() }
