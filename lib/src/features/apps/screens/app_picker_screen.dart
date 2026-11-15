@@ -192,7 +192,6 @@ class _ProtectionHero extends ConsumerWidget {
     final guarded = (lockedCount ?? config.lockedPackages.length) > 0;
     return HeroMetricCard(
       label: 'Aplikasi terlindungi',
-      trailing: _GuardPill(guarded: guarded),
       value: ValueText(
         lockedCount == null ? '-' : '$lockedCount',
         style: AppTextStyles.hero.copyWith(color: c.textPrimary),
