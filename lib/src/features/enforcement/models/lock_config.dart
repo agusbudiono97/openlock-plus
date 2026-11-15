@@ -21,6 +21,11 @@ final class LockConfig {
     this.strictModeEnabled = false,
     this.strictModePackages = const {},
     this.strictModeEndsAtMillis,
+    this.strictScreenTitle = 'WAKTUNYA BERHENTI',
+    this.strictScreenMessage =
+        'Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.',
+    this.strictScreenFooter =
+        'Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal.',
   });
 
   /// Apps locked at all times (user toggles in the app picker).
@@ -64,6 +69,11 @@ final class LockConfig {
   final Set<String> strictModePackages;
   final int? strictModeEndsAtMillis;
 
+  /// User-editable copy shown on the full-screen Strict Mode barrier.
+  final String strictScreenTitle;
+  final String strictScreenMessage;
+  final String strictScreenFooter;
+
   bool strictModeActiveAt(DateTime now) =>
       strictModeEnabled &&
       (strictModeEndsAtMillis == null ||
@@ -95,6 +105,9 @@ final class LockConfig {
     Set<String>? strictModePackages,
     int? strictModeEndsAtMillis,
     bool clearStrictModeEndsAtMillis = false,
+    String? strictScreenTitle,
+    String? strictScreenMessage,
+    String? strictScreenFooter,
   }) =>
       LockConfig(
         lockedPackages: lockedPackages ?? this.lockedPackages,
@@ -115,6 +128,9 @@ final class LockConfig {
         strictModeEndsAtMillis: clearStrictModeEndsAtMillis
             ? null
             : strictModeEndsAtMillis ?? this.strictModeEndsAtMillis,
+        strictScreenTitle: strictScreenTitle ?? this.strictScreenTitle,
+        strictScreenMessage: strictScreenMessage ?? this.strictScreenMessage,
+        strictScreenFooter: strictScreenFooter ?? this.strictScreenFooter,
       );
 
   Map<String, dynamic> toJson() => {
@@ -132,6 +148,9 @@ final class LockConfig {
         'strictModeEnabled': strictModeEnabled,
         'strictModePackages': strictModePackages.toList()..sort(),
         'strictModeEndsAtMillis': strictModeEndsAtMillis,
+        'strictScreenTitle': strictScreenTitle,
+        'strictScreenMessage': strictScreenMessage,
+        'strictScreenFooter': strictScreenFooter,
       };
 
   factory LockConfig.fromJson(Map<String, dynamic> json) => LockConfig(
@@ -163,6 +182,12 @@ final class LockConfig {
                 .toSet(),
         strictModeEndsAtMillis:
             (json['strictModeEndsAtMillis'] as num?)?.toInt(),
+        strictScreenTitle: json['strictScreenTitle'] as String? ??
+            'WAKTUNYA BERHENTI',
+        strictScreenMessage: json['strictScreenMessage'] as String? ??
+            'Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.',
+        strictScreenFooter: json['strictScreenFooter'] as String? ??
+            'Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal.',
       );
 
   /// The exact map handed to the native monitor. [pinHash]/[pinSalt] are the
@@ -189,6 +214,9 @@ final class LockConfig {
         'strictModeEnabled': strictModeEnabled,
         'strictModePackages': strictModePackages.toList()..sort(),
         'strictModeEndsAtMillis': strictModeEndsAtMillis,
+        'strictScreenTitle': strictScreenTitle,
+        'strictScreenMessage': strictScreenMessage,
+        'strictScreenFooter': strictScreenFooter,
         'pinHash': pinHash,
         'pinSalt': pinSalt,
         'pinIterations': 120000,
