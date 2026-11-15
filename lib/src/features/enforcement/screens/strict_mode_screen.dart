@@ -79,6 +79,15 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       );
       return;
     }
+    final permissions = await ref.read(enforcementBridgeProvider).getPermissionStates();
+    if (!permissions.canEnforce) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Grant Usage Access and Display over other apps in Permissions before starting.')),
+        );
+      }
+      return;
+    }
     await ref.read(configControllerProvider.notifier).setStrictMode(
       enabled: true,
       packages: Set.of(_selected),
