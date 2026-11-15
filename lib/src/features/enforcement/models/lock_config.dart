@@ -169,8 +169,8 @@ final class LockConfig {
   /// PBKDF2 verifier the on-top LockActivity checks entered PINs against; they
   /// live in secure storage and are merged in here at push time.
   Map<String, dynamic> toNativeMap({
-    required String pinHash,
-    required String pinSalt,
+    String pinHash = '',
+    String pinSalt = '',
     bool biometricEnabled = false,
   }) =>
       {
