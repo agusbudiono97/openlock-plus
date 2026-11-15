@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.2] - 2026-11-15
+
+### Fixed
+- Restore an unexpired Strict Mode commitment when OpenLock is explicitly launched again after its task was dismissed.
+- Push the saved protection configuration to the native monitor before restarting the foreground service, preserving the original end time instead of creating a fresh countdown.
+
+### Notes
+- This is best-effort recovery on app launch; Android force-stop, revoked permissions, OEM process restrictions, and other system-level termination can still interrupt enforcement.
+- This is a debug/test build. Verify update-signature compatibility before installing over an existing APK.
+
+# Changelog
+
 ## [1.11.1] - 2026-11-15
 
 ### Fixed
