@@ -1,38 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Navigasi utama OpenLock.
+/// Four primary sections; schedules remain reachable from the Blocking tab.
 class HomeShell extends StatelessWidget {
   const HomeShell({required this.shell, super.key});
 
   final StatefulNavigationShell shell;
 
+  static const _branches = [0, 3, 2, 4];
+
   @override
   Widget build(BuildContext context) {
+    final selected = _branches.indexOf(shell.currentIndex);
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: (index) => shell.goBranch(
-          index,
-          initialLocation: index == shell.currentIndex,
-        ),
+        selectedIndex: selected < 0 ? 0 : selected,
+        onDestinationSelected: (index) {
+          final branch = _branches[index];
+          shell.goBranch(
+            branch,
+            initialLocation: branch == shell.currentIndex,
+          );
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.apps_outlined),
             selectedIcon: Icon(Icons.apps_rounded),
-            label: 'Blokir',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.schedule_outlined),
-            selectedIcon: Icon(Icons.schedule_rounded),
-            label: 'Jadwal',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.shield_outlined),
-            selectedIcon: Icon(Icons.shield_rounded),
-            label: 'Riwayat',
+            label: 'Pemblokiran',
           ),
           NavigationDestination(
             icon: Icon(Icons.lock_clock_outlined),
@@ -40,9 +36,14 @@ class HomeShell extends StatelessWidget {
             label: 'Mode Ketat',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Setelan',
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart_rounded),
+            label: 'Statistik',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Profil',
           ),
         ],
       ),
