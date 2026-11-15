@@ -16,10 +16,14 @@ class BootReceiver : BroadcastReceiver() {
         }
 
         val store = ConfigStore.get(context)
-        val hasWork = store.lockedPackages().isNotEmpty() ||
-            store.schedules().length() > 0 ||
-            (store.strictModeActive() && store.strictModePackages().isNotEmpty())
-        if (store.pinHash() == null || !hasWork) return
+        val hasStrictModeWork = store.strictModeActive() &&
+            store.strictModePackages().isNotEmpty()
+        val hasPinProtectedWork = store.pinHash() != null &&
+            (store.lockedPackages().isNotEmpty() || store.schedules().length() > 0)
+
+        // Strict Mode does not depend on a configured PIN. Do not let the
+        // normal app-lock PIN gate silently disable Strict Mode after reboot.
+        if (!hasStrictModeWork && !hasPinProtectedWork) return
 
         val serviceIntent = Intent(context, OpenLockMonitorService::class.java)
         runCatching {
