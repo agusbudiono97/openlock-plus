@@ -46,6 +46,12 @@ final class PreventUninstallController extends AsyncNotifier<bool> {
   /// deactivated **only** after that succeeds; otherwise nothing changes.
   /// Returns true if protection was lifted.
   Future<bool> disableWithAuth(Future<bool> Function() authenticate) async {
+    // Strict Mode freezes every protection setting. Refuse before prompting
+    // for credentials so the UI cannot claim Device Admin was disabled when
+    // the native layer correctly rejects that request.
+    final config = ref.read(configControllerProvider).valueOrNull;
+    if (config?.strictModeActiveAt(DateTime.now()) ?? false) return false;
+
     final ok = await authenticate();
     if (!ok) return false;
     await ref.read(enforcementBridgeProvider).deactivateDeviceAdmin();
