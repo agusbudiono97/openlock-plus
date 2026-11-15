@@ -105,15 +105,15 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     // device-admin uninstall barrier and the accessibility screen recogniser
     // before starting, so the user is not led to believe those layers are on
     // when Android has not granted them.
-    var adminActive = await bridge.isDeviceAdminActive();
+    final adminActive = await bridge.isDeviceAdminActive();
     if (!adminActive) {
+      // The Android admin confirmation is an external system activity. The
+      // MethodChannel request only launches it; it cannot report the user's
+      // choice synchronously. Ask the user to return and tap Start again.
       await bridge.requestDeviceAdmin();
-      adminActive = await bridge.isDeviceAdminActive();
-    }
-    if (!adminActive) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mode Ketat belum dimulai. Izinkan Administrator perangkat agar OpenLock tidak bisa langsung di-uninstall.')),
+          const SnackBar(content: Text('Konfirmasi Administrator perangkat. Setelah kembali ke OpenLock, tekan Aktifkan Mode Ketat sekali lagi.')),
         );
       }
       return;
@@ -121,13 +121,12 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
 
     permissions = await bridge.getPermissionStates();
     if (!permissions.screenGuardAccess) {
+      // Accessibility is enabled in Android Settings, outside this app. Do
+      // not immediately re-check (the settings page has not been visited yet).
       await bridge.requestScreenGuardAccess();
-      permissions = await bridge.getPermissionStates();
-    }
-    if (!permissions.screenGuardAccess) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mode Ketat belum dimulai. Aktifkan layanan Aksesibilitas OpenLock untuk melindungi halaman pengaturan dan penghapusan aplikasi.')),
+          const SnackBar(content: Text('Aktifkan layanan Aksesibilitas OpenLock. Setelah kembali ke aplikasi, tekan Aktifkan Mode Ketat sekali lagi.')),
         );
       }
       return;
