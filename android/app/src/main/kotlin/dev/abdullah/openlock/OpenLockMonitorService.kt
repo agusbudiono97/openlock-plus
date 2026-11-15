@@ -44,6 +44,9 @@ class OpenLockMonitorService : Service() {
                 Intent.ACTION_SCREEN_OFF -> {
                     screenOffAt = System.currentTimeMillis()
                     observedForegroundPkg = null
+                    lastForegroundPkg = null
+                    lastStrictLaunchedPkg = null
+                    lastLaunchedPkg = null
                 }
             }
         }
