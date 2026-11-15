@@ -112,8 +112,9 @@ class OpenLockMonitorService : Service() {
         if (current == packageName) return
 
         // Strict Mode is a hard block, separate from the normal PIN app-lock.
-        // It is active until its wall-clock deadline; a null deadline means
-        // indefinite. The activity itself only displays the block/countdown.
+        // ConfigStore uses a monotonic deadline during the current boot and
+        // a best-effort wall-clock deadline after reboot. A null deadline
+        // means indefinite. The activity only displays the block/countdown.
         if (store.strictModeActive() && store.strictModePackages().contains(current)) {
             if (current == lastStrictLaunchedPkg &&
                 now - lastStrictLaunchAt < RELAUNCH_GUARD_MS
