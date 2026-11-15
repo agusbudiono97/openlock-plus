@@ -84,8 +84,8 @@ void main() {
     await pumpPicker(tester, bridge);
     await tester.pump();
 
-    expect(find.text('Protected apps'), findsOneWidget);
-    expect(find.text('Counting installed apps'), findsOneWidget);
+    expect(find.text('Aplikasi terlindungi'), findsOneWidget);
+    expect(find.text('Menghitung aplikasi terpasang'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     final skeletonRow = find
         .ancestor(of: find.byType(Skeleton), matching: find.byType(AppListRow))
@@ -95,7 +95,7 @@ void main() {
     bridge.holdApps!.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('of 1 installed apps'), findsOneWidget);
+    expect(find.text('dari 1 aplikasi terpasang'), findsOneWidget);
     final row = find.ancestor(
       of: find.text('Alpha'),
       matching: find.byType(AppListRow),
