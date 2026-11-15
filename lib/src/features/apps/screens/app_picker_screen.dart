@@ -168,6 +168,47 @@ class AppPickerScreen extends ConsumerWidget {
   }
 }
 
+class _ProtectionStat extends StatelessWidget {
+  const _ProtectionStat({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = SuiteColors.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 104, maxWidth: 150),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(color: c.textSecondary),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.labelStrong.copyWith(
+              color: valueColor ?? c.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// The dashboard hero: how many apps are guarded, with schedules, intruder
 /// events and the relock rule that explain the protection beneath it.
 class _ProtectionHero extends ConsumerWidget {
@@ -190,31 +231,66 @@ class _ProtectionHero extends ConsumerWidget {
     final activeSchedules = config.schedules.where((s) => s.enabled).length;
     // Until the app list arrives, the configured set is the best answer.
     final guarded = (lockedCount ?? config.lockedPackages.length) > 0;
-    return HeroMetricCard(
-      label: 'Aplikasi terlindungi',
-      value: ValueText(
-        lockedCount == null ? '-' : '$lockedCount',
-        style: AppTextStyles.hero.copyWith(color: c.textPrimary),
+    final relockLabel = switch (config.relock.mode) {
+      RelockMode.immediately => 'Saat keluar',
+      RelockMode.onScreenOff => 'Layar mati',
+      RelockMode.afterTimeout => '${config.relock.timeout.inMinutes} menit',
+    };
+
+    // Keep this dashboard card local instead of using HeroMetricCard's fixed
+    // three-column footer. StatTile's internal row can overflow on narrow
+    // phones and with enlarged system text.
+    return Material(
+      color: c.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        side: BorderSide(color: c.hairline),
       ),
-      deltaCaption: total == null
-          ? 'Menghitung aplikasi terpasang'
-          : 'dari $total aplikasi terpasang',
-      footer: [
-        StatTile(label: 'Jadwal', value: '$activeSchedules on'),
-        StatTile(
-          label: 'Penyusup',
-          value: intruders == null ? '-' : '${intruders.length}',
-          valueColor: (intruders?.isNotEmpty ?? false) ? c.negative : null,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Aplikasi terlindungi',
+              style: AppTextStyles.label.copyWith(color: c.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.smd),
+            Text(
+              lockedCount == null ? '-' : '$lockedCount',
+              style: AppTextStyles.hero.copyWith(color: c.textPrimary),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              total == null
+                  ? 'Menghitung aplikasi terpasang'
+                  : 'dari $total aplikasi terpasang',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodySmall.copyWith(color: c.textTertiary),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Divider(height: 1, color: c.hairline),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                _ProtectionStat(label: 'Jadwal', value: '$activeSchedules aktif'),
+                _ProtectionStat(
+                  label: 'Penyusup',
+                  value: intruders == null ? '-' : '${intruders.length}',
+                  valueColor:
+                      (intruders?.isNotEmpty ?? false) ? c.negative : null,
+                ),
+                _ProtectionStat(label: 'Kunci ulang', value: relockLabel),
+              ],
+            ),
+          ],
         ),
-        StatTile(
-          label: 'Kunci ulang',
-          value: switch (config.relock.mode) {
-            RelockMode.immediately => 'Saat keluar',
-            RelockMode.onScreenOff => 'Layar mati',
-            RelockMode.afterTimeout => '${config.relock.timeout.inMinutes} min',
-          },
-        ),
-      ],
+      ),
     );
   }
 }
