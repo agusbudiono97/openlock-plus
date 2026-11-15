@@ -72,6 +72,21 @@ class ConfigStore private constructor(context: Context) {
 
     fun schedules(): JSONArray = config?.optJSONArray("schedules") ?: JSONArray()
 
+    /** Strict Mode package set; expiry is checked against wall-clock time. */
+    fun strictModePackages(): Set<String> {
+        val array = config?.optJSONArray("strictModePackages") ?: return emptySet()
+        return buildSet {
+            for (i in 0 until array.length()) add(array.optString(i))
+        }
+    }
+
+    fun strictModeActive(nowMillis: Long = System.currentTimeMillis()): Boolean {
+        val cfg = config ?: return false
+        if (!cfg.optBoolean("strictModeEnabled", false)) return false
+        val end = cfg.optLong("strictModeEndsAtMillis", 0L)
+        return end == 0L || nowMillis < end
+    }
+
     fun relockMode(): String = config?.optString("relockMode", "immediately") ?: "immediately"
 
     fun relockTimeoutMinutes(): Int = config?.optInt("relockTimeoutMinutes", 1) ?: 1
