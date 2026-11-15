@@ -125,7 +125,13 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                   subtitle: Text('Jadwal dikunci sampai komitmen berakhir.'),
                 ),
               ),
-            AppTextField(label: 'Nama jadwal', controller: _nameController),
+            AbsorbPointer(
+              absorbing: strictActive,
+              child: AppTextField(
+                label: 'Nama jadwal',
+                controller: _nameController,
+              ),
+            ),
             const _FieldLabel('Hari aktif'),
             Wrap(
               spacing: AppSpacing.sm,
