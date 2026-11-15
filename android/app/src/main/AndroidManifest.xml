@@ -69,6 +69,18 @@
             android:theme="@style/LockTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"/>
 
+        <!-- Full-screen notice used while a Strict Mode target is foregrounded. -->
+        <activity
+            android:name=".StrictModeActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:taskAffinity="dev.abdullah.openlock.strict"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/LockTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"/>
+
         <!-- Persistent foreground service that watches the foreground app. -->
         <service
             android:name=".OpenLockMonitorService"
