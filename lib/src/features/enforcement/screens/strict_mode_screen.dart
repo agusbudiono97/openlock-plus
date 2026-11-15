@@ -331,6 +331,30 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     }
 
     return Scaffold(
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.gutter,
+            AppSpacing.sm,
+            AppSpacing.gutter,
+            AppSpacing.md,
+          ),
+          child: FilledButton.icon(
+            onPressed: _start,
+            icon: const Icon(Icons.lock_rounded),
+            label: const Text('Aktifkan Mode Ketat'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(54),
+              backgroundColor: const Color(0xFF007E9C),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         bottom: false,
         child: PageList(
@@ -338,6 +362,66 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             const ScreenHeader(
               eyebrow: 'Bangun kebiasaan lebih baik',
               title: 'Mode Ketat',
+            ),
+            // A prominent one-tap control, kept near the top like the
+            // circular lock control in dedicated app-blocking products.
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF006B83), Color(0xFF008FA8), Color(0xFF20B7C5)],
+                ),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF008FA8).withValues(alpha: 0.22),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _start,
+                      child: const SizedBox(
+                        width: 76,
+                        height: 76,
+                        child: Icon(Icons.lock_rounded, color: Colors.white, size: 36),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Aktifkan Mode Ketat',
+                    style: AppTextStyles.h3.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Ketuk ikon kunci untuk memulai komitmen perlindungan.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.white.withValues(alpha: 0.88),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '${_selected.length} aplikasi dipilih',
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
             ),
             VaultCard(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -458,10 +542,6 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                     ),
                 ],
               ),
-            ),
-            VaultButton(
-              label: 'Aktifkan Mode Ketat',
-              onPressed: _start,
             ),
             Text(
               'Sebelum aktif, OpenLock akan meminta izin yang diperlukan untuk menjalankan perlindungan.',
