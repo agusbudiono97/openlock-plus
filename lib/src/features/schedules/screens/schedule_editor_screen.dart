@@ -96,9 +96,12 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final config =
-        ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
-    _hydrate(config);
+    final configAsync = ref.watch(configControllerProvider);
+    final loadedConfig = configAsync.valueOrNull;
+    final config = loadedConfig ?? LockConfig.empty;
+    // Do not hydrate an existing schedule from the temporary empty fallback:
+    // the async config may still be loading on the first frame.
+    if (loadedConfig != null) _hydrate(loadedConfig);
     final appsAsync = ref.watch(installedAppsProvider);
     final isEditing = widget.scheduleId != null;
     final strictActive = config.strictModeActiveAt(DateTime.now());
