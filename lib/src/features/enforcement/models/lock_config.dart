@@ -18,6 +18,9 @@ final class LockConfig {
     this.hideNotifications = false,
     this.notificationOverrides = const {},
     this.schedules = const [],
+    this.strictModeEnabled = false,
+    this.strictModePackages = const {},
+    this.strictModeEndsAtMillis,
   });
 
   /// Apps locked at all times (user toggles in the app picker).
@@ -55,6 +58,17 @@ final class LockConfig {
 
   final List<LockSchedule> schedules;
 
+  /// Strict Mode locks this package set until [strictModeEndsAtMillis].
+  /// A null end time means indefinite. Expiry is evaluated by the native guard.
+  final bool strictModeEnabled;
+  final Set<String> strictModePackages;
+  final int? strictModeEndsAtMillis;
+
+  bool strictModeActiveAt(DateTime now) =>
+      strictModeEnabled &&
+      (strictModeEndsAtMillis == null ||
+          now.millisecondsSinceEpoch < strictModeEndsAtMillis!);
+
   /// Whether notifications from [package] should be hidden. Only locked apps
   /// qualify; an explicit per-app override wins over the global flag. Mirror of
   /// the Kotlin `ConfigStore.shouldHideNotificationsFor`.
@@ -77,6 +91,9 @@ final class LockConfig {
     bool? hideNotifications,
     Map<String, bool>? notificationOverrides,
     List<LockSchedule>? schedules,
+    bool? strictModeEnabled,
+    Set<String>? strictModePackages,
+    int? strictModeEndsAtMillis,
   }) =>
       LockConfig(
         lockedPackages: lockedPackages ?? this.lockedPackages,
@@ -92,6 +109,9 @@ final class LockConfig {
         notificationOverrides:
             notificationOverrides ?? this.notificationOverrides,
         schedules: schedules ?? this.schedules,
+        strictModeEnabled: strictModeEnabled ?? this.strictModeEnabled,
+        strictModePackages: strictModePackages ?? this.strictModePackages,
+        strictModeEndsAtMillis: strictModeEndsAtMillis ?? this.strictModeEndsAtMillis,
       );
 
   Map<String, dynamic> toJson() => {
@@ -106,6 +126,9 @@ final class LockConfig {
         'hideNotifications': hideNotifications,
         'notificationOverrides': notificationOverrides,
         'schedules': schedules.map((s) => s.toJson()).toList(),
+        'strictModeEnabled': strictModeEnabled,
+        'strictModePackages': strictModePackages.toList()..sort(),
+        'strictModeEndsAtMillis': strictModeEndsAtMillis,
       };
 
   factory LockConfig.fromJson(Map<String, dynamic> json) => LockConfig(
@@ -130,6 +153,13 @@ final class LockConfig {
         schedules: ((json['schedules'] as List<dynamic>?) ?? const [])
             .map((e) => LockSchedule.fromJson(e as Map<String, dynamic>))
             .toList(),
+        strictModeEnabled: json['strictModeEnabled'] as bool? ?? false,
+        strictModePackages:
+            ((json['strictModePackages'] as List<dynamic>?) ?? const [])
+                .map((e) => e as String)
+                .toSet(),
+        strictModeEndsAtMillis:
+            (json['strictModeEndsAtMillis'] as num?)?.toInt(),
       );
 
   /// The exact map handed to the native monitor. [pinHash]/[pinSalt] are the
@@ -153,6 +183,9 @@ final class LockConfig {
         'notificationOverrides': notificationOverrides,
         'biometricEnabled': biometricEnabled,
         'schedules': schedules.map((s) => s.toJson()).toList(),
+        'strictModeEnabled': strictModeEnabled,
+        'strictModePackages': strictModePackages.toList()..sort(),
+        'strictModeEndsAtMillis': strictModeEndsAtMillis,
         'pinHash': pinHash,
         'pinSalt': pinSalt,
         'pinIterations': 120000,
