@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
+import 'package:openlock/src/features/apps/services/app_icon_loader.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/core/di.dart';
@@ -186,7 +188,22 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final config = ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
+    final configAsync = ref.watch(configControllerProvider);
+    if (configAsync.isLoading) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+    if (configAsync.hasError) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Text('Pengaturan perlindungan gagal dimuat. Tutup lalu buka kembali OpenLock.'),
+          ),
+        ),
+      );
+    }
+    final config = configAsync.value ?? LockConfig.empty;
     final active = config.strictModeActiveAt(DateTime.now());
     _syncClock(active);
     final apps = ref.watch(installedAppsProvider);
@@ -301,7 +318,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                         AppListRow(
                           title: app.label,
                           subtitle: 'Dikunci sampai komitmen berakhir',
-                          leading: const IconBadge(icon: Icons.lock_rounded),
+                          leading: _StrictAppIcon(app: app),
                           trailing: Icon(Icons.check_circle_rounded, color: colors.positive),
                         ),
                     ],
@@ -488,13 +505,17 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: DropdownButtonFormField<String>(
+                            isExpanded: true,
                             initialValue: _unit,
-                            decoration: const InputDecoration(border: OutlineInputBorder()),
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            ),
                             items: const [
-                              DropdownMenuItem(value: 'menit', child: Text('Menit')),
-                              DropdownMenuItem(value: 'jam', child: Text('Jam')),
-                              DropdownMenuItem(value: 'hari', child: Text('Hari')),
-                              DropdownMenuItem(value: 'bulan', child: Text('Bulan')),
+                              DropdownMenuItem(value: 'menit', child: Text('Menit', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'jam', child: Text('Jam', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'hari', child: Text('Hari', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'bulan', child: Text('Bulan', maxLines: 1, overflow: TextOverflow.ellipsis)),
                             ],
                             onChanged: (value) => setState(() {
                               _unit = value ?? 'jam';
@@ -535,7 +556,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                     AppListRow(
                       title: app.label,
                       subtitle: app.packageName,
-                      leading: const IconBadge(icon: Icons.apps_rounded),
+                      leading: _StrictAppIcon(app: app),
                       onTap: () => setState(() {
                         if (!_selected.add(app.packageName)) {
                           _selected.remove(app.packageName);
@@ -565,6 +586,66 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       ),
     );
   }
+}
+
+
+const double _strictAppIconSize = 40;
+
+/// Reuses the same native launcher-icon cache as the main app list.
+class _StrictAppIcon extends ConsumerWidget {
+  const _StrictAppIcon({required this.app});
+
+  final InstalledApp app;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loader = ref.watch(appIconLoaderProvider);
+    if (loader.isResolved(app)) {
+      return _icon(context, loader.resolvedPath(app));
+    }
+    return FutureBuilder<String?>(
+      future: loader.pathFor(app),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return _fallback(context);
+        if (snapshot.connectionState == ConnectionState.done) {
+          return _icon(context, snapshot.data);
+        }
+        return _placeholder(context);
+      },
+    );
+  }
+
+  Widget _icon(BuildContext context, String? path) {
+    if (path == null) return _fallback(context);
+    final px = (_strictAppIconSize * MediaQuery.devicePixelRatioOf(context)).round();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.file(
+        File(path),
+        width: _strictAppIconSize,
+        height: _strictAppIconSize,
+        cacheWidth: px,
+        cacheHeight: px,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stack) => _fallback(context),
+      ),
+    );
+  }
+
+  Widget _fallback(BuildContext context) => SizedBox.square(
+        dimension: _strictAppIconSize,
+        child: Icon(Icons.android, color: SuiteColors.of(context).textSecondary),
+      );
+
+  Widget _placeholder(BuildContext context) => SizedBox.square(
+        dimension: _strictAppIconSize,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: SuiteColors.of(context).surfaceAlt,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
 }
 
 class _ActiveMetric extends StatelessWidget {
