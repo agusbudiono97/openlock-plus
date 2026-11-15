@@ -67,9 +67,9 @@ class AppPickerScreen extends ConsumerWidget {
                   return const AppEmptyState(
                     compact: true,
                     icon: Icons.error_outline_rounded,
-                    title: 'Could not load apps',
+                    title: 'Gagal memuat aplikasi',
                     message:
-                        'The list of installed apps is unavailable right now.',
+                        'Daftar aplikasi yang terpasang belum tersedia.',
                   );
                 }
                 if (view == null) {
@@ -83,8 +83,8 @@ class AppPickerScreen extends ConsumerWidget {
                   return const AppEmptyState(
                     compact: true,
                     icon: Icons.search_off_rounded,
-                    title: 'No apps match',
-                    message: 'Try a different name.',
+                    title: 'Aplikasi tidak ditemukan',
+                    message: 'Coba kata pencarian lain.',
                   );
                 }
                 final app = view.visible[i];
@@ -119,7 +119,7 @@ class AppPickerScreen extends ConsumerWidget {
   }) {
     switch (index) {
       case 0:
-        return const ScreenHeader(eyebrow: 'Protection', title: 'OpenLock');
+        return const ScreenHeader(eyebrow: 'Perlindungan', title: 'OpenLock');
       case 1:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,9 +141,9 @@ class AppPickerScreen extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SectionLead('Apps'),
+            const SectionLead('Aplikasi'),
             AppSearchField(
-              hint: 'Search apps',
+              hint: 'Cari aplikasi',
               onChanged: (value) =>
                   ref.read(appSearchQueryProvider.notifier).state = value,
             ),
@@ -191,27 +191,27 @@ class _ProtectionHero extends ConsumerWidget {
     // Until the app list arrives, the configured set is the best answer.
     final guarded = (lockedCount ?? config.lockedPackages.length) > 0;
     return HeroMetricCard(
-      label: 'Protected apps',
+      label: 'Aplikasi terlindungi',
       trailing: _GuardPill(guarded: guarded),
       value: ValueText(
         lockedCount == null ? '-' : '$lockedCount',
         style: AppTextStyles.hero.copyWith(color: c.textPrimary),
       ),
       deltaCaption: total == null
-          ? 'Counting installed apps'
-          : 'of $total installed apps',
+          ? 'Menghitung aplikasi terpasang'
+          : 'dari $total aplikasi terpasang',
       footer: [
-        StatTile(label: 'Schedules', value: '$activeSchedules on'),
+        StatTile(label: 'Jadwal', value: '$activeSchedules on'),
         StatTile(
-          label: 'Intruders',
+          label: 'Penyusup',
           value: intruders == null ? '-' : '${intruders.length}',
           valueColor: (intruders?.isNotEmpty ?? false) ? c.negative : null,
         ),
         StatTile(
-          label: 'Relock',
+          label: 'Kunci ulang',
           value: switch (config.relock.mode) {
-            RelockMode.immediately => 'On exit',
-            RelockMode.onScreenOff => 'Screen off',
+            RelockMode.immediately => 'Saat keluar',
+            RelockMode.onScreenOff => 'Layar mati',
             RelockMode.afterTimeout => '${config.relock.timeout.inMinutes} min',
           },
         ),
@@ -245,7 +245,7 @@ class _GuardPill extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              guarded ? 'Guarding' : 'Nothing locked',
+              guarded ? 'Terlindungi' : 'Belum ada yang dikunci',
               style: AppTextStyles.labelStrong.copyWith(color: color),
             ),
           ],
@@ -268,7 +268,7 @@ class _LockNewAppsTile extends ConsumerWidget {
       children: [
         AppListRow(
           leading: const IconBadge(icon: Icons.new_releases_outlined),
-          title: 'Lock newly installed apps',
+          title: 'Kunci aplikasi yang baru dipasang',
           subtitle: 'Guard apps you install later',
           trailing: Switch(value: config.lockNewApps, onChanged: set),
           onTap: () => set(!config.lockNewApps),
