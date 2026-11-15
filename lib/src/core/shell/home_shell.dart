@@ -21,27 +21,27 @@ class HomeShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.apps_outlined),
             selectedIcon: Icon(Icons.apps_rounded),
-            label: 'Apps',
+            label: 'Aplikasi',
           ),
           NavigationDestination(
             icon: Icon(Icons.schedule_outlined),
             selectedIcon: Icon(Icons.schedule_rounded),
-            label: 'Schedules',
+            label: 'Jadwal',
           ),
           NavigationDestination(
             icon: Icon(Icons.shield_outlined),
             selectedIcon: Icon(Icons.shield_rounded),
-            label: 'Intruders',
+            label: 'Penyusup',
           ),
           NavigationDestination(
             icon: Icon(Icons.lock_clock_outlined),
             selectedIcon: Icon(Icons.lock_clock_rounded),
-            label: 'Strict',
+            label: 'Mode Ketat',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Settings',
+            label: 'Pengaturan',
           ),
         ],
       ),
