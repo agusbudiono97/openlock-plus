@@ -8,6 +8,7 @@ import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/core/router/app_router.dart';
 import 'package:openlock/src/core/store_build.dart';
 import 'package:openlock/src/core/theme/theme_palette.dart';
+import 'package:openlock/src/core/theme/theme_palette.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/models/relock_policy.dart';
@@ -416,6 +417,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             RowGroup(
               children: [
                 AppearanceSetting(controller: ref.watch(appearanceProvider)),
+              ],
+            ),
+            const SectionLead('Tema aplikasi'),
+            RowGroup(
+              children: [
+                SettingsTile(
+                  icon: Icons.color_lens_outlined,
+                  title: 'Warna dan aksen',
+                  subtitle: 'Pilih tema siap pakai atau gunakan warna HEX sendiri',
+                  onTap: _editAppTheme,
+                ),
               ],
             ),
             const SectionLead('Tema aplikasi'),
@@ -1334,6 +1346,133 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
   }
 }
 ).hasMatch(hex.text)) return;
+                          await palette.setSeed(Color(0xFF000000 | int.parse(hex.text, radix: 16)));
+                          setDialogState(() {});
+                        },
+                        child: const Text('Terapkan'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await palette.reset();
+                  Navigator.pop(dialogContext);
+                },
+                child: const Text('Reset default'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Selesai'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      hex.dispose();
+    }
+  }
+
+
+  Future<void> _editAppTheme() async {
+    const presets = <(String, Color)>[
+      ('Ocean', Color(0xFF007E9C)),
+      ('Mint', Color(0xFF159B79)),
+      ('Violet', Color(0xFF805AD5)),
+      ('Blue', Color(0xFF3478D4)),
+      ('Rose', Color(0xFFC04475)),
+      ('Amber', Color(0xFFB7791F)),
+      ('Forest', Color(0xFF477A45)),
+      ('Monochrome', Color(0xFF596273)),
+    ];
+    final palette = ThemePaletteScope.of(context);
+    final hex = TextEditingController(
+      text: palette.seed.value.toRadixString(16).substring(2).toUpperCase(),
+    );
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) => AlertDialog(
+            title: const Text('Warna tema aplikasi'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Pilih warna aksen'),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final preset in presets)
+                        InkWell(
+                          onTap: () async {
+                            await palette.setSeed(preset.$2);
+                            hex.text = preset.$2.value
+                                .toRadixString(16)
+                                .substring(2)
+                                .toUpperCase();
+                            setDialogState(() {});
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 76,
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: palette.seed.value == preset.$2.value
+                                    ? Theme.of(dialogContext).colorScheme.primary
+                                    : Theme.of(dialogContext).colorScheme.outlineVariant,
+                                width: palette.seed.value == preset.$2.value ? 2 : 1,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                CircleAvatar(radius: 13, backgroundColor: preset.$2),
+                                const SizedBox(height: 5),
+                                Text(preset.$1, style: Theme.of(dialogContext).textTheme.labelSmall),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Warna custom (HEX)'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: hex,
+                    maxLength: 6,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      prefixText: '#',
+                      hintText: '20C9A5',
+                      counterText: '',
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 13,
+                        backgroundColor: RegExp(r'^[0-9A-Fa-f]{6}\$').hasMatch(hex.text)
+                            ? Color(0xFF000000 | int.parse(hex.text, radix: 16))
+                            : Theme.of(dialogContext).colorScheme.surfaceContainerHighest,
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Pratinjau warna', style: Theme.of(dialogContext).textTheme.bodySmall),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          if (!RegExp(r'^[0-9A-Fa-f]{6}\$').hasMatch(hex.text)) return;
                           await palette.setSeed(Color(0xFF000000 | int.parse(hex.text, radix: 16)));
                           setDialogState(() {});
                         },
