@@ -160,7 +160,7 @@ class _ProtectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(30),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -168,7 +168,7 @@ class _ProtectionCard extends StatelessWidget {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft, end: Alignment.bottomRight,
-              colors: [Color(0xFF087E82), Color(0xFF07516A), Color(0xFF242D59)],
+              colors: [Color(0xFF087E82), Color(0xFF07516A), Color(0xFF59418F)],
             ),
           ),
           child: Padding(
