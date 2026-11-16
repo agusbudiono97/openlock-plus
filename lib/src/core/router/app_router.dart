@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openlock/src/core/shell/home_shell.dart';
 import 'package:openlock/src/features/apps/screens/app_picker_screen.dart';
+import 'package:openlock/src/features/home/screens/home_dashboard_screen.dart';
 import 'package:openlock/src/features/auth/providers/auth_providers.dart';
 import 'package:openlock/src/features/auth/screens/recovery_offer_screen.dart';
 import 'package:openlock/src/features/auth/screens/setup_pin_screen.dart';
@@ -26,6 +27,7 @@ abstract final class AppRoutes {
   static const String unlock = '/unlock';
   static const String recoveryOffer = '/recovery-key';
   static const String permissions = '/permissions';
+  static const String home = '/home';
   static const String apps = '/apps';
   static const String schedules = '/schedules';
   static const String intruder = '/intruder';
@@ -79,7 +81,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             AppRoutes.setup,
             AppRoutes.unlock,
           };
-          return gates.contains(location) ? AppRoutes.apps : null;
+          return gates.contains(location) ? AppRoutes.home : null;
       }
     },
     routes: [
@@ -102,6 +104,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.recoveryOffer,
         builder: (_, __) => const RecoveryOfferScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.strictMode,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, __) => const StrictModeScreen(),
       ),
       GoRoute(
         path: AppRoutes.permissions,
@@ -145,6 +152,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: AppRoutes.home,
+                builder: (_, __) => const HomeDashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.apps,
                 builder: (_, __) => const AppPickerScreen(),
               ),
@@ -163,14 +178,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.intruder,
                 builder: (_, __) => const IntruderLogScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.strictMode,
-                builder: (_, __) => const StrictModeScreen(),
               ),
             ],
           ),
