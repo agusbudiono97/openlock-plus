@@ -57,10 +57,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            // CI test APKs use the persistent release key when configured.
+            // Local builds without signing material retain the standard debug key.
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+        }
         release {
-            // Signs with the release keystore when android/key.properties exists
-            // (created by the Release workflow from repo secrets); falls back to
-            // debug keys otherwise so local `flutter run --release` still works.
+            // Test and release APKs share one signing identity for in-place updates.
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
