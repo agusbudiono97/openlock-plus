@@ -57,6 +57,8 @@ class AppPickerScreen extends ConsumerWidget {
                 parent: AlwaysScrollableScrollPhysics(),
               ),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              // Resolve upcoming launcher icons before they enter the viewport.
+              cacheExtent: 720,
               itemBuilder: (context, index) {
                 if (index < _headerCount) {
                   return _header(
@@ -94,15 +96,17 @@ class AppPickerScreen extends ConsumerWidget {
                   );
                 }
                 final app = view.visible[i];
-                return GroupedRowItem(
-                  isFirst: i == 0,
-                  isLast: i == view.visible.length - 1,
-                  child: _AppTile(
-                    app: app,
-                    config: config,
-                    onToggle: () => ref
-                        .read(configControllerProvider.notifier)
-                        .toggleApp(app.packageName),
+                return RepaintBoundary(
+                  child: GroupedRowItem(
+                    isFirst: i == 0,
+                    isLast: i == view.visible.length - 1,
+                    child: _AppTile(
+                      app: app,
+                      config: config,
+                      onToggle: () => ref
+                          .read(configControllerProvider.notifier)
+                          .toggleApp(app.packageName),
+                    ),
                   ),
                 );
               },
