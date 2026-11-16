@@ -99,7 +99,7 @@ class _NavigationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final foreground = selected ? colors.primary : colors.onSurfaceVariant;
+    final foreground = selected ? colors.secondary : colors.onSurfaceVariant;
 
     return Semantics(
       button: true,
@@ -117,7 +117,7 @@ class _NavigationItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 7),
             decoration: BoxDecoration(
               color: selected
-                  ? colors.primary.withValues(alpha: .12)
+                  ? colors.secondary.withValues(alpha: .13)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(18),
             ),
