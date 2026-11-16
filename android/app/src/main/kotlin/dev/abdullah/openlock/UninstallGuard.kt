@@ -3,7 +3,13 @@ package dev.abdullah.openlock
 /** One node of the active window's accessibility tree: its resource id (e.g.
  *  `com.android.settings:id/entity_header_title`) and its visible text or
  *  content description. */
-data class ScreenNode(\n    val viewId: String?,\n    val text: String?,\n    val isChecked: Boolean = false,\n    val isSelected: Boolean = false,\n    val insideSelectedContainer: Boolean = false,\n)
+data class ScreenNode(
+    val viewId: String?,
+    val text: String?,
+    val isChecked: Boolean = false,
+    val isSelected: Boolean = false,
+    val insideSelectedContainer: Boolean = false,
+)
 
 /**
  * Decides whether the active window is an OS screen *about OpenLock itself*
