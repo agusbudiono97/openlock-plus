@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.12.1] - 2026-11-16
+
+### Fixed
+- Remove an unused Dart import that caused the zero-tolerance static analysis job to fail.
+
+
 ## [1.12.0] - 2026-11-16
 
 ### Added
