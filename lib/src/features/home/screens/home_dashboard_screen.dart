@@ -44,7 +44,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                             color: scheme.primary, fontWeight: FontWeight.w800, letterSpacing: 1.5,
                           )),
                           const SizedBox(height: 4),
-                          Text('Beranda', style: AppTextStyles.h1.copyWith(
+                          Text('Beranda', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: scheme.onSurface, fontWeight: FontWeight.w800,
                           )),
                         ],
