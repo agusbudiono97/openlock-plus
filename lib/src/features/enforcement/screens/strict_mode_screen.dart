@@ -401,7 +401,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [scheme.primaryContainer, scheme.primary, scheme.primary],
