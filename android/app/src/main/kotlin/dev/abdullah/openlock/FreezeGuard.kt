@@ -1,12 +1,9 @@
 package dev.abdullah.openlock
 
 /**
- * Recognises XOS Freezer actions targeting OpenLock.
- *
- * XOS does not expose a literal "Freeze" button in the observed flow. It
- * opens an app picker ("Pilih aplikasi (n/68)"), lets the user select
- * OpenLock, then freezes the selection when "Oke" is tapped. Match that
- * complete picker signature rather than relying only on a Freeze label.
+ * Recognises XOS Freezer actions targeting OpenLock without blocking the
+ * Freezer's general app picker. In the XOS picker, OpenLock is visible even
+ * when it is NOT selected, so the picker signature alone is insufficient.
  */
 object FreezeGuard {
     private val freezeLabels = setOf(
@@ -21,15 +18,18 @@ object FreezeGuard {
         ownPackage: String,
     ): Boolean {
         val texts = nodes.mapNotNull { it.text?.trim()?.takeIf(String::isNotEmpty) }
-        val namesOpenLock = texts.any { text ->
+        val ownIdentityNodes = nodes.filter { node ->
+            val text = node.text?.trim() ?: return@filter false
             text == ownPackage || text.equals(ownLabel, ignoreCase = true)
         }
-        if (!namesOpenLock) return false
+        if (ownIdentityNodes.isEmpty()) return false
 
         val normalized = texts.map {
             it.lowercase().replace(Regex("\\s+"), " ").trim()
         }
 
+        // Explicit single-app freeze screens are safe to match when the
+        // current window names OpenLock and exposes a freeze action.
         val explicitFreezeAction = normalized.any { text ->
             text in freezeLabels ||
                 text.contains("add to freezer") ||
@@ -37,14 +37,17 @@ object FreezeGuard {
         }
         if (explicitFreezeAction) return true
 
-        // Observed Infinix/XOS flow: + -> "Pilih aplikasi (n/68)" ->
-        // select OpenLock -> "Batal" / "Oke". The confirmation commits
-        // the freeze immediately, so block the picker before "Oke".
+        // XOS flow: "Pilih aplikasi (n/68)" + app tiles + Batal/Oke.
+        // OpenLock is always present in this list, so only block when its own
+        // accessibility node (or a selected row/container) reports selected.
         val appPicker = normalized.any { text ->
             text.startsWith("pilih aplikasi") || text.startsWith("select apps")
         }
         val confirm = normalized.any { it == "oke" || it == "ok" || it == "done" }
         val cancel = normalized.any { it == "batal" || it == "cancel" }
-        return appPicker && confirm && cancel
+        val ownAppSelected = ownIdentityNodes.any { node ->
+            node.isChecked || node.isSelected || node.insideSelectedContainer
+        }
+        return appPicker && confirm && cancel && ownAppSelected
     }
 }
