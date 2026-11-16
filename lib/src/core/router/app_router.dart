@@ -85,8 +85,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.splash,
-        builder: (_, __) =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (context, state) => const _OpenLockSplash(),
       ),
       GoRoute(
         path: AppRoutes.onboarding,
@@ -188,3 +187,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+
+class _OpenLockSplash extends StatelessWidget {
+  const _OpenLockSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Scaffold(
+      backgroundColor: colors.surface,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Icon(Icons.shield_rounded, size: 42, color: colors.primary),
+              ),
+              const SizedBox(height: 20),
+              Text('OpenLock', style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800, letterSpacing: -0.5,
+              )),
+              const SizedBox(height: 8),
+              Text('Menyiapkan perlindungan...', style: textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              )),
+              const SizedBox(height: 28),
+              SizedBox(width: 28, height: 28, child: CircularProgressIndicator(
+                strokeWidth: 2.6, color: colors.primary,
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
