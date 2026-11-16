@@ -73,7 +73,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     ];
     final palette = ThemePaletteScope.of(context);
     final hex = TextEditingController(
-      text: palette.seed.value.toRadixString(16).substring(2).toUpperCase(),
+      text: palette.seed.toARGB32().toRadixString(16).substring(2).toUpperCase(),
     );
     try {
       await showDialog<void>(
@@ -95,7 +95,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         InkWell(
                           onTap: () async {
                             await palette.setSeed(preset.$2);
-                            hex.text = preset.$2.value.toRadixString(16)
+                            if (!dialogContext.mounted) return;
+                            hex.text = preset.$2.toARGB32().toRadixString(16)
                                 .substring(2).toUpperCase();
                             setDialogState(() {});
                           },
@@ -106,10 +107,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: palette.seed.value == preset.$2.value
+                                color: palette.seed.toARGB32() == preset.$2.toARGB32()
                                     ? Theme.of(dialogContext).colorScheme.primary
                                     : Theme.of(dialogContext).colorScheme.outlineVariant,
-                                width: palette.seed.value == preset.$2.value ? 2 : 1,
+                                width: palette.seed.toARGB32() == preset.$2.toARGB32() ? 2 : 1,
                               ),
                             ),
                             child: Column(children: [
@@ -150,6 +151,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         if (!RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(hex.text)) return;
                         await palette.setSeed(
                             Color(0xFF000000 | int.parse(hex.text, radix: 16)));
+                        if (!dialogContext.mounted) return;
                         setDialogState(() {});
                       },
                       child: const Text('Terapkan'),
@@ -162,6 +164,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               TextButton(
                 onPressed: () async {
                   await palette.reset();
+                  if (!dialogContext.mounted) return;
                   Navigator.pop(dialogContext);
                 },
                 child: const Text('Reset default'),
@@ -400,15 +403,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     final config =
-        ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
+        ref.watch(configControllerProvider).toARGB32()OrNull ?? LockConfig.empty;
     final controller = ref.read(configControllerProvider.notifier);
     final biometricSupported =
-        ref.watch(biometricSupportedProvider).valueOrNull ?? false;
+        ref.watch(biometricSupportedProvider).toARGB32()OrNull ?? false;
     final biometricEnabled =
-        ref.watch(biometricEnabledProvider).valueOrNull ?? false;
+        ref.watch(biometricEnabledProvider).toARGB32()OrNull ?? false;
     final preventUninstall =
-        ref.watch(preventUninstallControllerProvider).valueOrNull ?? false;
-    final permissions = ref.watch(permissionsControllerProvider).valueOrNull;
+        ref.watch(preventUninstallControllerProvider).toARGB32()OrNull ?? false;
+    final permissions = ref.watch(permissionsControllerProvider).toARGB32()OrNull;
     final notificationAccess = permissions?.notificationAccess ?? false;
     final screenGuardAccess = permissions?.screenGuardAccess ?? false;
     final strictActive = config.strictModeActiveAt(DateTime.now());
@@ -734,7 +737,7 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
 
   @override
   Widget build(BuildContext context) {
-    final autoCheck = ref.watch(updateAutoCheckProvider).valueOrNull ?? true;
+    final autoCheck = ref.watch(updateAutoCheckProvider).toARGB32()OrNull ?? true;
     Future<void> setAuto(bool v) async {
       await ref.read(secureStorageProvider).write(
             key: updateAutoCheckKey,
