@@ -169,8 +169,16 @@ class _StatsTile extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 126),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(21),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              scheme.secondary.withValues(alpha: .10),
+              scheme.primary.withValues(alpha: .05),
+              scheme.surfaceContainerLow,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: scheme.outlineVariant.withValues(alpha: .38),
           ),
@@ -182,10 +190,10 @@ class _StatsTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: .12),
+                color: scheme.secondary.withValues(alpha: .14),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: scheme.primary, size: 19),
+              child: Icon(icon, color: scheme.secondary, size: 19),
             ),
             const SizedBox(height: 13),
             Text(
