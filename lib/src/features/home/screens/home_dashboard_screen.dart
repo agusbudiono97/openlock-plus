@@ -188,7 +188,6 @@ class _ProtectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Material(
       borderRadius: BorderRadius.circular(28),
       clipBehavior: Clip.antiAlias,
