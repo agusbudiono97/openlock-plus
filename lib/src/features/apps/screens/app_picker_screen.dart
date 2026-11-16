@@ -65,8 +65,6 @@ class AppPickerScreen extends ConsumerWidget {
                     context,
                     ref,
                     index,
-                    config: config,
-                    total: view?.total,
                     lockedCount: view?.lockedCount,
                   );
                 }
@@ -117,44 +115,36 @@ class AppPickerScreen extends ConsumerWidget {
     );
   }
 
-  static const _headerCount = 5;
+  static const _headerCount = 3;
 
   Widget _header(
     BuildContext context,
     WidgetRef ref,
     int index, {
-    required LockConfig config,
-    required int? total,
     required int? lockedCount,
   }) {
     switch (index) {
       case 0:
-        return const ScreenHeader(eyebrow: 'Perlindungan', title: 'OpenLock');
+        return const ScreenHeader(
+          eyebrow: 'KENDALIKAN AKSES',
+          title: 'Aplikasi',
+        );
       case 1:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!kStoreBuild) const _UpdateBannerCard(),
-            _ProtectionHero(
-              config: config,
-              lockedCount: lockedCount,
-              total: total,
+            const SectionLead(
+              'Aplikasi terpasang',
+              subtitle: 'Pilih aplikasi yang ingin kamu batasi aksesnya.',
             ),
-          ],
-        );
-      case 2:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SectionLead('Daftar aplikasi'),
             AppSearchField(
-              hint: 'Cari aplikasi',
+              hint: 'Cari nama aplikasi',
               onChanged: (value) =>
                   ref.read(appSearchQueryProvider.notifier).state = value,
             ),
           ],
         );
-      case 3:
+      default:
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xs,
@@ -162,234 +152,24 @@ class AppPickerScreen extends ConsumerWidget {
             AppSpacing.xs,
             AppSpacing.sm,
           ),
-          child: Text(
-            lockedCount == null ? '' : '$lockedCount aplikasi dikunci',
-            style: AppTextStyles.label.copyWith(
-              color: SuiteColors.of(context).textSecondary,
-            ),
-          ),
-        );
-      default:
-        return Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.md),
           child: Row(
             children: [
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: () => context.push(AppRoutes.strictMode),
-                  icon: const Icon(Icons.lock_clock_rounded),
-                  label: const Text('Blokir Cepat'),
+                child: Text(
+                  lockedCount == null
+                      ? 'Memuat daftar aplikasi...'
+                      : '$lockedCount aplikasi sedang dikunci',
+                  style: AppTextStyles.label.copyWith(
+                    color: SuiteColors.of(context).textSecondary,
+                  ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(AppRoutes.schedules),
-                  icon: const Icon(Icons.schedule_rounded),
-                  label: const Text('Jadwal baru'),
-                ),
-              ),
+              Icon(Icons.tune_rounded,
+                  size: 17, color: SuiteColors.of(context).textSecondary),
             ],
           ),
         );
     }
-  }
-}
-
-class _ProtectionStat extends StatelessWidget {
-  const _ProtectionStat({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = SuiteColors.of(context);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 104, maxWidth: 150),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.caption.copyWith(color: c.textSecondary),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.labelStrong.copyWith(
-              color: valueColor ?? c.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The dashboard hero: how many apps are guarded, with schedules, intruder
-/// events and the relock rule that explain the protection beneath it.
-class _ProtectionHero extends ConsumerWidget {
-  const _ProtectionHero({
-    required this.config,
-    required this.lockedCount,
-    required this.total,
-  });
-
-  final LockConfig config;
-
-  /// Null until the installed apps have loaded.
-  final int? lockedCount;
-  final int? total;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = SuiteColors.of(context);
-    final intruders = ref.watch(intruderControllerProvider).valueOrNull;
-    final activeSchedules = config.schedules.where((s) => s.enabled).length;
-    final relockLabel = switch (config.relock.mode) {
-      RelockMode.immediately => 'Saat keluar',
-      RelockMode.onScreenOff => 'Layar mati',
-      RelockMode.afterTimeout => '${config.relock.timeout.inMinutes} menit',
-    };
-
-    // Keep the dashboard card local instead of using a fixed-column footer.
-    // The soft accent wash adds depth without changing any protection state.
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: c.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
-        side: BorderSide(color: c.hairline),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              scheme.primaryContainer.withValues(alpha: 0.48),
-              c.surface,
-              c.surface,
-            ],
-            stops: const [0, 0.48, 1],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: Icon(
-                      Icons.shield_moon_rounded,
-                      color: scheme.primary,
-                      size: 21,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.smd),
-                  Expanded(
-                    child: Text(
-                      'Aplikasi terlindungi',
-                      style: AppTextStyles.label.copyWith(
-                        color: c.textSecondary,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.09),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Text(
-                      'OPENLOCK',
-                      style: AppTextStyles.caption.copyWith(
-                        color: scheme.primary,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.08),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                ),
-                child: Text(
-                  lockedCount == null ? '-' : '$lockedCount',
-                  key: ValueKey(lockedCount),
-                  style: AppTextStyles.hero.copyWith(
-                    color: c.textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                total == null
-                    ? 'Menghitung aplikasi terpasang'
-                    : 'dari $total aplikasi terpasang',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodySmall.copyWith(color: c.textTertiary),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Divider(height: 1, color: c.hairline),
-              const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  _ProtectionStat(label: 'Jadwal', value: '$activeSchedules aktif'),
-                  _ProtectionStat(
-                    label: 'Penyusup',
-                    value: intruders == null ? '-' : '${intruders.length}',
-                    valueColor:
-                        (intruders?.isNotEmpty ?? false) ? c.negative : null,
-                  ),
-                  _ProtectionStat(label: 'Kunci ulang', value: relockLabel),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 
