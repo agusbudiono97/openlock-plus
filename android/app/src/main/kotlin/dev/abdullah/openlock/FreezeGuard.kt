@@ -1,9 +1,12 @@
 package dev.abdullah.openlock
 
 /**
- * Best-effort recognition of an OEM app-freezer action targeting OpenLock.
- * A match requires OpenLock's exact label/package AND an explicit freeze
- * action in the same accessibility window.
+ * Recognises XOS Freezer actions targeting OpenLock.
+ *
+ * XOS does not expose a literal "Freeze" button in the observed flow. It
+ * opens an app picker ("Pilih aplikasi (n/68)"), lets the user select
+ * OpenLock, then freezes the selection when "Oke" is tapped. Match that
+ * complete picker signature rather than relying only on a Freeze label.
  */
 object FreezeGuard {
     private val freezeLabels = setOf(
@@ -23,11 +26,25 @@ object FreezeGuard {
         }
         if (!namesOpenLock) return false
 
-        return texts.any { text ->
-            val normalized = text.lowercase().replace(Regex("\\s+"), " ")
-            normalized in freezeLabels ||
-                normalized.contains("add to freezer") ||
-                normalized.contains("bekukan aplikasi")
+        val normalized = texts.map {
+            it.lowercase().replace(Regex("\\s+"), " ").trim()
         }
+
+        val explicitFreezeAction = normalized.any { text ->
+            text in freezeLabels ||
+                text.contains("add to freezer") ||
+                text.contains("bekukan aplikasi")
+        }
+        if (explicitFreezeAction) return true
+
+        // Observed Infinix/XOS flow: + -> "Pilih aplikasi (n/68)" ->
+        // select OpenLock -> "Batal" / "Oke". The confirmation commits
+        // the freeze immediately, so block the picker before "Oke".
+        val appPicker = normalized.any { text ->
+            text.startsWith("pilih aplikasi") || text.startsWith("select apps")
+        }
+        val confirm = normalized.any { it == "oke" || it == "ok" || it == "done" }
+        val cancel = normalized.any { it == "batal" || it == "cancel" }
+        return appPicker && confirm && cancel
     }
 }
