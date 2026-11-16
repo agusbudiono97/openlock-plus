@@ -40,13 +40,14 @@ class HomeDashboardScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('RUANG KONTROL', style: AppTextStyles.caption.copyWith(
-                            color: scheme.primary, fontWeight: FontWeight.w800, letterSpacing: 1.5,
-                          )),
-                          const SizedBox(height: 4),
-                          Text('Beranda', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          Text('Halo, Fokus! 👋', style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             color: scheme.onSurface, fontWeight: FontWeight.w800,
                           )),
+                          const SizedBox(height: 4),
+                          Text(strictActive ? 'Komitmenmu sedang berjalan' : 'Kamu sedang terlindungi',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            )),
                         ],
                       ),
                     ),
@@ -72,53 +73,24 @@ class HomeDashboardScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(child: _MetricCard(
-                      icon: Icons.apps_rounded, label: 'Aplikasi dikunci',
-                      value: '$lockedCount', tint: scheme.primary,
+                      icon: Icons.apps_rounded,
+                      label: 'Aplikasi terkunci',
+                      value: '$lockedCount',
+                      tint: scheme.primary,
                     )),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 9),
                     Expanded(child: _MetricCard(
-                      icon: Icons.calendar_month_rounded, label: 'Jadwal aktif',
-                      value: '${activeSchedules.length}', tint: const Color(0xFF9B82F6),
+                      icon: Icons.shield_outlined,
+                      label: 'Percobaan diblokir',
+                      value: '${events.length}',
+                      tint: const Color(0xFFFF766D),
                     )),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
+                    const SizedBox(width: 9),
                     Expanded(child: _MetricCard(
-                      icon: Icons.shield_outlined, label: 'Percobaan tercatat',
-                      value: '${events.length}', tint: const Color(0xFFF0A35A),
-                    )),
-                    const SizedBox(width: 12),
-                    Expanded(child: _MetricCard(
-                      icon: Icons.photo_camera_back_outlined, label: 'Foto penyusup',
-                      value: '${events.where((e) => e.photoPath != null).length}',
-                      tint: const Color(0xFF55B99A),
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 26),
-                _SectionHeading(
-                  title: 'Akses cepat',
-                  action: 'Lihat aplikasi',
-                  onAction: () => context.go(AppRoutes.apps),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _QuickAction(
-                      icon: Icons.apps_rounded, label: 'Pilih aplikasi',
-                      onTap: () => context.go(AppRoutes.apps),
-                    )),
-                    const SizedBox(width: 10),
-                    Expanded(child: _QuickAction(
-                      icon: Icons.schedule_rounded, label: 'Atur jadwal',
-                      onTap: () => context.go(AppRoutes.schedules),
-                    )),
-                    const SizedBox(width: 10),
-                    Expanded(child: _QuickAction(
-                      icon: Icons.lock_clock_rounded, label: 'Mode ketat',
-                      onTap: () => context.push(AppRoutes.strictMode),
+                      icon: Icons.calendar_month_rounded,
+                      label: 'Jadwal aktif',
+                      value: '${activeSchedules.length}',
+                      tint: const Color(0xFFFFC15B),
                     )),
                   ],
                 ),
@@ -269,7 +241,7 @@ class _MetricCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: scheme.outlineVariant.withValues(alpha: .38)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -291,32 +263,6 @@ class _SectionHeading extends StatelessWidget {
     Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
     if (action != null) TextButton(onPressed: onAction, child: Text(action!)),
   ]);
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
-  final IconData icon; final String label; final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 7),
-          child: Column(children: [
-            Icon(icon, color: scheme.primary, size: 23),
-            const SizedBox(height: 8),
-            Text(label, textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
-          ]),
-        ),
-      ),
-    );
-  }
 }
 
 class _SchedulePreview extends StatelessWidget {
