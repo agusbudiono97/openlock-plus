@@ -137,7 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   Row(children: [
                     CircleAvatar(
                       radius: 13,
-                      backgroundColor: RegExp(r'^[0-9A-Fa-f]{6}\$').hasMatch(hex.text)
+                      backgroundColor: RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(hex.text)
                           ? Color(0xFF000000 | int.parse(hex.text, radix: 16))
                           : Theme.of(dialogContext).colorScheme.surfaceContainerHighest,
                     ),
@@ -147,7 +147,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     const Spacer(),
                     TextButton(
                       onPressed: () async {
-                        if (!RegExp(r'^[0-9A-Fa-f]{6}\$').hasMatch(hex.text)) return;
+                        if (!RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(hex.text)) return;
                         await palette.setSeed(
                             Color(0xFF000000 | int.parse(hex.text, radix: 16)));
                         setDialogState(() {});
