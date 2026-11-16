@@ -51,7 +51,7 @@ class AppPickerScreen extends ConsumerWidget {
               ),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               // Resolve upcoming launcher icons before they enter the viewport.
-              cacheExtent: 720,
+              cacheExtent: 900,
               itemBuilder: (context, index) {
                 if (index < _headerCount) {
                   return _header(
@@ -120,9 +120,57 @@ class AppPickerScreen extends ConsumerWidget {
   }) {
     switch (index) {
       case 0:
-        return const ScreenHeader(
-          eyebrow: 'DAFTAR APLIKASI',
-          title: 'Aplikasi terlindungi',
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const ScreenHeader(
+              eyebrow: 'KENDALI AKSES',
+              title: 'Aplikasi terlindungi',
+            ),
+            Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).colorScheme.secondary.withValues(alpha: .16),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .35),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(
+                      Icons.shield_outlined,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'Pilih aplikasi yang ingin kamu jauhkan sementara.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: SuiteColors.of(context).textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       case 1:
         return Column(
