@@ -334,22 +334,3 @@ class _IconPlaceholder extends StatelessWidget {
 
 /// "Update available" card, shown when a newer GitHub release exists and the
 /// user hasn't dismissed it this session.
-class _UpdateBannerCard extends ConsumerWidget {
-  const _UpdateBannerCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final info = ref.watch(updateCheckProvider).valueOrNull;
-    final dismissed = ref.watch(updateDismissedProvider);
-    if (info == null || dismissed) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.smd),
-      child: UpdateBanner(
-        info: info,
-        onUpdate: () => ref.read(updateServiceProvider).openDownload(info),
-        onDismiss: () =>
-            ref.read(updateDismissedProvider.notifier).state = true,
-      ),
-    );
-  }
-}
