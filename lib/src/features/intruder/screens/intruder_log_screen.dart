@@ -30,7 +30,7 @@ class IntruderLogScreen extends ConsumerWidget {
           data: (records) => PageList(
             children: [
               ScreenHeader(
-                eyebrow: 'Ringkasan perlindungan',
+                eyebrow: 'PUSAT AKTIVITAS',
                 title: 'Statistik',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -162,33 +162,50 @@ class _StatsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = SuiteColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 154,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: colors.textSecondary),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                value,
-                style: AppTextStyles.numberMedium.copyWith(
-                  color: colors.textPrimary,
-                ),
-              ),
-              Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.caption.copyWith(
-                  color: colors.textSecondary,
-                ),
-              ),
-            ],
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 126),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(21),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: .38),
           ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: scheme.primary, size: 19),
+            ),
+            const SizedBox(height: 13),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -.6,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.25,
+              ),
+            ),
+          ],
         ),
       ),
     );
