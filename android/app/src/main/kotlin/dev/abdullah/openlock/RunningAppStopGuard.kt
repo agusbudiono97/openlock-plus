@@ -20,8 +20,7 @@ object RunningAppStopGuard {
     ): Boolean {
         val texts = nodes.mapNotNull { it.text?.trim()?.takeIf(String::isNotEmpty) }
         val namesOpenLock = texts.any { text ->
-            text == ownPackage || text.equals(ownLabel, ignoreCase = true) ||
-                containsWholeLabel(text, ownLabel)
+            text == ownPackage || text.equals(ownLabel, ignoreCase = true)
         }
         if (!namesOpenLock) return false
 
@@ -33,10 +32,4 @@ object RunningAppStopGuard {
         }
     }
 
-    private fun containsWholeLabel(text: String, label: String): Boolean {
-        if (label.isBlank()) return false
-        val escaped = Regex.escape(label.trim())
-        return Regex("(^|[^\\p{L}\\p{N}])$escaped([^\\p{L}\\p{N}]|$)", RegexOption.IGNORE_CASE)
-            .containsMatchIn(text)
-    }
 }
