@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Four primary sections; schedules remain reachable from the Blocking tab.
+/// Primary destinations for all five existing app sections.
 class HomeShell extends StatelessWidget {
   const HomeShell({required this.shell, super.key});
 
   final StatefulNavigationShell shell;
 
-  static const _branches = [0, 3, 2, 4];
+  // Visual order: Blocking, Schedules, Strict Mode, Statistics, Profile.
+  // These map to the existing router branch indexes; no route is removed.
+  static const _branches = [0, 1, 3, 2, 4];
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +64,11 @@ class HomeShell extends StatelessWidget {
               icon: Icon(Icons.apps_outlined),
               selectedIcon: Icon(Icons.apps_rounded),
               label: 'Pemblokiran',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month_rounded),
+              label: 'Jadwal',
             ),
             NavigationDestination(
               icon: Icon(Icons.lock_clock_outlined),
