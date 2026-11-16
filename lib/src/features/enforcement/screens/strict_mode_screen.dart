@@ -211,6 +211,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     _syncClock(active);
     final apps = ref.watch(installedAppsProvider);
     final colors = SuiteColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
 
     if (active) {
       final endAt = config.strictModeEndsAtMillis == null
@@ -322,7 +323,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                           title: app.label,
                           subtitle: 'Dikunci sampai komitmen berakhir',
                           leading: _StrictAppIcon(app: app),
-                          trailing: Icon(Icons.check_circle_rounded, color: colors.positive),
+                          trailing: Icon(Icons.check_circle_rounded, color: scheme.primary),
                         ),
                     ],
                   );
@@ -378,7 +379,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             label: const Text('Aktifkan Mode Ketat'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(54),
-              backgroundColor: const Color(0xFF007E9C),
+              backgroundColor: scheme.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -403,12 +404,12 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF006B83), Color(0xFF008FA8), Color(0xFF20B7C5)],
+                  colors: [scheme.primaryContainer, scheme.primary, scheme.primary],
                 ),
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF008FA8).withValues(alpha: 0.22),
+                    color: scheme.primary.withValues(alpha: 0.22),
                     blurRadius: 24,
                     offset: const Offset(0, 10),
                   ),
