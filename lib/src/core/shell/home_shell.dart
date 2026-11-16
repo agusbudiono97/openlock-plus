@@ -36,7 +36,7 @@ class HomeShell extends StatelessWidget {
           color: colors.surface,
           border: Border(
             top: BorderSide(
-              color: colors.outlineVariant.withOpacity(0.45),
+              color: colors.outlineVariant.withValues(alpha: 0.45),
               width: 0.7,
             ),
           ),
