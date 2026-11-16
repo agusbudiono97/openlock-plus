@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.12.0] - 2026-11-16
+
+### Added
+- Exclude the OpenLock launcher task from Android Recents while keeping its foreground monitor and accessibility enforcement services independent of the launcher task.
+- Add an accessibility-based Strict Mode enforcement path that blocks selected apps even when the main monitor service is unavailable.
+- Apply the Strict Mode barrier to OpenLock's own App info and Device Administrator deactivation screens when the accessibility guard recognises them.
+
+### Improved
+- Debounce accessibility-triggered barriers to avoid repeated launches from window-content events.
+- Keep the existing UsageStats monitor as a second enforcement path.
+
+### Notes
+- Requires the OpenLock Accessibility service to remain enabled for the independent enforcement and OS-settings guard.
+- Android does not let an ordinary app make Device Administrator impossible to deactivate. Force-stop, disabling Accessibility, revoking special access, or OEM/system-level termination may still bypass protection.
+- Debug/test build. APK update signing compatibility is a separate issue and may require a one-time migration before future in-place updates work.
+
+# Changelog
+
 ## [1.11.4] - 2026-11-15
 
 ### Fixed
