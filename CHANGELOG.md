@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.2] - 2026-11-16
+
+### Fixed
+- Sign CI test APKs with the same persistent keystore as release APKs, enabling in-place updates across revisions.
+- Fail the test APK workflow when persistent signing secrets are missing instead of publishing an APK signed with a temporary debug key.
+
+
 ## [1.12.1] - 2026-11-16
 
 ### Fixed
