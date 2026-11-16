@@ -21,8 +21,8 @@ class ThemePaletteController extends ChangeNotifier {
   }
 
   Future<void> setSeed(Color color) async {
-    final value = color.value & 0x00FFFFFF;
-    if ((_seed.value & 0x00FFFFFF) == value) return;
+    final value = color.toARGB32() & 0x00FFFFFF;
+    if ((_seed.toARGB32() & 0x00FFFFFF) == value) return;
     _seed = Color(0xFF000000 | value);
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
