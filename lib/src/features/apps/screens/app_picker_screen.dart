@@ -4,18 +4,13 @@ import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:core_update/core_update.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openlock/src/core/di.dart';
-import 'package:openlock/src/core/router/app_router.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
-import 'package:openlock/src/core/store_build.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
-import 'package:openlock/src/features/enforcement/models/relock_policy.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
-import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
 
 class AppPickerScreen extends ConsumerWidget {
   const AppPickerScreen({super.key});
