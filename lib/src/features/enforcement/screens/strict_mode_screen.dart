@@ -21,6 +21,8 @@ class StrictModeScreen extends ConsumerStatefulWidget {
 
 class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
   final _amount = TextEditingController(text: '1');
+  final _appSearch = TextEditingController();
+  String _appQuery = '';
   final Set<String> _selected = {};
   String _unit = 'jam';
   bool _indefinite = false;
@@ -50,6 +52,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
   void dispose() {
     _clock?.cancel();
     _amount.dispose();
+    _appSearch.dispose();
     super.dispose();
   }
 
@@ -543,6 +546,31 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 Text('${_selected.length} dipilih', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
               ],
             ),
+            TextField(
+              controller: _appSearch,
+              onChanged: (value) => setState(() => _appQuery = value.trim().toLowerCase()),
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'Cari nama atau paket aplikasi',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _appQuery.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Hapus pencarian',
+                        onPressed: () {
+                          _appSearch.clear();
+                          setState(() => _appQuery = '');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
             apps.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => const AppEmptyState(
@@ -550,31 +578,47 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 icon: Icons.error_outline_rounded,
                 title: 'Tidak dapat memuat daftar aplikasi',
               ),
-              data: (items) => RowGroup(
-                children: [
-                  for (final app in items)
-                    AppListRow(
-                      title: app.label,
-                      subtitle: app.packageName,
-                      leading: _StrictAppIcon(app: app),
-                      onTap: () => setState(() {
-                        if (!_selected.add(app.packageName)) {
-                          _selected.remove(app.packageName);
-                        }
-                      }),
-                      trailing: Checkbox(
-                        value: _selected.contains(app.packageName),
-                        onChanged: (value) => setState(() {
-                          if (value == true) {
-                            _selected.add(app.packageName);
-                          } else {
+              data: (items) {
+                final query = _appQuery;
+                final filtered = query.isEmpty
+                    ? items
+                    : items.where((app) =>
+                        app.label.toLowerCase().contains(query) ||
+                        app.packageName.toLowerCase().contains(query)).toList();
+                if (filtered.isEmpty) {
+                  return const AppEmptyState(
+                    compact: true,
+                    icon: Icons.search_off_rounded,
+                    title: 'Aplikasi tidak ditemukan',
+                    message: 'Coba kata pencarian lain.',
+                  );
+                }
+                return RowGroup(
+                  children: [
+                    for (final app in filtered)
+                      AppListRow(
+                        title: app.label,
+                        subtitle: app.packageName,
+                        leading: _StrictAppIcon(app: app),
+                        onTap: () => setState(() {
+                          if (!_selected.add(app.packageName)) {
                             _selected.remove(app.packageName);
                           }
                         }),
+                        trailing: Checkbox(
+                          value: _selected.contains(app.packageName),
+                          onChanged: (value) => setState(() {
+                            if (value == true) {
+                              _selected.add(app.packageName);
+                            } else {
+                              _selected.remove(app.packageName);
+                            }
+                          }),
+                        ),
                       ),
-                    ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
             Text(
               'Sebelum aktif, OpenLock akan meminta izin yang diperlukan untuk menjalankan perlindungan.',
