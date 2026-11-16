@@ -263,9 +263,9 @@ class _ProtectionHero extends ConsumerWidget {
       RelockMode.afterTimeout => '${config.relock.timeout.inMinutes} menit',
     };
 
-    // Keep this dashboard card local instead of using HeroMetricCard's fixed
-    // three-column footer. StatTile's internal row can overflow on narrow
-    // phones and with enlarged system text.
+    // Keep the dashboard card local instead of using a fixed-column footer.
+    // The soft accent wash adds depth without changing any protection state.
+    final scheme = Theme.of(context).colorScheme;
     return Material(
       color: c.surface,
       shape: RoundedRectangleBorder(
@@ -273,48 +273,121 @@ class _ProtectionHero extends ConsumerWidget {
         side: BorderSide(color: c.hairline),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Aplikasi terlindungi',
-              style: AppTextStyles.label.copyWith(color: c.textSecondary),
-            ),
-            const SizedBox(height: AppSpacing.smd),
-            Text(
-              lockedCount == null ? '-' : '$lockedCount',
-              style: AppTextStyles.hero.copyWith(color: c.textPrimary),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              total == null
-                  ? 'Menghitung aplikasi terpasang'
-                  : 'dari $total aplikasi terpasang',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodySmall.copyWith(color: c.textTertiary),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Divider(height: 1, color: c.hairline),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                _ProtectionStat(label: 'Jadwal', value: '$activeSchedules aktif'),
-                _ProtectionStat(
-                  label: 'Penyusup',
-                  value: intruders == null ? '-' : '${intruders.length}',
-                  valueColor:
-                      (intruders?.isNotEmpty ?? false) ? c.negative : null,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              scheme.primaryContainer.withValues(alpha: 0.48),
+              c.surface,
+              c.surface,
+            ],
+            stops: const [0, 0.48, 1],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(
+                      Icons.shield_moon_rounded,
+                      color: scheme.primary,
+                      size: 21,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.smd),
+                  Expanded(
+                    child: Text(
+                      'Aplikasi terlindungi',
+                      style: AppTextStyles.label.copyWith(
+                        color: c.textSecondary,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.09),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Text(
+                      'OPENLOCK',
+                      style: AppTextStyles.caption.copyWith(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.08),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
                 ),
-                _ProtectionStat(label: 'Kunci ulang', value: relockLabel),
-              ],
-            ),
-          ],
+                child: Text(
+                  lockedCount == null ? '-' : '$lockedCount',
+                  key: ValueKey(lockedCount),
+                  style: AppTextStyles.hero.copyWith(
+                    color: c.textPrimary,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                total == null
+                    ? 'Menghitung aplikasi terpasang'
+                    : 'dari $total aplikasi terpasang',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodySmall.copyWith(color: c.textTertiary),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Divider(height: 1, color: c.hairline),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  _ProtectionStat(label: 'Jadwal', value: '$activeSchedules aktif'),
+                  _ProtectionStat(
+                    label: 'Penyusup',
+                    value: intruders == null ? '-' : '${intruders.length}',
+                    valueColor:
+                        (intruders?.isNotEmpty ?? false) ? c.negative : null,
+                  ),
+                  _ProtectionStat(label: 'Kunci ulang', value: relockLabel),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
