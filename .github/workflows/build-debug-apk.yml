@@ -33,11 +33,48 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Restore persistent signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Persistent signing key is not configured. Add KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_PASSWORD and KEY_ALIAS in repository Settings > Secrets and variables > Actions. No APK will be produced with a temporary key."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          test -s android/app/release.keystore
+
+      - name: Write signing properties
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::One or more signing secrets are missing."
+            exit 1
+          fi
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+          } > android/key.properties
+
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build debug APK
+      - name: Build test APK with persistent signature
         run: flutter build apk --debug
+
+      - name: Verify APK signature
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f android/key.properties android/app/release.keystore
 
       - name: Upload installable test APK
         uses: actions/upload-artifact@v4
