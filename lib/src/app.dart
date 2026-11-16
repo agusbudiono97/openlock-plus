@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:core_theme/core_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +19,8 @@ class _OpenLockAppState extends ConsumerState<OpenLockApp> {
   @override
   void initState() {
     super.initState();
-    _palette = ThemePaletteController()..load();
+    _palette = ThemePaletteController();
+    unawaited(_palette.load());
   }
 
   @override
