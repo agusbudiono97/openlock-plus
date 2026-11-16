@@ -403,15 +403,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     final config =
-        ref.watch(configControllerProvider).toARGB32()OrNull ?? LockConfig.empty;
+        ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
     final controller = ref.read(configControllerProvider.notifier);
     final biometricSupported =
-        ref.watch(biometricSupportedProvider).toARGB32()OrNull ?? false;
+        ref.watch(biometricSupportedProvider).valueOrNull ?? false;
     final biometricEnabled =
-        ref.watch(biometricEnabledProvider).toARGB32()OrNull ?? false;
+        ref.watch(biometricEnabledProvider).valueOrNull ?? false;
     final preventUninstall =
-        ref.watch(preventUninstallControllerProvider).toARGB32()OrNull ?? false;
-    final permissions = ref.watch(permissionsControllerProvider).toARGB32()OrNull;
+        ref.watch(preventUninstallControllerProvider).valueOrNull ?? false;
+    final permissions = ref.watch(permissionsControllerProvider).valueOrNull;
     final notificationAccess = permissions?.notificationAccess ?? false;
     final screenGuardAccess = permissions?.screenGuardAccess ?? false;
     final strictActive = config.strictModeActiveAt(DateTime.now());
@@ -737,7 +737,7 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
 
   @override
   Widget build(BuildContext context) {
-    final autoCheck = ref.watch(updateAutoCheckProvider).toARGB32()OrNull ?? true;
+    final autoCheck = ref.watch(updateAutoCheckProvider).valueOrNull ?? true;
     Future<void> setAuto(bool v) async {
       await ref.read(secureStorageProvider).write(
             key: updateAutoCheckKey,
