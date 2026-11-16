@@ -149,14 +149,23 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
 
     private fun flatten(root: AccessibilityNodeInfo): List<ScreenNode> {
         val out = ArrayList<ScreenNode>()
-        val stack = ArrayDeque<AccessibilityNodeInfo>()
-        stack.addLast(root)
+        val stack = ArrayDeque<Pair<AccessibilityNodeInfo, Boolean>>()
+        stack.addLast(root to false)
         while (stack.isNotEmpty() && out.size < MAX_NODES) {
-            val node = stack.removeLast()
+            val (node, inheritedSelected) = stack.removeLast()
+            val selectedHere = inheritedSelected || node.isChecked || node.isSelected
             val text = node.text?.toString() ?: node.contentDescription?.toString()
-            out.add(ScreenNode(node.viewIdResourceName, text))
+            out.add(
+                ScreenNode(
+                    viewId = node.viewIdResourceName,
+                    text = text,
+                    isChecked = node.isChecked,
+                    isSelected = node.isSelected,
+                    insideSelectedContainer = inheritedSelected,
+                ),
+            )
             for (i in node.childCount - 1 downTo 0) {
-                node.getChild(i)?.let { stack.addLast(it) }
+                node.getChild(i)?.let { stack.addLast(it to selectedHere) }
             }
         }
         return out
