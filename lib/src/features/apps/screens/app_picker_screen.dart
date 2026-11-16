@@ -356,7 +356,6 @@ class _ProtectionHero extends ConsumerWidget {
                   key: ValueKey(lockedCount),
                   style: AppTextStyles.hero.copyWith(
                     color: c.textPrimary,
-                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
               ),
