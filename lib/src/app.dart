@@ -30,7 +30,16 @@ class _OpenLockAppState extends ConsumerState<OpenLockApp> {
   }
 
   ThemeData _motionTheme(Brightness brightness) {
-    return AppTheme.seeded(brightness, _palette.seed).copyWith(
+    final base = AppTheme.seeded(brightness, _palette.seed);
+    final scheme = base.colorScheme.copyWith(
+      secondary: const Color(0xFF8B6CE8),
+      tertiary: const Color(0xFF36C9A5),
+    );
+    return base.copyWith(
+      colorScheme: scheme,
+      scaffoldBackgroundColor: brightness == Brightness.dark
+          ? const Color(0xFF10151B)
+          : const Color(0xFFF5F7FA),
       // Material's forward transition gives pushed pages a short, coherent
       // entrance without changing navigation or page state.
       pageTransitionsTheme: const PageTransitionsTheme(
