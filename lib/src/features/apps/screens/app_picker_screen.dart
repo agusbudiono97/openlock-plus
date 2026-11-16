@@ -59,6 +59,7 @@ class AppPickerScreen extends ConsumerWidget {
                     ref,
                     index,
                     lockedCount: view?.lockedCount,
+                    total: view?.total,
                   );
                 }
                 final i = index - _headerCount;
@@ -115,19 +116,20 @@ class AppPickerScreen extends ConsumerWidget {
     WidgetRef ref,
     int index, {
     required int? lockedCount,
+    required int? total,
   }) {
     switch (index) {
       case 0:
         return const ScreenHeader(
-          eyebrow: 'KENDALIKAN AKSES',
-          title: 'Aplikasi',
+          eyebrow: 'DAFTAR APLIKASI',
+          title: 'Aplikasi terlindungi',
         );
       case 1:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SectionLead(
-              'Aplikasi terpasang',
+              'Aplikasi terkunci',
               subtitle: 'Pilih aplikasi yang ingin kamu batasi aksesnya.',
             ),
             AppSearchField(
@@ -148,13 +150,25 @@ class AppPickerScreen extends ConsumerWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  lockedCount == null
-                      ? 'Memuat daftar aplikasi...'
-                      : '$lockedCount aplikasi sedang dikunci',
-                  style: AppTextStyles.label.copyWith(
-                    color: SuiteColors.of(context).textSecondary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lockedCount == null
+                          ? 'Menghitung aplikasi terpasang'
+                          : '$lockedCount aplikasi dikunci',
+                      style: AppTextStyles.label.copyWith(
+                        color: SuiteColors.of(context).textSecondary,
+                      ),
+                    ),
+                    if (total != null)
+                      Text(
+                        'dari $total aplikasi terpasang',
+                        style: AppTextStyles.caption.copyWith(
+                          color: SuiteColors.of(context).textSecondary,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Icon(Icons.tune_rounded,
