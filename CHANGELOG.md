@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.3] - 2026-11-16
+
+### Fixed
+- Detect the XOS running-apps panel when it shows OpenLock together with a Stop/Force stop action, and raise the existing Strict Mode barrier before the user can normally tap Stop.
+- Add focused unit tests for Indonesian and English stop-action labels and false-positive cases.
+
+### Notes
+- This is a best-effort accessibility barrier. XOS may still allow force-stop before the accessibility event is handled, or stop the Accessibility service itself; ordinary Android apps cannot guarantee prevention of system force-stop.
+- Existing PIN, fingerprint, app-lock, Strict Mode configuration, App info guard, and Device Administrator guard behavior are intentionally unchanged.
+
 ## [1.12.2] - 2026-11-16
 
 ### Fixed
@@ -29,8 +39,6 @@
 - Android does not let an ordinary app make Device Administrator impossible to deactivate. Force-stop, disabling Accessibility, revoking special access, or OEM/system-level termination may still bypass protection.
 - Debug/test build. APK update signing compatibility is a separate issue and may require a one-time migration before future in-place updates work.
 
-# Changelog
-
 ## [1.11.4] - 2026-11-15
 
 ### Fixed
@@ -40,8 +48,6 @@
 - Includes the v1.11.3 best-effort immediate foreground-monitor restart when the app task is dismissed.
 - Device testing on Infinix/XOS is still required; Android force-stop, OEM process termination, or revoked special access can still interrupt enforcement.
 - This is a debug/test build. Verify update-signature compatibility before installing over an existing APK.
-
-# Changelog
 
 ## [1.11.3] - 2026-11-15
 
@@ -54,8 +60,6 @@
 - Device testing is still required to verify behavior on Infinix/XOS.
 - This is a debug/test build. Verify update-signature compatibility before installing over an existing APK.
 
-# Changelog
-
 ## [1.11.2] - 2026-11-15
 
 ### Fixed
@@ -65,8 +69,6 @@
 ### Notes
 - This is best-effort recovery on app launch; Android force-stop, revoked permissions, OEM process restrictions, and other system-level termination can still interrupt enforcement.
 - This is a debug/test build. Verify update-signature compatibility before installing over an existing APK.
-
-# Changelog
 
 ## [1.11.1] - 2026-11-15
 
