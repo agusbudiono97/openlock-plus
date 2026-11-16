@@ -7,6 +7,18 @@ import 'package:openlock/src/core/router/app_router.dart';
 class OpenLockApp extends ConsumerWidget {
   const OpenLockApp({super.key});
 
+  ThemeData _motionTheme(Brightness brightness) {
+    return AppTheme.build(brightness, accent: AppAccents.openlock).copyWith(
+      // Material's forward transition gives pushed pages a short, coherent
+      // entrance without changing navigation or page state.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
@@ -15,8 +27,8 @@ class OpenLockApp extends ConsumerWidget {
       listenable: appearance,
       builder: (context, _) => MaterialApp.router(
         title: 'OpenLock',
-        theme: AppTheme.build(Brightness.light, accent: AppAccents.openlock),
-        darkTheme: AppTheme.build(Brightness.dark, accent: AppAccents.openlock),
+        theme: _motionTheme(Brightness.light),
+        darkTheme: _motionTheme(Brightness.dark),
         themeMode: appearance.mode,
         scrollBehavior: const MaterialScrollBehavior().copyWith(
           physics: const BouncingScrollPhysics(
