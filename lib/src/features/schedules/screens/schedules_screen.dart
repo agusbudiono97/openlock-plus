@@ -41,19 +41,19 @@ class SchedulesScreen extends ConsumerWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [scheme.primary.withValues(alpha: .18), scheme.surfaceContainerLow],
+                      colors: [scheme.secondary.withValues(alpha: .20), scheme.primary.withValues(alpha: .08), scheme.surfaceContainerLow],
                     ),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(28),
                     border: Border.all(color: scheme.outlineVariant.withValues(alpha: .4)),
                   ),
                   child: Row(children: [
                     Container(
                       width: 48, height: 48,
                       decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: .14),
+                        color: scheme.secondary.withValues(alpha: .15),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Icon(Icons.calendar_month_rounded, color: scheme.primary, size: 25),
+                      child: Icon(Icons.calendar_month_rounded, color: scheme.secondary, size: 25),
                     ),
                     const SizedBox(width: 14),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -119,7 +119,7 @@ class _ScheduleCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Material(
       color: scheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -130,10 +130,10 @@ class _ScheduleCard extends StatelessWidget {
               Container(
                 width: 42, height: 42,
                 decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: .12),
+                  color: scheme.secondary.withValues(alpha: .13),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(Icons.schedule_rounded, color: scheme.primary),
+                child: Icon(Icons.schedule_rounded, color: scheme.secondary),
               ),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -155,11 +155,11 @@ class _ScheduleCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: schedule.enabled ? scheme.primary.withValues(alpha: .12) : scheme.surfaceContainerHighest,
+                  color: schedule.enabled ? scheme.secondary.withValues(alpha: .14) : scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(schedule.enabled ? 'AKTIF' : 'NONAKTIF',
-                  style: TextStyle(color: schedule.enabled ? scheme.primary : scheme.onSurfaceVariant,
+                  style: TextStyle(color: schedule.enabled ? scheme.secondary : scheme.onSurfaceVariant,
                     fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .5)),
               ),
               const SizedBox(width: 5),
