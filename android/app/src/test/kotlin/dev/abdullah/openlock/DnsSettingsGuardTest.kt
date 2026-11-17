@@ -6,17 +6,39 @@ import org.junit.Test
 
 class DnsSettingsGuardTest {
     @Test
-    fun blocksPrivateDnsSettingsAndSearchResult() {
+    fun blocksOnlyOpenedPrivateDnsModeScreen() {
         assertTrue(
             DnsSettingsGuard.isPrivateDnsScreen(
                 "com.android.settings",
-                listOf(ScreenNode("settings:id/title", "DNS Pribadi")),
+                listOf(
+                    ScreenNode("settings:id/title", "DNS Pribadi"),
+                    ScreenNode("settings:id/summary", "Otomatis"),
+                    ScreenNode("settings:id/radio", "Nonaktif"),
+                ),
             ),
         )
         assertTrue(
             DnsSettingsGuard.isPrivateDnsScreen(
                 "com.android.settings",
-                listOf(ScreenNode("settings:id/title", "Private DNS provider hostname")),
+                listOf(
+                    ScreenNode("settings:id/title", "Private DNS"),
+                    ScreenNode("settings:id/title", "Private DNS provider hostname"),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun doesNotBlockParentConnectivityScreenContainingPrivateDnsRow() {
+        assertFalse(
+            DnsSettingsGuard.isPrivateDnsScreen(
+                "com.android.settings",
+                listOf(
+                    ScreenNode("settings:id/title", "Koneksi Multi Perangkat"),
+                    ScreenNode("settings:id/title", "DNS Pribadi"),
+                    ScreenNode("settings:id/summary", "7m1.example-dns.com"),
+                    ScreenNode("settings:id/title", "VPN"),
+                ),
             ),
         )
     }
@@ -43,8 +65,8 @@ class DnsSettingsGuardTest {
             DnsSettingsGuard.isOpenLockAccessibilitySettings(
                 "com.android.settings",
                 listOf(
-                    ScreenNode("settings:id/title", "OpenLock"),
-                    ScreenNode("settings:id/switch_widget", "Aksesibilitas", isChecked = true),
+                    ScreenNode("settings:id/title", "OpenLock protection service"),
+                    ScreenNode("settings:id/switch_widget", "Gunakan OpenLock protection service", isChecked = true),
                 ),
                 "OpenLock",
             ),
