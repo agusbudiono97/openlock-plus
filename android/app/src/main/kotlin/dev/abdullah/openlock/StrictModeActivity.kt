@@ -225,7 +225,12 @@ class StrictModeActivity : Activity() {
 
     private fun updateCountdown() {
         timer?.cancel()
-        val remaining = ConfigStore.get(this).strictModeRemainingMillis()
+        val store = ConfigStore.get(this)
+        val remaining = if (store.strictModeActive()) {
+            store.strictModeRemainingMillis()
+        } else {
+            store.dnsGuardRemainingMillis()
+        }
         if (remaining == null) {
             countdown.text = "Perlindungan aktif tanpa batas waktu"
             return
@@ -253,7 +258,8 @@ class StrictModeActivity : Activity() {
                 // Re-check the same monotonic deadline used by enforcement.
                 // A wall-clock edit must not leave this barrier on screen
                 // after the commitment expires or dismiss it prematurely.
-                if (ConfigStore.get(this@StrictModeActivity).strictModeActive()) {
+                val store = ConfigStore.get(this@StrictModeActivity)
+                if (store.strictModeActive() || store.dnsGuardActive()) {
                     updateCountdown()
                 } else {
                     finish()
