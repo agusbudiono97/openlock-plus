@@ -377,7 +377,7 @@ class EnforcementPlugin(private val activity: Activity) :
         // honour an in-app stop request while a commitment is active; Android
         // force-stop / permission revocation remain OS-level bypasses that an
         // ordinary app cannot fully prevent.
-        if (store.strictModeActive()) return
+        if (store.strictModeActive() || store.dnsGuardActive()) return
         runCatching {
             activity.stopService(Intent(activity, OpenLockMonitorService::class.java))
         }
@@ -412,7 +412,7 @@ class EnforcementPlugin(private val activity: Activity) :
     private fun deactivateDeviceAdmin() {
         // Device-admin removal weakens uninstall protection. Keep it behind
         // the same native Strict Mode commitment gate as config/service edits.
-        if (store.strictModeActive()) return
+        if (store.strictModeActive() || store.dnsGuardActive()) return
         runCatching { devicePolicyManager().removeActiveAdmin(adminComponent()) }
     }
 
