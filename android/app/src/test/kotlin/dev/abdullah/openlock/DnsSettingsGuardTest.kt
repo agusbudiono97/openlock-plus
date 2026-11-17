@@ -12,6 +12,7 @@ class DnsSettingsGuardTest {
                 "com.android.settings",
                 listOf(
                     ScreenNode("settings:id/title", "DNS Pribadi"),
+                    ScreenNode("settings:id/title", "Pilih mode DNS pribadi"),
                     ScreenNode("settings:id/summary", "Otomatis"),
                     ScreenNode("settings:id/radio", "Nonaktif"),
                 ),
@@ -38,6 +39,26 @@ class DnsSettingsGuardTest {
                     ScreenNode("settings:id/title", "DNS Pribadi"),
                     ScreenNode("settings:id/summary", "7m1.example-dns.com"),
                     ScreenNode("settings:id/title", "VPN"),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun doesNotBlockMultiDeviceParentWithUnrelatedDisabledRowsAndDnsHostnameSummary() {
+        assertFalse(
+            DnsSettingsGuard.isPrivateDnsScreen(
+                "com.android.settings",
+                listOf(
+                    ScreenNode("settings:id/title", "Koneksi Multi Perangkat"),
+                    ScreenNode("settings:id/title", "Hotspot pribadi"),
+                    ScreenNode("settings:id/summary", "Nonaktif"),
+                    ScreenNode("settings:id/title", "NFC"),
+                    ScreenNode("settings:id/summary", "Nonaktif"),
+                    ScreenNode("settings:id/title", "VPN"),
+                    ScreenNode("settings:id/summary", "Tidak ada"),
+                    ScreenNode("settings:id/title", "DNS Pribadi"),
+                    ScreenNode("settings:id/summary", "7m1qhqj9lo.cloudflare-gateway.com"),
                 ),
             ),
         )
