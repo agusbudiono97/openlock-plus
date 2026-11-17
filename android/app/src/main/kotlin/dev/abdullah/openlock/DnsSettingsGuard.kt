@@ -21,6 +21,23 @@ internal object DnsSettingsGuard {
         "private dns mode",
     )
 
+    fun isOpenLockAccessibilitySettings(
+        packageName: String,
+        nodes: List<ScreenNode>,
+        ownLabel: String,
+    ): Boolean {
+        if (packageName !in settingsPackages) return false
+        val texts = nodes.mapNotNull { it.text }.map { it.trim().lowercase() }
+        val mentionsOpenLock = texts.any { it == ownLabel.lowercase() }
+        val mentionsAccessibility = texts.any {
+            it.contains("aksesibilitas") || it.contains("accessibility")
+        }
+        val hasServiceSwitch = nodes.any {
+            it.isChecked || it.viewId?.contains("switch", ignoreCase = true) == true
+        }
+        return mentionsOpenLock && mentionsAccessibility && hasServiceSwitch
+    }
+
     fun isPrivateDnsScreen(packageName: String, nodes: List<ScreenNode>): Boolean {
         if (packageName !in settingsPackages) return false
         val visibleText = nodes.mapNotNull { it.text }
