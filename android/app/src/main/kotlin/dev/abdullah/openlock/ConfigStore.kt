@@ -91,6 +91,36 @@ class ConfigStore private constructor(context: Context) {
             incoming.remove(KEY_STRICT_END_ELAPSED)
             incoming.remove(KEY_STRICT_BOOT_COUNT)
         }
+
+        // DNS Guard has its own monotonic deadline and never reuses the
+        // Strict Mode timer fields.
+        if (incoming.optBoolean("dnsGuardEnabled", false)) {
+            val endWall = incoming.optLong("dnsGuardEndsAtMillis", 0L)
+            if (endWall > 0L) {
+                incoming.put(
+                    KEY_DNS_END_ELAPSED,
+                    StrictModeClock.elapsedDeadline(
+                        endWall,
+                        System.currentTimeMillis(),
+                        SystemClock.elapsedRealtime(),
+                    ) ?: 0L,
+                )
+                incoming.put(
+                    KEY_DNS_BOOT_COUNT,
+                    Settings.Global.getInt(
+                        appContext.contentResolver,
+                        Settings.Global.BOOT_COUNT,
+                        -1,
+                    ),
+                )
+            } else {
+                incoming.remove(KEY_DNS_END_ELAPSED)
+                incoming.remove(KEY_DNS_BOOT_COUNT)
+            }
+        } else {
+            incoming.remove(KEY_DNS_END_ELAPSED)
+            incoming.remove(KEY_DNS_BOOT_COUNT)
+        }
         val persisted = incoming.toString()
         prefs.edit().putString(KEY_CONFIG, persisted).apply()
         config = incoming
@@ -152,6 +182,41 @@ class ConfigStore private constructor(context: Context) {
             endElapsedMillis = cfg.optLong(KEY_STRICT_END_ELAPSED, 0L),
             savedBootCount = cfg.optInt(KEY_STRICT_BOOT_COUNT, -1),
             nowWallMillis = nowMillis,
+            nowElapsedMillis = SystemClock.elapsedRealtime(),
+            currentBootCount = Settings.Global.getInt(
+                appContext.contentResolver,
+                Settings.Global.BOOT_COUNT,
+                -1,
+            ),
+        )
+    }
+
+    /** DNS Guard is independent from Strict Mode and expires on its own deadline. */
+    fun dnsGuardActive(nowMillis: Long = System.currentTimeMillis()): Boolean {
+        val cfg = config ?: return false
+        return StrictModeClock.isActive(
+            enabled = cfg.optBoolean("dnsGuardEnabled", false),
+            endWallMillis = cfg.optLong("dnsGuardEndsAtMillis", 0L),
+            endElapsedMillis = cfg.optLong(KEY_DNS_END_ELAPSED, 0L),
+            savedBootCount = cfg.optInt(KEY_DNS_BOOT_COUNT, -1),
+            nowWallMillis = nowMillis,
+            nowElapsedMillis = SystemClock.elapsedRealtime(),
+            currentBootCount = Settings.Global.getInt(
+                appContext.contentResolver,
+                Settings.Global.BOOT_COUNT,
+                -1,
+            ),
+        )
+    }
+
+    fun dnsGuardRemainingMillis(): Long? {
+        val cfg = config ?: return 0L
+        return StrictModeClock.remainingMillis(
+            enabled = cfg.optBoolean("dnsGuardEnabled", false),
+            endWallMillis = cfg.optLong("dnsGuardEndsAtMillis", 0L),
+            endElapsedMillis = cfg.optLong(KEY_DNS_END_ELAPSED, 0L),
+            savedBootCount = cfg.optInt(KEY_DNS_BOOT_COUNT, -1),
+            nowWallMillis = System.currentTimeMillis(),
             nowElapsedMillis = SystemClock.elapsedRealtime(),
             currentBootCount = Settings.Global.getInt(
                 appContext.contentResolver,
@@ -312,5 +377,7 @@ class ConfigStore private constructor(context: Context) {
         private const val KEY_INTRUDERS = "intruders"
         private const val KEY_STRICT_END_ELAPSED = "strictModeEndElapsedRealtime"
         private const val KEY_STRICT_BOOT_COUNT = "strictModeBootCount"
+        private const val KEY_DNS_END_ELAPSED = "dnsGuardEndElapsedRealtime"
+        private const val KEY_DNS_BOOT_COUNT = "dnsGuardBootCount"
     }
 }
