@@ -31,13 +31,14 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
       // before this screen finished loading.
       final current = await _currentConfig();
       final requested = update(current);
-      final strictActive = current.strictModeActiveAt(DateTime.now());
+      final now = DateTime.now();
+      final commitmentActive = current.strictModeActiveAt(now) ||
+          current.dnsGuardActiveAt(now);
 
-      // Strict Mode is a full settings freeze, not merely a protected timer.
-      // Keep the complete snapshot unchanged until the native/Dart deadline
-      // expires. This covers app lists, schedules, uninstall settings, and
-      // backup restores regardless of which screen initiated the mutation.
-      final next = strictActive ? current : requested;
+      // Strict Mode and DNS Guard both freeze security-sensitive settings
+      // while active. DNS Guard owns a separate deadline and does not change
+      // the Strict Mode app list or timer.
+      final next = commitmentActive ? current : requested;
 
       // Persist before publishing the new state. A storage failure must not
       // leave the UI showing a configuration that was never saved.
