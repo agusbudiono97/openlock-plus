@@ -81,6 +81,13 @@ class _DnsGuardScreenState extends ConsumerState<DnsGuardScreen> {
   }
 
   Future<void> _enable() async {
+    final current = ref.read(configControllerProvider).valueOrNull ?? LockConfig.empty;
+    if (current.strictModeActiveAt(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tunggu Mode Ketat berakhir sebelum mengaktifkan DNS Guard.')),
+      );
+      return;
+    }
     final end = _deadline();
     if (!_indefinite && (end == null || !end.isAfter(DateTime.now()))) {
       ScaffoldMessenger.of(context).showSnackBar(
