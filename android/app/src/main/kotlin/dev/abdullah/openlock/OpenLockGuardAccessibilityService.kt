@@ -68,7 +68,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
         // OpenLock's own Accessibility service detail page. The detail page
         // must be identified by its service title and switch, not the general
         // Accessibility list, so other accessibility services remain usable.
-        if (store.dnsGuardActive() &&
+        if ((store.strictModeActive() || store.dnsGuardActive()) &&
             DnsSettingsGuard.isOpenLockAccessibilitySettings(
                 rootPkg,
                 nodes,
