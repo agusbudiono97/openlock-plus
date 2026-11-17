@@ -137,6 +137,19 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
     ));
   }
 
+  /// Starts or stops the independent DNS Guard commitment.
+  /// A null deadline means indefinite protection.
+  Future<void> setDnsGuard({
+    required bool enabled,
+    int? endsAtMillis,
+  }) async {
+    await _apply((config) => config.copyWith(
+      dnsGuardEnabled: enabled,
+      dnsGuardEndsAtMillis: endsAtMillis,
+      clearDnsGuardEndsAtMillis: enabled && endsAtMillis == null || !enabled,
+    ));
+  }
+
   Future<void> setStrictScreenText({
     required String title,
     required String message,
