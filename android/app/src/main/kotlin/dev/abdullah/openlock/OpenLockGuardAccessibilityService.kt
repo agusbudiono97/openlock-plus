@@ -93,7 +93,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
             }
             return
         }
-        if (rootPkg != packageName && store.strictModeActive() &&
+        if (rootPkg != packageName && (store.strictModeActive() || store.dnsGuardActive()) &&
             RunningAppStopGuard.isStopActionForOwnApp(
                 nodes = nodes,
                 ownLabel = applicationInfo.loadLabel(packageManager).toString(),
@@ -107,7 +107,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
         // Best-effort guard for XOS App Freezer / app-freezing screens.
         // Only react when the same visible window identifies OpenLock AND
         // exposes an explicit freeze action; never block generic freezer UI.
-        if (rootPkg != packageName && store.strictModeActive() &&
+        if (rootPkg != packageName && (store.strictModeActive() || store.dnsGuardActive()) &&
             FreezeGuard.isFreezeActionForOwnApp(
                 nodes = nodes,
                 ownLabel = applicationInfo.loadLabel(packageManager).toString(),
