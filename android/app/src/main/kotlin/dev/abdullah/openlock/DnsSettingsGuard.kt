@@ -66,24 +66,23 @@ internal object DnsSettingsGuard {
         }
         if (!namesPrivateDns) return false
 
-        // Do not block the parent "Koneksi Multi Perangkat" screen merely
-        // because its list contains a "DNS Pribadi" row. Only block after that
-        // row has been opened and the mode choices / provider-hostname editor
-        // are actually visible.
-        val detailMarkers = setOf(
-            "nonaktif",
-            "otomatis",
-            "nama host penyedia dns pribadi",
-            "private dns provider hostname",
-            "pilih mode dns pribadi",
-            "private dns mode",
-            "off",
-            "automatic",
-        )
-        return visibleText.any { text ->
-            text in detailMarkers ||
-                text.contains("nama host penyedia dns pribadi") ||
+        // A parent page can contain unrelated rows whose values are
+        // "Nonaktif" (Hotspot/NFC) or "Otomatis". Those values must never
+        // identify a DNS detail page on their own. Require a DNS-specific
+        // editor label or an explicit DNS-mode heading plus a mode option.
+        val hasHostnameEditor = visibleText.any { text ->
+            text.contains("nama host penyedia dns pribadi") ||
                 text.contains("private dns provider hostname")
         }
+        val hasDnsModeHeading = visibleText.any { text ->
+            text == "pilih mode dns pribadi" ||
+                text == "private dns mode" ||
+                text == "mode dns pribadi"
+        }
+        val hasModeOption = visibleText.any { text ->
+            text == "nonaktif" || text == "off" ||
+                text == "otomatis" || text == "automatic"
+        }
+        return hasHostnameEditor || (hasDnsModeHeading && hasModeOption)
     }
 }
