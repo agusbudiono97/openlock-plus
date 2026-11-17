@@ -54,10 +54,9 @@ class ConfigStore private constructor(context: Context) {
     fun saveConfig(json: String) {
         val incoming = parse(json) ?: return
         val current = config
-        if (current != null && strictModeActive()) {
-            // Native backstop: freeze the entire stored snapshot while the
-            // commitment is active. Do not accept app-list, schedule, PIN, or
-            // protection-setting edits from another UI/code path either.
+        if (current != null && (strictModeActive() || dnsGuardActive())) {
+            // Native backstop: freeze the entire stored snapshot while either
+            // commitment is active. DNS Guard keeps its own independent timer.
             return
         }
         // Capture a monotonic deadline at commitment time. This makes
