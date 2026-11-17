@@ -244,6 +244,8 @@ final class LockConfig {
         'strictModeEnabled': strictModeEnabled,
         'strictModePackages': strictModePackages.toList()..sort(),
         'strictModeEndsAtMillis': strictModeEndsAtMillis,
+        'dnsGuardEnabled': dnsGuardEnabled,
+        'dnsGuardEndsAtMillis': dnsGuardEndsAtMillis,
         'strictScreenTitle': strictScreenTitle,
         'strictScreenMessage': strictScreenMessage,
         'strictScreenFooter': strictScreenFooter,
