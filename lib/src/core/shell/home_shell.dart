@@ -21,20 +21,11 @@ class HomeShell extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: TweenAnimationBuilder<double>(
-        key: ValueKey(shell.currentIndex),
-        tween: Tween<double>(begin: 0, end: 1),
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        child: shell,
-        builder: (context, value, child) => Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 7 * (1 - value)),
-            child: child,
-          ),
-        ),
-      ),
+      // Keep the indexed branch stack out of a full-screen opacity/transform
+      // animation. Compositing the entire subtree on every tab change can
+      // cause frame drops on devices with many live list rows and icons.
+      // The destination item retains its lightweight local selection motion.
+      body: shell,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           color: colors.surface,
