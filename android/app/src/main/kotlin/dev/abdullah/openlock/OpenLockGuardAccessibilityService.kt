@@ -64,6 +64,23 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
 
         val nodes = flatten(root)
 
+        // During DNS Guard, also return from OpenLock's own Accessibility
+        // service detail page when its enabled switch is visible.
+        if (store.dnsGuardActive() &&
+            DnsSettingsGuard.isOpenLockAccessibilitySettings(
+                rootPkg,
+                nodes,
+                applicationInfo.loadLabel(packageManager).toString(),
+            )
+        ) {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastDnsGuardBackAt >= DNS_GUARD_BACK_DEBOUNCE_MS) {
+                lastDnsGuardBackAt = now
+                performGlobalAction(GLOBAL_ACTION_BACK)
+            }
+            return
+        }
+
         // Independent DNS Guard: return from only the explicit Private DNS
         // settings page/search result. Other Settings categories remain usable.
         if (store.dnsGuardActive() &&
