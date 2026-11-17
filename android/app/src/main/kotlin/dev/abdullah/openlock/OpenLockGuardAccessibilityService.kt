@@ -131,7 +131,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
             GuardedScreen.set(rootPkg)
             // Strict Mode guards our own App info and the Device Admin
             // deactivate screen, not merely the apps selected in the blocklist.
-            if (store.strictModeActive()) {
+            if (store.strictModeActive() || store.dnsGuardActive()) {
                 showStrictBarrier(rootPkg, packageName)
             }
         } else {
