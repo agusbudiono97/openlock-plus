@@ -21,6 +21,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
     private var windowClass: String? = null
     private var lastBarrierKey: String? = null
     private var lastBarrierAt = 0L
+    private var lastDnsGuardBackAt = 0L
     private lateinit var store: ConfigStore
 
     override fun onServiceConnected() {
@@ -62,6 +63,19 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
         }
 
         val nodes = flatten(root)
+
+        // Independent DNS Guard: return from only the explicit Private DNS
+        // settings page/search result. Other Settings categories remain usable.
+        if (store.dnsGuardActive() &&
+            DnsSettingsGuard.isPrivateDnsScreen(rootPkg, nodes)
+        ) {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastDnsGuardBackAt >= DNS_GUARD_BACK_DEBOUNCE_MS) {
+                lastDnsGuardBackAt = now
+                performGlobalAction(GLOBAL_ACTION_BACK)
+            }
+            return
+        }
         if (rootPkg != packageName && store.strictModeActive() &&
             RunningAppStopGuard.isStopActionForOwnApp(
                 nodes = nodes,
@@ -174,6 +188,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
     private companion object {
         const val MAX_NODES = 600
         const val RELAUNCH_GUARD_MS = 1_200L
+        const val DNS_GUARD_BACK_DEBOUNCE_MS = 900L
     }
 }
 
