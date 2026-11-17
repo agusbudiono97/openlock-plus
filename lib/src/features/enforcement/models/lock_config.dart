@@ -21,6 +21,8 @@ final class LockConfig {
     this.strictModeEnabled = false,
     this.strictModePackages = const {},
     this.strictModeEndsAtMillis,
+    this.dnsGuardEnabled = false,
+    this.dnsGuardEndsAtMillis,
     this.strictScreenTitle = 'WAKTUNYA BERHENTI',
     this.strictScreenMessage =
         'Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.',
@@ -70,6 +72,15 @@ final class LockConfig {
   final Set<String> strictModePackages;
   final int? strictModeEndsAtMillis;
 
+  /// Independent DNS settings guard commitment. Null deadline means indefinite.
+  final bool dnsGuardEnabled;
+  final int? dnsGuardEndsAtMillis;
+
+  bool dnsGuardActiveAt(DateTime now) =>
+      dnsGuardEnabled &&
+      (dnsGuardEndsAtMillis == null ||
+          now.millisecondsSinceEpoch < dnsGuardEndsAtMillis!);
+
   /// User-editable copy shown on the full-screen Strict Mode barrier.
   final String strictScreenTitle;
   final String strictScreenMessage;
@@ -107,6 +118,9 @@ final class LockConfig {
     Set<String>? strictModePackages,
     int? strictModeEndsAtMillis,
     bool clearStrictModeEndsAtMillis = false,
+    bool? dnsGuardEnabled,
+    int? dnsGuardEndsAtMillis,
+    bool clearDnsGuardEndsAtMillis = false,
     String? strictScreenTitle,
     String? strictScreenMessage,
     String? strictScreenFooter,
@@ -131,6 +145,10 @@ final class LockConfig {
         strictModeEndsAtMillis: clearStrictModeEndsAtMillis
             ? null
             : strictModeEndsAtMillis ?? this.strictModeEndsAtMillis,
+        dnsGuardEnabled: dnsGuardEnabled ?? this.dnsGuardEnabled,
+        dnsGuardEndsAtMillis: clearDnsGuardEndsAtMillis
+            ? null
+            : dnsGuardEndsAtMillis ?? this.dnsGuardEndsAtMillis,
         strictScreenTitle: strictScreenTitle ?? this.strictScreenTitle,
         strictScreenMessage: strictScreenMessage ?? this.strictScreenMessage,
         strictScreenFooter: strictScreenFooter ?? this.strictScreenFooter,
@@ -152,6 +170,8 @@ final class LockConfig {
         'strictModeEnabled': strictModeEnabled,
         'strictModePackages': strictModePackages.toList()..sort(),
         'strictModeEndsAtMillis': strictModeEndsAtMillis,
+        'dnsGuardEnabled': dnsGuardEnabled,
+        'dnsGuardEndsAtMillis': dnsGuardEndsAtMillis,
         'strictScreenTitle': strictScreenTitle,
         'strictScreenMessage': strictScreenMessage,
         'strictScreenFooter': strictScreenFooter,
@@ -187,6 +207,9 @@ final class LockConfig {
                 .toSet(),
         strictModeEndsAtMillis:
             (json['strictModeEndsAtMillis'] as num?)?.toInt(),
+        dnsGuardEnabled: json['dnsGuardEnabled'] as bool? ?? false,
+        dnsGuardEndsAtMillis:
+            (json['dnsGuardEndsAtMillis'] as num?)?.toInt(),
         strictScreenTitle: json['strictScreenTitle'] as String? ??
             'WAKTUNYA BERHENTI',
         strictScreenMessage: json['strictScreenMessage'] as String? ??
