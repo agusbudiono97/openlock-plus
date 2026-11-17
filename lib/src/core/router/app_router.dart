@@ -11,6 +11,7 @@ import 'package:openlock/src/features/auth/screens/unlock_screen.dart';
 import 'package:openlock/src/features/backup/screens/backup_screen.dart';
 import 'package:openlock/src/features/intruder/screens/intruder_log_screen.dart';
 import 'package:openlock/src/features/enforcement/screens/strict_mode_screen.dart';
+import 'package:openlock/src/features/enforcement/screens/dns_guard_screen.dart';
 import 'package:openlock/src/features/onboarding/screens/onboarding_screen.dart';
 import 'package:openlock/src/features/onboarding/screens/permissions_screen.dart';
 import 'package:openlock/src/features/schedules/screens/schedule_editor_screen.dart';
@@ -39,6 +40,7 @@ abstract final class AppRoutes {
   static const String about = '/about';
   static const String backup = '/backup';
   static const String strictMode = '/strict-mode';
+  static const String dnsGuard = '/dns-guard';
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -109,6 +111,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.strictMode,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (_, __) => const StrictModeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.dnsGuard,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, __) => const DnsGuardScreen(),
       ),
       GoRoute(
         path: AppRoutes.permissions,
