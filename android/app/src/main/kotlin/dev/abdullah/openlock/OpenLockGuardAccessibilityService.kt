@@ -92,7 +92,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
             val now = SystemClock.elapsedRealtime()
             if (now - lastDnsGuardBackAt >= DNS_GUARD_BACK_DEBOUNCE_MS) {
                 lastDnsGuardBackAt = now
-                performGlobalAction(GLOBAL_ACTION_BACK)
+                showStrictBarrier("dns-guard-private-dns", packageName)
             }
             return
         }
