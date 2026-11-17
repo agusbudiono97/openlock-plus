@@ -207,7 +207,7 @@ class _DnsGuardScreenState extends ConsumerState<DnsGuardScreen> {
               Expanded(
                 flex: 3,
                 child: DropdownButtonFormField<String>(
-                  value: _unit,
+                  initialValue: _unit,
                   decoration: const InputDecoration(labelText: 'Satuan', border: OutlineInputBorder()),
                   items: const ['menit', 'jam', 'hari', 'bulan']
                       .map((unit) => DropdownMenuItem(value: unit, child: Text(unit)))
