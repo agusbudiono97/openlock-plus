@@ -96,7 +96,7 @@ class _Dial extends CustomPainter {
    final p2=Offset(center.dx+math.cos(a)*(radius+12),center.dy+math.sin(a)*(radius+12));
    canvas.drawLine(p1,p2,orbit);
   }
-  const colors=[_amber2,Color(0xFFFFB65F),Color(0xFFFFB260),Color(0xFFFFAE60),Color(0xFFFFAA5F),Color(0xFFFFA65E),Color(0xFFFFA15D),Color(0xFFFF9C5D),Color(0xFFFF975E),Color(0xFFFF9262),Color(0xFFFF8D68),Color(0xFFF98770),Color(0xFFF1817B),Color(0xFFEA7D8A),Color(0xFFE27C9A),Color(0xFFD77BAA),Color(0xFFCA78BE),Color(0xFFBC76D4),Color(0xFFAA6FE6),Color(0xFF9865F0),_indigo,Color(0xFF7770F2),Color(0xFF8A6CF4),Color(0xFF9A70F5),_amber2];
+  final colors=[_amber2,Color(0xFFFFB65F),Color(0xFFFFB260),Color(0xFFFFAE60),Color(0xFFFFAA5F),Color(0xFFFFA65E),Color(0xFFFFA15D),Color(0xFFFF9C5D),Color(0xFFFF975E),Color(0xFFFF9262),Color(0xFFFF8D68),Color(0xFFF98770),Color(0xFFF1817B),Color(0xFFEA7D8A),Color(0xFFE27C9A),Color(0xFFD77BAA),Color(0xFFCA78BE),Color(0xFFBC76D4),Color(0xFFAA6FE6),Color(0xFF9865F0),_indigo,Color(0xFF7770F2),Color(0xFF8A6CF4),Color(0xFF9A70F5),_amber2];
   const stops=[0,.06,.10,.14,.18,.22,.26,.30,.34,.38,.42,.46,.50,.54,.58,.62,.66,.70,.74,.78,.82,.86,.90,.95,1];
   final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:colors,stops:stops);
   final wave=(.5-.5*math.cos(phase*math.pi*2));
