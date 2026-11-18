@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
