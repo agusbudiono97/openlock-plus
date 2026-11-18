@@ -12,9 +12,11 @@ import 'package:openlock/src/features/enforcement/providers/config_providers.dar
 import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
 
 class _HomePalette {
+ static bool dark=true;
  static Color bg=Color(0xFF0C0D14), panel=const Color(0xFF171927), high=const Color(0xFF292D43);
  static Color ink=const Color(0xFFF1F0F7), muted=const Color(0xFF9D9BB3), amber=const Color(0xFFFF9E42), amber2=const Color(0xFFFFB259), indigo=const Color(0xFF8B5CF6);
- static void apply(bool dark) {
+ static void apply(bool value) {
+  dark=value;
   bg=dark?const Color(0xFF0C0D14):const Color(0xFFF5F7FA);
   panel=dark?const Color(0xFF171927):const Color(0xFFFFFFFF);
   high=dark?const Color(0xFF292D43):const Color(0xFFE8EDF4);
