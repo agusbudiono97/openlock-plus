@@ -46,9 +46,26 @@ final class PreventUninstallController extends AsyncNotifier<bool> {
   /// deactivated **only** after that succeeds; otherwise nothing changes.
   /// Returns true if protection was lifted.
   Future<bool> disableWithAuth(Future<bool> Function() authenticate) async {
+    // Strict Mode freezes every protection setting. Refuse before prompting
+    // for credentials so the UI cannot claim Device Admin was disabled when
+    // the native layer correctly rejects that request.
+    final config = await ref.read(configControllerProvider.future);
+    if (config.strictModeActiveAt(DateTime.now())) return false;
+
     final ok = await authenticate();
     if (!ok) return false;
-    await ref.read(enforcementBridgeProvider).deactivateDeviceAdmin();
+
+    final bridge = ref.read(enforcementBridgeProvider);
+    await bridge.deactivateDeviceAdmin();
+    // The native Strict Mode guard is authoritative and may reject a request
+    // if a commitment became active after the Dart pre-check. Verify the live
+    // OS state before changing the UI or persisted preference.
+    final stillActive = await bridge.isDeviceAdminActive();
+    if (stillActive) {
+      state = const AsyncData(true);
+      return false;
+    }
+
     await ref
         .read(configControllerProvider.notifier)
         .setPreventUninstall(false);

@@ -8,6 +8,7 @@ import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/core/perf_log.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/auth/providers/auth_providers.dart';
+import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
 
 Future<void> main() async {
@@ -53,4 +54,29 @@ Future<void> main() async {
   container
     ..read(installedAppsProvider)
     ..read(intruderControllerProvider);
+
+  // The Android task can be dismissed from Recents while the native
+  // foreground service is stopped by an OEM process policy. On the next
+  // explicit app launch, restore the saved commitment to the native store
+  // and restart the monitor. This never creates a new deadline: it reuses
+  // the persisted end timestamp and skips expired/empty commitments.
+  _restoreStrictModeProtection(container);
+}
+
+Future<void> _restoreStrictModeProtection(ProviderContainer container) async {
+  try {
+    final config = await container.read(configControllerProvider.future);
+    if (!config.strictModeActiveAt(DateTime.now()) ||
+        config.strictModePackages.isEmpty) {
+      return;
+    }
+
+    // Push the saved snapshot before starting the service so its first poll
+    // cannot run against an empty or stale native config.
+    await container.read(configControllerProvider.notifier).pushToNative();
+    await container.read(enforcementBridgeProvider).startService();
+  } catch (error, stackTrace) {
+    debugPrint('OpenLock Strict Mode recovery failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
 }

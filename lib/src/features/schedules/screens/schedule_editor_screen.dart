@@ -21,7 +21,7 @@ class ScheduleEditorScreen extends ConsumerStatefulWidget {
 }
 
 class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
-  final _nameController = TextEditingController(text: 'Focus time');
+  final _nameController = TextEditingController(text: 'Waktu fokus');
   Set<int> _weekdays = {1, 2, 3, 4, 5};
   int _start = 9 * 60;
   int _end = 17 * 60;
@@ -74,7 +74,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     final schedule = LockSchedule(
       id: widget.scheduleId,
       name: _nameController.text.trim().isEmpty
-          ? 'Schedule'
+          ? 'Jadwal'
           : _nameController.text.trim(),
       packages: _packages,
       weekdays: _weekdays,
@@ -96,19 +96,23 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final config =
-        ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
-    _hydrate(config);
+    final configAsync = ref.watch(configControllerProvider);
+    final loadedConfig = configAsync.valueOrNull;
+    final config = loadedConfig ?? LockConfig.empty;
+    // Do not hydrate an existing schedule from the temporary empty fallback:
+    // the async config may still be loading on the first frame.
+    if (loadedConfig != null) _hydrate(loadedConfig);
     final appsAsync = ref.watch(installedAppsProvider);
     final isEditing = widget.scheduleId != null;
+    final strictActive = config.strictModeActiveAt(DateTime.now());
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit schedule' : 'New schedule'),
+        title: Text(isEditing ? 'Ubah jadwal' : 'Jadwal baru'),
         actions: [
           if (isEditing)
             IconButton(
-              onPressed: _delete,
+              onPressed: strictActive ? null : _delete,
               icon: const Icon(Icons.delete_outline),
             ),
         ],
@@ -116,8 +120,22 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       body: SafeArea(
         child: PageList(
           children: [
-            AppTextField(label: 'Name', controller: _nameController),
-            const _FieldLabel('Active days'),
+            if (strictActive)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.lock_clock_rounded),
+                  title: Text('Mode Ketat sedang aktif'),
+                  subtitle: Text('Jadwal dikunci sampai komitmen berakhir.'),
+                ),
+              ),
+            AbsorbPointer(
+              absorbing: strictActive,
+              child: AppTextField(
+                label: 'Nama jadwal',
+                controller: _nameController,
+              ),
+            ),
+            const _FieldLabel('Hari aktif'),
             Wrap(
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
@@ -126,28 +144,28 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                   AppChip(
                     label: ScheduleFormat.weekdayLabels[day - 1],
                     selected: _weekdays.contains(day),
-                    onTap: () => setState(() {
+                    onTap: strictActive ? null : () => setState(() {
                       if (!_weekdays.add(day)) _weekdays.remove(day);
                     }),
                   ),
               ],
             ),
-            const _FieldLabel('Hours'),
+            const _FieldLabel('Jam pemblokiran'),
             Row(
               children: [
                 Expanded(
                   child: _TimeField(
-                    label: 'Start',
+                    label: 'Mulai',
                     value: ScheduleFormat.time(_start),
-                    onTap: () => _pickTime(true),
+                    onTap: strictActive ? null : () => _pickTime(true),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.smd),
                 Expanded(
                   child: _TimeField(
-                    label: 'End',
+                    label: 'Selesai',
                     value: ScheduleFormat.time(_end),
-                    onTap: () => _pickTime(false),
+                    onTap: strictActive ? null : () => _pickTime(false),
                   ),
                 ),
               ],
@@ -156,22 +174,22 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.sm),
                 child: Text(
-                  'Overnight window — ends the next morning.',
+                  'Jadwal melewati tengah malam dan berakhir keesokan pagi.',
                   style: AppTextStyles.caption.copyWith(
                     color: SuiteColors.of(context).textSecondary,
                   ),
                 ),
               ),
             _FieldLabel(
-              'Apps to lock',
-              trailing: '${_packages.length} selected',
+              'Aplikasi yang diblokir',
+              trailing: '${_packages.length} dipilih',
             ),
             appsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => const AppEmptyState(
                 compact: true,
                 icon: Icons.error_outline_rounded,
-                title: 'Could not load apps',
+                title: 'Tidak dapat memuat aplikasi',
               ),
               data: (apps) {
                 final sorted = [...apps]
@@ -186,10 +204,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                       AppListRow(
                         dense: true,
                         title: app.label,
-                        onTap: () => toggle(app.packageName),
+                        onTap: strictActive ? null : () => toggle(app.packageName),
                         trailing: Checkbox(
                           value: _packages.contains(app.packageName),
-                          onChanged: (_) => toggle(app.packageName),
+                          onChanged: strictActive ? null : (_) => toggle(app.packageName),
                         ),
                       ),
                   ],
@@ -197,7 +215,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               },
             ),
             const SizedBox(height: AppSpacing.lg),
-            VaultButton(label: 'Save schedule', onPressed: _save),
+            VaultButton(label: 'Simpan jadwal', onPressed: strictActive ? null : _save),
           ],
         ),
       ),
@@ -249,14 +267,14 @@ class _TimeField extends StatelessWidget {
 
   final String label;
   final String value;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = SuiteColors.of(context);
     return Semantics(
       button: true,
-      label: '$label time, $value',
+      label: '$label, $value',
       child: ExcludeSemantics(
         child: VaultCard(
           onTap: onTap,

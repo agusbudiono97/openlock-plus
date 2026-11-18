@@ -45,14 +45,15 @@ void main() {
     // Both apps are listed.
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
-    expect(find.text('0 locked'), findsOneWidget);
+    expect(find.text('0 aplikasi dikunci'), findsOneWidget);
 
     // Toggle the first app's switch on.
-    final firstSwitch = find.byType(Switch).at(1); // 0 = "lock new apps"
+    expect(find.text('Kunci aplikasi yang baru dipasang'), findsNothing);
+    final firstSwitch = find.byType(Switch).first;
     await tester.tap(firstSwitch);
     await tester.pumpAndSettle();
 
-    expect(find.text('1 locked'), findsOneWidget);
+    expect(find.text('1 aplikasi dikunci'), findsOneWidget);
   });
 
   Future<void> pumpPicker(WidgetTester tester, FakeEnforcementBridge bridge) {
@@ -84,8 +85,8 @@ void main() {
     await pumpPicker(tester, bridge);
     await tester.pump();
 
-    expect(find.text('Protected apps'), findsOneWidget);
-    expect(find.text('Counting installed apps'), findsOneWidget);
+    expect(find.text('Aplikasi terlindungi'), findsOneWidget);
+    expect(find.text('Menghitung aplikasi terpasang'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     final skeletonRow = find
         .ancestor(of: find.byType(Skeleton), matching: find.byType(AppListRow))
@@ -95,7 +96,7 @@ void main() {
     bridge.holdApps!.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('of 1 installed apps'), findsOneWidget);
+    expect(find.text('dari 1 aplikasi terpasang'), findsOneWidget);
     final row = find.ancestor(
       of: find.text('Alpha'),
       matching: find.byType(AppListRow),
@@ -178,7 +179,7 @@ void main() {
       // directly below instead.
       tester.takeException();
 
-      expect(find.text('Hide notifications'), findsOneWidget);
+      expect(find.text('Sembunyikan notifikasi'), findsOneWidget);
       // No row inside the app's card lays its children out past its edge.
       final rows = find.descendant(
         of: find.byType(GroupedRowItem),
@@ -195,8 +196,8 @@ void main() {
       }
       // The hide switch sits under the lock switch, inside the row padding.
       final card = tester.getRect(find.byType(GroupedRowItem));
-      final lock = tester.getRect(find.byType(Switch).at(1)); // 0 = new apps
-      final hide = tester.getRect(find.byType(Switch).at(2));
+      final lock = tester.getRect(find.byType(Switch).at(0));
+      final hide = tester.getRect(find.byType(Switch).at(1));
       expect(hide.right, lock.right);
       expect(hide.right, lessThanOrEqualTo(card.right - AppSpacing.md));
       expect(hide.bottom, lessThanOrEqualTo(card.bottom));

@@ -362,16 +362,22 @@ class EnforcementPlugin(private val activity: Activity) :
 
     private fun startService() {
         val intent = Intent(activity, OpenLockMonitorService::class.java)
-        runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                activity.startForegroundService(intent)
-            } else {
-                activity.startService(intent)
-            }
+        // Do not swallow Android's foreground-service start failures. Flutter
+        // must be told when the monitor could not start, otherwise the UI can
+        // report a successful lock while no process is enforcing it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity.startForegroundService(intent)
+        } else {
+            activity.startService(intent)
         }
     }
 
     private fun stopService() {
+        // The monitor is part of the Strict Mode enforcement boundary. Never
+        // honour an in-app stop request while a commitment is active; Android
+        // force-stop / permission revocation remain OS-level bypasses that an
+        // ordinary app cannot fully prevent.
+        if (store.strictModeActive()) return
         runCatching {
             activity.stopService(Intent(activity, OpenLockMonitorService::class.java))
         }
@@ -404,6 +410,9 @@ class EnforcementPlugin(private val activity: Activity) :
     }
 
     private fun deactivateDeviceAdmin() {
+        // Device-admin removal weakens uninstall protection. Keep it behind
+        // the same native Strict Mode commitment gate as config/service edits.
+        if (store.strictModeActive()) return
         runCatching { devicePolicyManager().removeActiveAdmin(adminComponent()) }
     }
 

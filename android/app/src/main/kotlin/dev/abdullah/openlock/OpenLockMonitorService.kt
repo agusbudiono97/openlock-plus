@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.app.AppOpsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -15,6 +16,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.Process
+import android.provider.Settings
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
 
@@ -34,11 +37,22 @@ class OpenLockMonitorService : Service() {
     private var lastForegroundPkg: String? = null
     private var lastLaunchedPkg: String? = null
     private var lastLaunchAt: Long = 0L
+    private var lastStrictLaunchedPkg: String? = null
+    private var lastStrictLaunchAt: Long = 0L
+    @Volatile private var observedForegroundPkg: String? = null
+    private var lastNotificationAccessState: String? = null
+    @Volatile private var monitorFaulted = false
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                Intent.ACTION_SCREEN_OFF -> screenOffAt = System.currentTimeMillis()
+                Intent.ACTION_SCREEN_OFF -> {
+                    screenOffAt = System.currentTimeMillis()
+                    observedForegroundPkg = null
+                    lastForegroundPkg = null
+                    lastStrictLaunchedPkg = null
+                    lastLaunchedPkg = null
+                }
             }
         }
     }
@@ -47,8 +61,17 @@ class OpenLockMonitorService : Service() {
         override fun run() {
             try {
                 tick()
+                if (monitorFaulted) {
+                    monitorFaulted = false
+                    runCatching { refreshNotificationIfNeeded() }
+                }
             } catch (_: Exception) {
-                // Never let a transient failure kill the loop.
+                // Keep the monitor loop alive, but never leave a healthy-looking
+                // notification while foreground detection is failing.
+                if (!monitorFaulted) {
+                    monitorFaulted = true
+                    runCatching { refreshNotificationIfNeeded() }
+                }
             }
             handler.postDelayed(this, POLL_INTERVAL_MS)
         }
@@ -76,9 +99,42 @@ class OpenLockMonitorService : Service() {
         super.onDestroy()
     }
 
+    /**
+     * The monitor must outlive the launcher task. Some OEM launchers kill the
+     * app process shortly after the task is dismissed, so a delayed Handler
+     * callback is unsafe: it disappears with that process. Request the
+     * foreground-service start synchronously while this callback is running.
+     *
+     * The service is already configured with stopWithTask=false and returns
+     * START_STICKY. This explicit start is an additional best-effort nudge for
+     * launchers that detach/stop it with the task. Android force-stop, OEM
+     * process killers, or revoked special access can still defeat an ordinary
+     * app's monitor.
+     */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        if (!hasProtectedWork()) return
+
+        runCatching {
+            val restart = Intent(applicationContext, OpenLockMonitorService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                applicationContext.startForegroundService(restart)
+            } else {
+                applicationContext.startService(restart)
+            }
+        }
+    }
+
+    private fun hasProtectedWork(): Boolean {
+        if (store.strictModeActive()) return true
+        if (store.pinHash() == null) return false
+        return store.lockedPackages().isNotEmpty() || store.schedules().length() > 0
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun tick() {
+        refreshNotificationIfNeeded()
         val current = foregroundApp() ?: return
         val now = System.currentTimeMillis()
 
@@ -97,24 +153,53 @@ class OpenLockMonitorService : Service() {
         // Never lock ourselves.
         if (current == packageName) return
 
+        // Strict Mode is a hard block, separate from the normal PIN app-lock.
+        // ConfigStore uses a monotonic deadline during the current boot and
+        // a best-effort wall-clock deadline after reboot. A null deadline
+        // means indefinite. The activity only displays the block/countdown.
+        if (store.strictModeActive() && store.strictModePackages().contains(current)) {
+            if (current == lastStrictLaunchedPkg &&
+                now - lastStrictLaunchAt < RELAUNCH_GUARD_MS
+            ) return
+            lastStrictLaunchedPkg = current
+            lastStrictLaunchAt = now
+            launchStrictMode(current)
+            return
+        }
+
+        // Clear the strict-mode debounce when the user leaves the blocked app.
+        lastStrictLaunchedPkg = null
+
         // Uninstall protection: guard the OS screens about OpenLock itself
         // (App info, uninstall dialog, device-admin deactivation), as read by
         // OpenLockGuardAccessibilityService. Runs before the normal locked-app
         // check because Settings is not in the locked set.
-        if (store.pinHash() != null && store.preventUninstall() &&
-            GuardedScreen.isShowing(current)
-        ) {
-            // Respect an in-session unlock so the user can actually reach the
-            // deactivate screen after authenticating; re-lock once the screen
-            // has turned off since.
-            val unlockedAt = LockSession.unlockedAt(current)
-            val stillUnlocked = unlockedAt != 0L && screenOffAt <= unlockedAt
-            if (!stillUnlocked &&
-                !(current == lastLaunchedPkg && now - lastLaunchAt < RELAUNCH_GUARD_MS)
-            ) {
-                lastLaunchedPkg = current
-                lastLaunchAt = now
-                launchLock(current)
+        val strictActive = store.strictModeActive()
+        val uninstallGuardEnabled =
+            strictActive || (store.pinHash() != null && store.preventUninstall())
+        if (uninstallGuardEnabled && GuardedScreen.isShowing(current)) {
+            // During Strict Mode there is no early-unlock path: show the
+            // non-dismissible Strict Mode barrier even when no ordinary PIN
+            // has ever been configured. Outside Strict Mode, retain the
+            // existing PIN-authenticated device-admin flow.
+            if (strictActive) {
+                if (current != lastLaunchedPkg ||
+                    now - lastLaunchAt >= RELAUNCH_GUARD_MS
+                ) {
+                    lastLaunchedPkg = current
+                    lastLaunchAt = now
+                    launchStrictMode(current)
+                }
+            } else {
+                val unlockedAt = LockSession.unlockedAt(current)
+                val stillUnlocked = unlockedAt != 0L && screenOffAt <= unlockedAt
+                if (!stillUnlocked &&
+                    !(current == lastLaunchedPkg && now - lastLaunchAt < RELAUNCH_GUARD_MS)
+                ) {
+                    lastLaunchedPkg = current
+                    lastLaunchAt = now
+                    launchLock(current)
+                }
             }
             return
         }
@@ -143,6 +228,15 @@ class OpenLockMonitorService : Service() {
         launchLock(current)
     }
 
+    private fun launchStrictMode(packageName: String) {
+        val intent = Intent(this, StrictModeActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+            putExtra(StrictModeActivity.EXTRA_PACKAGE, packageName)
+        }
+        runCatching { startActivity(intent) }
+    }
+
     private fun launchLock(packageName: String) {
         val intent = Intent(this, LockActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -157,15 +251,75 @@ class OpenLockMonitorService : Service() {
         val end = System.currentTimeMillis()
         val begin = end - LOOKBACK_MS
         val events = usageStatsManager.queryEvents(begin, end)
-        var pkg: String? = null
         val event = UsageEvents.Event()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
-            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-                pkg = event.packageName
+            // Ignore history from before the display was turned off. Otherwise
+            // a poll immediately after screen-off could resurrect the last
+            // app from the lookback window and show a block over the lockscreen.
+            if (event.timeStamp <= screenOffAt) continue
+
+            // Android 10+ reports ACTIVITY_RESUMED; older releases report
+            // MOVE_TO_FOREGROUND. Keep the latest observed package between
+            // polls: the foreground event is emitted once on app launch, not
+            // continuously, so returning null after LOOKBACK_MS would silently
+            // stop enforcing an app that stays open.
+            val entersForeground =
+                event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                        event.eventType == UsageEvents.Event.ACTIVITY_RESUMED)
+            val leavesForeground =
+                event.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                        event.eventType == UsageEvents.Event.ACTIVITY_PAUSED)
+
+            if (entersForeground) {
+                observedForegroundPkg = event.packageName
+            } else if (leavesForeground && observedForegroundPkg == event.packageName) {
+                // Clear only the package that actually left. A later resumed
+                // event in the same query window will set the new foreground.
+                observedForegroundPkg = null
             }
         }
-        return pkg
+        return observedForegroundPkg
+    }
+
+    /**
+     * Detect permissions that are essential for foreground-app enforcement.
+     * Android can revoke these while Strict Mode is active; the persistent
+     * notification must not continue claiming protection is healthy.
+     */
+    private fun missingEnforcementAccess(): String {
+        val missing = ArrayList<String>(2)
+        val usageAllowed = runCatching {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    Process.myUid(),
+                    packageName,
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                appOps.checkOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    Process.myUid(),
+                    packageName,
+                )
+            }
+            mode == AppOpsManager.MODE_ALLOWED
+        }.getOrDefault(false)
+        if (!usageAllowed) missing.add("Akses penggunaan")
+        if (!Settings.canDrawOverlays(this)) missing.add("Tampil di atas aplikasi lain")
+        return missing.joinToString(" dan ")
+    }
+
+    private fun refreshNotificationIfNeeded() {
+        val missing = missingEnforcementAccess()
+        val state = "$missing|$monitorFaulted"
+        if (state == lastNotificationAccessState) return
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(NOTIFICATION_ID, buildNotification())
     }
 
     private fun buildNotification(): Notification {
@@ -198,9 +352,15 @@ class OpenLockMonitorService : Service() {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
         }
+        val missingAccess = missingEnforcementAccess()
+        lastNotificationAccessState = "$missingAccess|$monitorFaulted"
+        val notice = monitorNotice(missingAccess, monitorFaulted)
+        val contentText = notice.second
+        val contentTitle = notice.first
+
         return builder
-            .setContentTitle("OpenLock is protecting your apps")
-            .setContentText("Locked apps stay behind your PIN.")
+            .setContentTitle(contentTitle)
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setOngoing(true)
             .setContentIntent(pending)

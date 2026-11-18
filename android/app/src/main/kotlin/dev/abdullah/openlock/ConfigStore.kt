@@ -2,6 +2,8 @@ package dev.abdullah.openlock
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.SystemClock
+import android.provider.Settings
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import org.json.JSONArray
@@ -23,6 +25,7 @@ import java.util.UUID
  */
 class ConfigStore private constructor(context: Context) {
 
+    private val appContext = context.applicationContext
     private val prefs: SharedPreferences = createPrefs(context)
 
     @Volatile
@@ -47,9 +50,50 @@ class ConfigStore private constructor(context: Context) {
         }
     }
 
+    @Synchronized
     fun saveConfig(json: String) {
-        prefs.edit().putString(KEY_CONFIG, json).apply()
-        config = parse(json)
+        val incoming = parse(json) ?: return
+        val current = config
+        if (current != null && strictModeActive()) {
+            // Native backstop: freeze the entire stored snapshot while the
+            // commitment is active. Do not accept app-list, schedule, PIN, or
+            // protection-setting edits from another UI/code path either.
+            return
+        }
+        // Capture a monotonic deadline at commitment time. This makes
+        // wall-clock edits unable to extend/shorten Strict Mode during the
+        // current boot. After reboot, StrictModeClock falls back to the wall
+        // deadline because elapsedRealtime is reset by Android.
+        if (incoming.optBoolean("strictModeEnabled", false)) {
+            val endWall = incoming.optLong("strictModeEndsAtMillis", 0L)
+            if (endWall > 0L) {
+                incoming.put(
+                    KEY_STRICT_END_ELAPSED,
+                    StrictModeClock.elapsedDeadline(
+                        endWall,
+                        System.currentTimeMillis(),
+                        SystemClock.elapsedRealtime(),
+                    ) ?: 0L,
+                )
+                incoming.put(
+                    KEY_STRICT_BOOT_COUNT,
+                    Settings.Global.getInt(
+                        appContext.contentResolver,
+                        Settings.Global.BOOT_COUNT,
+                        -1,
+                    ),
+                )
+            } else {
+                incoming.remove(KEY_STRICT_END_ELAPSED)
+                incoming.remove(KEY_STRICT_BOOT_COUNT)
+            }
+        } else {
+            incoming.remove(KEY_STRICT_END_ELAPSED)
+            incoming.remove(KEY_STRICT_BOOT_COUNT)
+        }
+        val persisted = incoming.toString()
+        prefs.edit().putString(KEY_CONFIG, persisted).apply()
+        config = incoming
     }
 
     private fun parse(raw: String?): JSONObject? {
@@ -72,6 +116,51 @@ class ConfigStore private constructor(context: Context) {
 
     fun schedules(): JSONArray = config?.optJSONArray("schedules") ?: JSONArray()
 
+    /** Strict Mode package set; expiry is checked against wall-clock time. */
+    fun strictModePackages(): Set<String> {
+        val array = config?.optJSONArray("strictModePackages") ?: return emptySet()
+        return buildSet {
+            for (i in 0 until array.length()) add(array.optString(i))
+        }
+    }
+
+    fun strictModeEndMillis(): Long =
+        config?.optLong("strictModeEndsAtMillis", 0L) ?: 0L
+
+    fun strictModeRemainingMillis(): Long? {
+        val cfg = config ?: return 0L
+        return StrictModeClock.remainingMillis(
+            enabled = cfg.optBoolean("strictModeEnabled", false),
+            endWallMillis = cfg.optLong("strictModeEndsAtMillis", 0L),
+            endElapsedMillis = cfg.optLong(KEY_STRICT_END_ELAPSED, 0L),
+            savedBootCount = cfg.optInt(KEY_STRICT_BOOT_COUNT, -1),
+            nowWallMillis = System.currentTimeMillis(),
+            nowElapsedMillis = SystemClock.elapsedRealtime(),
+            currentBootCount = Settings.Global.getInt(
+                appContext.contentResolver,
+                Settings.Global.BOOT_COUNT,
+                -1,
+            ),
+        )
+    }
+
+    fun strictModeActive(nowMillis: Long = System.currentTimeMillis()): Boolean {
+        val cfg = config ?: return false
+        return StrictModeClock.isActive(
+            enabled = cfg.optBoolean("strictModeEnabled", false),
+            endWallMillis = cfg.optLong("strictModeEndsAtMillis", 0L),
+            endElapsedMillis = cfg.optLong(KEY_STRICT_END_ELAPSED, 0L),
+            savedBootCount = cfg.optInt(KEY_STRICT_BOOT_COUNT, -1),
+            nowWallMillis = nowMillis,
+            nowElapsedMillis = SystemClock.elapsedRealtime(),
+            currentBootCount = Settings.Global.getInt(
+                appContext.contentResolver,
+                Settings.Global.BOOT_COUNT,
+                -1,
+            ),
+        )
+    }
+
     fun relockMode(): String = config?.optString("relockMode", "immediately") ?: "immediately"
 
     fun relockTimeoutMinutes(): Int = config?.optInt("relockTimeoutMinutes", 1) ?: 1
@@ -84,6 +173,27 @@ class ConfigStore private constructor(context: Context) {
     fun intruderThreshold(): Int = config?.optInt("intruderThreshold", 3) ?: 3
 
     fun fakeCoverEnabled(): Boolean = config?.optBoolean("fakeCoverEnabled", false) ?: false
+
+    fun strictScreenTitle(): String =
+        config?.optString("strictScreenTitle", "WAKTUNYA BERHENTI")
+            ?.takeIf { it.isNotBlank() } ?: "WAKTUNYA BERHENTI"
+
+    fun strictScreenMessage(): String =
+        config?.optString(
+            "strictScreenMessage",
+            "Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan.",
+        )?.takeIf { it.isNotBlank() }
+            ?: "Kamu sedang menjaga komitmenmu. Aplikasi ini belum bisa digunakan."
+
+    fun strictScreenFooter(): String =
+        config?.optString(
+            "strictScreenFooter",
+            "Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal.",
+        )?.takeIf { it.isNotBlank() }
+            ?: "Tetap kuat. Waktu perlindungan akan berakhir sesuai jadwal."
+
+    fun strictScreenPalette(): Int =
+        (config?.optInt("strictScreenPalette", 0) ?: 0).coerceIn(0, 2)
 
     fun preventUninstall(): Boolean = config?.optBoolean("preventUninstall", false) ?: false
 
@@ -200,5 +310,7 @@ class ConfigStore private constructor(context: Context) {
         private const val PREFS_NAME = "openlock_enforcement"
         private const val KEY_CONFIG = "config"
         private const val KEY_INTRUDERS = "intruders"
+        private const val KEY_STRICT_END_ELAPSED = "strictModeEndElapsedRealtime"
+        private const val KEY_STRICT_BOOT_COUNT = "strictModeBootCount"
     }
 }

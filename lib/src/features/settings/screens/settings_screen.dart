@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/core/router/app_router.dart';
 import 'package:openlock/src/core/store_build.dart';
+import 'package:openlock/src/core/theme/theme_palette.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/models/relock_policy.dart';
@@ -48,11 +49,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   String _relockLabel(RelockPolicy policy) {
     switch (policy.mode) {
       case RelockMode.immediately:
-        return 'When you leave the app';
+        return 'Saat keluar dari aplikasi';
       case RelockMode.onScreenOff:
-        return 'When the screen turns off';
+        return 'Saat layar mati';
       case RelockMode.afterTimeout:
-        return 'After ${policy.timeout.inMinutes} min';
+        return 'Setelah ${policy.timeout.inMinutes} menit';
     }
   }
 
@@ -60,12 +61,239 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// biometrics first (if enabled), then falls back to a PIN prompt. Returns
   /// true only on a successful check.
   Future<bool> _authenticateForDisable() =>
-      _reauthenticate('Enter your PIN to turn off uninstall protection.');
+      _reauthenticate('Masukkan PIN untuk menonaktifkan perlindungan uninstall.');
+
+
+  Future<void> _editAppTheme() async {
+    const presets = <(String, Color)>[
+      ('Ocean', Color(0xFF007E9C)), ('Mint', Color(0xFF159B79)),
+      ('Violet', Color(0xFF805AD5)), ('Blue', Color(0xFF3478D4)),
+      ('Rose', Color(0xFFC04475)), ('Amber', Color(0xFFB7791F)),
+      ('Forest', Color(0xFF477A45)), ('Monochrome', Color(0xFF596273)),
+    ];
+    final palette = ThemePaletteScope.of(context);
+    final hex = TextEditingController(
+      text: palette.seed.toARGB32().toRadixString(16).substring(2).toUpperCase(),
+    );
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) => AlertDialog(
+            title: const Text('Warna tema aplikasi'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Pilih warna aksen'),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10, runSpacing: 10,
+                    children: [
+                      for (final preset in presets)
+                        InkWell(
+                          onTap: () async {
+                            await palette.setSeed(preset.$2);
+                            if (!dialogContext.mounted) return;
+                            hex.text = preset.$2.toARGB32().toRadixString(16)
+                                .substring(2).toUpperCase();
+                            setDialogState(() {});
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 76,
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: palette.seed.toARGB32() == preset.$2.toARGB32()
+                                    ? Theme.of(dialogContext).colorScheme.primary
+                                    : Theme.of(dialogContext).colorScheme.outlineVariant,
+                                width: palette.seed.toARGB32() == preset.$2.toARGB32() ? 2 : 1,
+                              ),
+                            ),
+                            child: Column(children: [
+                              CircleAvatar(radius: 13, backgroundColor: preset.$2),
+                              const SizedBox(height: 5),
+                              Text(preset.$1,
+                                  style: Theme.of(dialogContext).textTheme.labelSmall),
+                            ]),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Warna custom (HEX)'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: hex, maxLength: 6,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      prefixText: '#', hintText: '20C9A5', counterText: '',
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    CircleAvatar(
+                      radius: 13,
+                      backgroundColor: RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(hex.text)
+                          ? Color(0xFF000000 | int.parse(hex.text, radix: 16))
+                          : Theme.of(dialogContext).colorScheme.surfaceContainerHighest,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Pratinjau warna',
+                        style: Theme.of(dialogContext).textTheme.bodySmall),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () async {
+                        if (!RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(hex.text)) return;
+                        await palette.setSeed(
+                            Color(0xFF000000 | int.parse(hex.text, radix: 16)));
+                        if (!dialogContext.mounted) return;
+                        setDialogState(() {});
+                      },
+                      child: const Text('Terapkan'),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await palette.reset();
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext);
+                },
+                child: const Text('Reset default'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Selesai'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      hex.dispose();
+    }
+  }
+
+  Future<void> _editStrictScreenText(LockConfig config) async {
+    final title = TextEditingController(text: config.strictScreenTitle);
+    final message = TextEditingController(text: config.strictScreenMessage);
+    final footer = TextEditingController(text: config.strictScreenFooter);
+    try {
+      final save = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Personalisasi layar blokir'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: title,
+                  maxLength: 48,
+                  decoration: const InputDecoration(
+                    labelText: 'Judul utama',
+                    hintText: 'WAKTUNYA BERHENTI',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: message,
+                  maxLength: 140,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Pesan utama',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: footer,
+                  maxLength: 100,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Pesan penutup',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      );
+      if (save == true && mounted) {
+        await ref.read(configControllerProvider.notifier).setStrictScreenText(
+              title: title.text,
+              message: message.text,
+              footer: footer.text,
+            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Teks layar blokir berhasil disimpan.')),
+          );
+        }
+      }
+    } finally {
+      title.dispose();
+      message.dispose();
+      footer.dispose();
+    }
+  }
+
+  Future<void> _editStrictScreenPalette(LockConfig config) async {
+    const labels = ['Malam mint', 'Senja amber', 'Hutan tenang'];
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Warna layar blokir'),
+        children: [
+          for (var index = 0; index < labels.length; index++)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, index),
+              child: Row(
+                children: [
+                  Icon(
+                    config.strictScreenPalette == index
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    color: config.strictScreenPalette == index
+                        ? const Color(0xFF007E9C)
+                        : null,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(labels[index]),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (selected != null && mounted) {
+      await ref
+          .read(configControllerProvider.notifier)
+          .setStrictScreenPalette(selected);
+    }
+  }
 
   /// Re-auth, confirm replacing any existing key, then show a new recovery
   /// key until the user confirms saving it.
   Future<void> _recoveryKey() async {
-    if (!await _reauthenticate('Enter your PIN to create a recovery key.')) {
+    if (!await _reauthenticate('Masukkan PIN untuk membuat kunci pemulihan.')) {
       return;
     }
     final auth = ref.read(pinAuthServiceProvider);
@@ -73,19 +301,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       final replace = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Replace your recovery key?'),
+          title: const Text('Ganti kunci pemulihan?'),
           content: const Text(
-            'Your current recovery key will stop working. Recovery keys are '
-            'never stored, so the current one cannot be shown again.',
+            'Kunci pemulihan lama tidak akan berlaku. Kunci pemulihan '
+            'tidak pernah disimpan, jadi kunci lama tidak dapat ditampilkan lagi.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
+              child: const Text('Batal'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Create new key'),
+              child: const Text('Buat kunci baru'),
             ),
           ],
         ),
@@ -127,7 +355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         var error = false;
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) => AlertDialog(
-            title: const Text('Confirm your PIN'),
+            title: const Text('Konfirmasi PIN'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -139,14 +367,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   obscureText: true,
                   autofocus: true,
                   keyboardType: TextInputType.number,
-                  errorText: error ? 'Wrong PIN' : null,
+                  errorText: error ? 'PIN salah' : null,
                 ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Cancel'),
+                child: const Text('Batal'),
               ),
               FilledButton(
                 onPressed: () async {
@@ -161,7 +389,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     setDialogState(() => error = true);
                   }
                 },
-                child: const Text('Confirm'),
+                child: const Text('Konfirmasi'),
               ),
             ],
           ),
@@ -186,6 +414,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final permissions = ref.watch(permissionsControllerProvider).valueOrNull;
     final notificationAccess = permissions?.notificationAccess ?? false;
     final screenGuardAccess = permissions?.screenGuardAccess ?? false;
+    final strictActive = config.strictModeActiveAt(DateTime.now());
 
     Widget toggle({
       required IconData icon,
@@ -199,8 +428,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           title: title,
           subtitle: subtitle,
           showChevron: false,
-          trailing: Switch(value: value, onChanged: onChanged),
-          onTap: onChanged == null ? null : () => onChanged(!value),
+          trailing: Switch(value: value, onChanged: strictActive ? null : onChanged),
+          onTap: strictActive || onChanged == null ? null : () => onChanged(!value),
         );
 
     return Scaffold(
@@ -208,38 +437,132 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         bottom: false,
         child: PageList(
           children: [
-            const ScreenHeader(eyebrow: 'OpenLock', title: 'Settings'),
+            const ScreenHeader(eyebrow: 'PREFERENSI & KEAMANAN', title: 'Profil'),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).colorScheme.secondary.withValues(alpha: .16),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: .07),
+                    Theme.of(context).colorScheme.surfaceContainerLow,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .35),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: .15),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Icons.shield_moon_outlined,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Perlindungan perangkat',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Atur keamanan dan pengalaman OpenLock.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (strictActive)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.lock_clock_rounded),
+                  title: Text('Mode Ketat sedang aktif'),
+                  subtitle: Text('Pengaturan perlindungan dikunci sampai waktu komitmen berakhir.'),
+                ),
+              ),
             RowGroup(
               children: [
                 AppearanceSetting(controller: ref.watch(appearanceProvider)),
               ],
             ),
-            const SectionLead('Protection'),
+            const SectionLead('Tema aplikasi'),
+            RowGroup(
+              children: [
+                SettingsTile(
+                  icon: Icons.color_lens_outlined,
+                  title: 'Warna dan aksen',
+                  subtitle: 'Pilih tema siap pakai atau gunakan warna HEX sendiri',
+                  onTap: _editAppTheme,
+                ),
+              ],
+            ),
+            const SectionLead('Personalisasi'),
+            RowGroup(
+              children: [
+                SettingsTile(
+                  icon: Icons.text_fields_rounded,
+                  title: 'Teks layar blokir',
+                  subtitle: 'Atur judul, pesan utama, dan pesan penutup',
+                  onTap: strictActive ? null : () => _editStrictScreenText(config),
+                ),
+                SettingsTile(
+                  icon: Icons.palette_outlined,
+                  title: 'Warna layar blokir',
+                  subtitle: const ['Malam mint', 'Senja amber', 'Hutan tenang']
+                      [config.strictScreenPalette.clamp(0, 2).toInt()],
+                  onTap: strictActive
+                      ? null
+                      : () => _editStrictScreenPalette(config),
+                ),
+              ],
+            ),
+            const SectionLead('Perlindungan'),
             RowGroup(
               children: [
                 SettingsTile(
                   icon: Icons.verified_user_outlined,
-                  title: 'Permissions & status',
-                  subtitle: 'Usage access, overlay, monitor service',
-                  onTap: () => context.push(AppRoutes.permissions),
+                  title: 'Izin dan status',
+                  subtitle: 'Akses penggunaan, tampil di atas aplikasi, layanan pemantau',
+                  onTap: strictActive ? null : () => context.push(AppRoutes.permissions),
                 ),
                 SettingsTile(
                   icon: Icons.timer_outlined,
-                  title: 'Relock behavior',
+                  title: 'Perilaku kunci ulang',
                   subtitle: _relockLabel(config.relock),
-                  onTap: () => context.push(AppRoutes.relock),
+                  onTap: strictActive ? null : () => context.push(AppRoutes.relock),
                 ),
               ],
             ),
-            const SectionLead('Notifications'),
+            const SectionLead('Notifikasi'),
             RowGroup(
               children: [
                 toggle(
                   icon: Icons.notifications_off_outlined,
-                  title: 'Hide notification content',
+                  title: 'Sembunyikan isi notifikasi',
                   subtitle: config.hideNotifications
-                      ? 'Locked apps show a redacted notice'
-                      : 'Replace locked apps\' notifications with a count',
+                      ? 'Notifikasi aplikasi terkunci akan disamarkan'
+                      : 'Notifikasi aplikasi terkunci diganti dengan jumlah notifikasi',
                   value: config.hideNotifications,
                   onChanged: (value) async {
                     final messenger = ScaffoldMessenger.of(context);
@@ -248,8 +571,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       messenger.showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Grant Notification access so OpenLock can hide '
-                            'notification content.',
+                            'Berikan akses notifikasi agar OpenLock dapat menyembunyikan '
+                            'isi notifikasi.',
                           ),
                         ),
                       );
@@ -260,20 +583,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   icon: notificationAccess
                       ? Icons.check_circle_outline
                       : Icons.error_outline,
-                  title: 'Notification access',
+                  title: 'Akses notifikasi',
                   subtitle: notificationAccess
-                      ? 'Granted'
-                      : 'Required to hide notification content',
+                      ? 'Diizinkan'
+                      : 'Diperlukan untuk menyembunyikan isi notifikasi',
                   showChevron: false,
                   trailing: notificationAccess
                       ? null
                       : TextButton(
-                          onPressed: () => ref
+                          onPressed: strictActive ? null : () => ref
                               .read(permissionsControllerProvider.notifier)
                               .requestNotificationAccess(),
-                          child: const Text('Grant'),
+                          child: const Text('Izinkan'),
                         ),
-                  onTap: notificationAccess
+                  onTap: strictActive || notificationAccess
                       ? null
                       : () => ref
                           .read(permissionsControllerProvider.notifier)
@@ -281,26 +604,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
               ],
             ),
-            const SectionLead('Security'),
+            const SectionLead('Keamanan'),
             RowGroup(
               children: [
                 SettingsTile(
                   icon: Icons.pin_outlined,
-                  title: 'Change PIN',
-                  onTap: () => context.push(AppRoutes.changePin),
+                  title: 'Ubah PIN',
+                  onTap: strictActive ? null : () => context.push(AppRoutes.changePin),
                 ),
                 SettingsTile(
                   icon: Icons.key_outlined,
-                  title: 'Recovery key',
-                  subtitle: 'Resets your PIN if you forget it',
-                  onTap: _recoveryKey,
+                  title: 'Kunci pemulihan',
+                  subtitle: 'Atur ulang PIN jika kamu lupa',
+                  onTap: strictActive ? null : _recoveryKey,
                 ),
                 toggle(
                   icon: Icons.fingerprint,
-                  title: 'Fingerprint unlock',
+                  title: 'Buka dengan sidik jari',
                   subtitle: biometricSupported
-                      ? 'Unlock with your fingerprint'
-                      : 'Not available on this device',
+                      ? 'Gunakan sidik jari untuk membuka'
+                      : 'Tidak tersedia di perangkat ini',
                   value: biometricEnabled,
                   onChanged: biometricSupported
                       ? (value) async {
@@ -318,10 +641,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
                 toggle(
                   icon: Icons.app_blocking_outlined,
-                  title: 'Prevent uninstall',
+                  title: 'Cegah uninstall',
                   subtitle: preventUninstall
-                      ? 'Uninstall needs your PIN'
-                      : 'Require your PIN to uninstall',
+                      ? 'Uninstall memerlukan PIN'
+                      : 'Wajibkan PIN untuk uninstall',
                   value: preventUninstall,
                   onChanged: (value) async {
                     final security =
@@ -336,8 +659,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         messenger.showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'PIN or fingerprint required to turn off '
-                              'uninstall protection.',
+                              'PIN atau sidik jari diperlukan untuk mematikan '
+                              'perlindungan uninstall.',
                             ),
                           ),
                         );
@@ -350,22 +673,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     icon: screenGuardAccess
                         ? Icons.check_circle_outline
                         : Icons.error_outline,
-                    title: 'Uninstall screen guard',
+                    title: 'Lindungi layar uninstall',
                     subtitle: screenGuardAccess
-                        ? 'PIN required on OpenLock\'s App info and uninstall '
-                            'screens'
-                        : 'Enable in Accessibility to guard OpenLock\'s App '
-                            'info and uninstall screens',
+                        ? 'PIN diperlukan pada halaman Info aplikasi dan proses uninstall OpenLock.'
+                        : 'Aktifkan Aksesibilitas agar OpenLock dapat mengawal halaman Info aplikasi dan proses uninstall.',
                     showChevron: false,
                     trailing: screenGuardAccess
                         ? null
                         : TextButton(
-                            onPressed: () => ref
+                            onPressed: strictActive ? null : () => ref
                                 .read(permissionsControllerProvider.notifier)
                                 .requestScreenGuardAccess(),
-                            child: const Text('Enable'),
+                            child: const Text('Aktifkan'),
                           ),
-                    onTap: screenGuardAccess
+                    onTap: strictActive || screenGuardAccess
                         ? null
                         : () => ref
                             .read(permissionsControllerProvider.notifier)
@@ -373,56 +694,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 toggle(
                   icon: Icons.shuffle,
-                  title: 'Randomize keypad',
-                  subtitle: 'Shuffle digits on the keypad',
+                  title: 'Acak susunan tombol PIN',
+                  subtitle: 'Acak posisi angka pada papan PIN',
                   value: config.randomizeKeypad,
                   onChanged: controller.setRandomizeKeypad,
                 ),
               ],
             ),
-            const SectionLead('Intruder detection'),
+            const SectionLead('Deteksi penyusup'),
             RowGroup(
               children: [
                 toggle(
                   icon: Icons.photo_camera_outlined,
-                  title: 'Capture intruder photos',
+                  title: 'Ambil foto penyusup',
                   subtitle:
-                      'Photo after ${config.intruderThreshold} failed attempts',
+                      'Ambil foto setelah ${config.intruderThreshold} percobaan gagal',
                   value: config.intruderCaptureEnabled,
                   onChanged: (value) =>
                       controller.setIntruderCapture(enabled: value),
                 ),
                 SettingsTile(
                   icon: Icons.list_alt_outlined,
-                  title: 'View intruder log',
+                  title: 'Lihat riwayat penyusup',
                   onTap: () => context.go(AppRoutes.intruder),
                 ),
               ],
             ),
-            const SectionLead('Advanced'),
+            const SectionLead('Lanjutan'),
             RowGroup(
               children: [
                 toggle(
                   icon: Icons.warning_amber_outlined,
-                  title: 'Decoy cover',
-                  subtitle: 'Fake "app stopped" dialog',
+                  title: 'Tampilan pengalih',
+                  subtitle: 'Dialog tiruan aplikasi berhenti',
                   value: config.fakeCoverEnabled,
                   onChanged: controller.setFakeCover,
                 ),
                 SettingsTile(
                   icon: Icons.backup_outlined,
-                  title: 'Backup & restore',
-                  onTap: () => context.push(AppRoutes.backup),
+                  title: 'Cadangkan dan pulihkan',
+                  onTap: strictActive ? null : () => context.push(AppRoutes.backup),
                 ),
               ],
             ),
-            const SectionLead('Updates'),
+            const SectionLead('Pembaruan'),
             RowGroup(
               children: [
                 if (!kStoreBuild) const _UpdateTiles(),
                 SettingsTile(
                   icon: Icons.info_outline,
-                  title: 'About',
+                  title: 'Tentang aplikasi',
                   onTap: () => context.push(AppRoutes.about),
                 ),
               ],
@@ -454,14 +775,14 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
     final messenger = ScaffoldMessenger.of(context);
     if (info == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text("You're on the latest version.")),
+        const SnackBar(content: Text('Kamu sudah menggunakan versi terbaru.')),
       );
     } else {
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Update available · v${info.version}'),
+          content: Text('Pembaruan tersedia · v${info.version}'),
           action: SnackBarAction(
-            label: 'Update',
+            label: 'Perbarui',
             onPressed: () => ref.read(updateServiceProvider).openDownload(info),
           ),
         ),
@@ -485,8 +806,8 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
       children: [
         SettingsTile(
           icon: Icons.system_update_alt,
-          title: 'Auto-check for updates',
-          subtitle: 'Checks GitHub, uploads nothing',
+          title: 'Periksa pembaruan otomatis',
+          subtitle: 'Memeriksa pembaruan dari GitHub',
           showChevron: false,
           trailing: Switch(value: autoCheck, onChanged: setAuto),
           onTap: () => setAuto(!autoCheck),
@@ -494,7 +815,7 @@ class _UpdateTilesState extends ConsumerState<_UpdateTiles> {
         const Divider(height: 1, indent: 68),
         SettingsTile(
           icon: Icons.refresh,
-          title: 'Check now',
+          title: 'Periksa sekarang',
           showChevron: false,
           trailing: _checking
               ? const SizedBox(

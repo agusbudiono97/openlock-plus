@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
 import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
+import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 
 class IntruderLogScreen extends ConsumerWidget {
   const IntruderLogScreen({super.key});
@@ -15,6 +16,7 @@ class IntruderLogScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(intruderControllerProvider);
+    final config = ref.watch(configControllerProvider).valueOrNull;
 
     return Scaffold(
       body: SafeArea(
@@ -23,18 +25,18 @@ class IntruderLogScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const AppEmptyState(
             icon: Icons.error_outline_rounded,
-            title: 'Could not load the log',
+            title: 'Riwayat tidak dapat dimuat',
           ),
           data: (records) => PageList(
             children: [
               ScreenHeader(
-                eyebrow: 'Failed unlocks',
-                title: 'Intruders',
+                eyebrow: 'PUSAT AKTIVITAS',
+                title: 'Statistik',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      tooltip: 'Refresh',
+                      tooltip: 'Muat ulang',
                       onPressed: () => ref
                           .read(intruderControllerProvider.notifier)
                           .refresh(),
@@ -42,7 +44,7 @@ class IntruderLogScreen extends ConsumerWidget {
                     ),
                     if (records.isNotEmpty)
                       IconButton(
-                        tooltip: 'Clear all',
+                        tooltip: 'Hapus semua',
                         onPressed: () => ref
                             .read(intruderControllerProvider.notifier)
                             .clearAll(),
@@ -51,12 +53,40 @@ class IntruderLogScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  _StatsTile(
+                    label: 'Aplikasi dikunci',
+                    value: '${config?.lockedPackages.length ?? 0}',
+                    icon: Icons.lock_outline_rounded,
+                  ),
+                  _StatsTile(
+                    label: 'Jadwal aktif',
+                    value: '${config?.schedules.where((s) => s.enabled).length ?? 0}',
+                    icon: Icons.schedule_rounded,
+                  ),
+                  _StatsTile(
+                    label: 'Percobaan gagal',
+                    value: '${records.length}',
+                    icon: Icons.warning_amber_rounded,
+                  ),
+                  _StatsTile(
+                    label: 'Foto tersimpan',
+                    value: '${records.where((r) => r.photoPath != null).length}',
+                    icon: Icons.photo_camera_back_outlined,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const SectionLead('Riwayat percobaan gagal'),
               if (records.isEmpty)
                 const AppEmptyState(
                   icon: Icons.verified_user_outlined,
-                  title: 'No intruder events',
-                  message: 'If someone fails your PIN too many times, a '
-                      'snapshot appears here.',
+                  title: 'Belum ada aktivitas penyusup',
+                  message: 'Jika seseorang terlalu sering salah memasukkan PIN, foto '
+                      'dan catatan percobaannya akan muncul di sini.',
                 )
               else
                 RowGroup(
@@ -111,9 +141,80 @@ class _IntruderRow extends StatelessWidget {
       title: record.packageName,
       subtitle: when,
       trailing: IconButton(
-        tooltip: 'Delete',
+        tooltip: 'Hapus catatan',
         onPressed: onDelete,
         icon: const Icon(Icons.close_rounded),
+      ),
+    );
+  }
+}
+
+class _StatsTile extends StatelessWidget {
+  const _StatsTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 154,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 126),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              scheme.secondary.withValues(alpha: .10),
+              scheme.primary.withValues(alpha: .05),
+              scheme.surfaceContainerLow,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: .38),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: scheme.secondary.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: scheme.secondary, size: 19),
+            ),
+            const SizedBox(height: 13),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -.6,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.25,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

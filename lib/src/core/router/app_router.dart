@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openlock/src/core/shell/home_shell.dart';
 import 'package:openlock/src/features/apps/screens/app_picker_screen.dart';
+import 'package:openlock/src/features/home/screens/home_dashboard_screen.dart';
 import 'package:openlock/src/features/auth/providers/auth_providers.dart';
 import 'package:openlock/src/features/auth/screens/recovery_offer_screen.dart';
 import 'package:openlock/src/features/auth/screens/setup_pin_screen.dart';
 import 'package:openlock/src/features/auth/screens/unlock_screen.dart';
 import 'package:openlock/src/features/backup/screens/backup_screen.dart';
 import 'package:openlock/src/features/intruder/screens/intruder_log_screen.dart';
+import 'package:openlock/src/features/enforcement/screens/strict_mode_screen.dart';
 import 'package:openlock/src/features/onboarding/screens/onboarding_screen.dart';
 import 'package:openlock/src/features/onboarding/screens/permissions_screen.dart';
 import 'package:openlock/src/features/schedules/screens/schedule_editor_screen.dart';
@@ -25,6 +27,7 @@ abstract final class AppRoutes {
   static const String unlock = '/unlock';
   static const String recoveryOffer = '/recovery-key';
   static const String permissions = '/permissions';
+  static const String home = '/home';
   static const String apps = '/apps';
   static const String schedules = '/schedules';
   static const String intruder = '/intruder';
@@ -35,6 +38,7 @@ abstract final class AppRoutes {
   static const String relock = '/relock';
   static const String about = '/about';
   static const String backup = '/backup';
+  static const String strictMode = '/strict-mode';
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -77,14 +81,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             AppRoutes.setup,
             AppRoutes.unlock,
           };
-          return gates.contains(location) ? AppRoutes.apps : null;
+          return gates.contains(location) ? AppRoutes.home : null;
       }
     },
     routes: [
       GoRoute(
         path: AppRoutes.splash,
-        builder: (_, __) =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (context, state) => const _OpenLockSplash(),
       ),
       GoRoute(
         path: AppRoutes.onboarding,
@@ -101,6 +104,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.recoveryOffer,
         builder: (_, __) => const RecoveryOfferScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.strictMode,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, __) => const StrictModeScreen(),
       ),
       GoRoute(
         path: AppRoutes.permissions,
@@ -144,6 +152,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: AppRoutes.home,
+                builder: (_, __) => const HomeDashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.apps,
                 builder: (_, __) => const AppPickerScreen(),
               ),
@@ -178,3 +194,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+
+class _OpenLockSplash extends StatelessWidget {
+  const _OpenLockSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Scaffold(
+      backgroundColor: colors.surface,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Icon(Icons.shield_rounded, size: 42, color: colors.primary),
+              ),
+              const SizedBox(height: 20),
+              Text('OpenLock', style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800, letterSpacing: -0.5,
+              )),
+              const SizedBox(height: 8),
+              Text('Menyiapkan perlindungan...', style: textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              )),
+              const SizedBox(height: 28),
+              SizedBox(width: 28, height: 28, child: CircularProgressIndicator(
+                strokeWidth: 2.6, color: colors.primary,
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -2,18 +2,13 @@ import 'dart:io';
 
 import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
-import 'package:core_update/core_update.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
-import 'package:openlock/src/core/store_build.dart';
 import 'package:openlock/src/core/widgets/screen_header.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
-import 'package:openlock/src/features/enforcement/models/relock_policy.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
-import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
 
 class AppPickerScreen extends ConsumerWidget {
   const AppPickerScreen({super.key});
@@ -51,15 +46,21 @@ class AppPickerScreen extends ConsumerWidget {
               // Header blocks first, then one lazily built row per app. The
               // header never waits for the app list; only the rows do.
               itemCount: _headerCount + rowCount,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              // Keep prefetch close to the viewport. A large cache extent builds
+              // many off-screen rows and requests their launcher icons early.
+              cacheExtent: 250,
               itemBuilder: (context, index) {
                 if (index < _headerCount) {
                   return _header(
                     context,
                     ref,
                     index,
-                    config: config,
-                    total: view?.total,
                     lockedCount: view?.lockedCount,
+                    total: view?.total,
                   );
                 }
                 final i = index - _headerCount;
@@ -67,9 +68,9 @@ class AppPickerScreen extends ConsumerWidget {
                   return const AppEmptyState(
                     compact: true,
                     icon: Icons.error_outline_rounded,
-                    title: 'Could not load apps',
+                    title: 'Gagal memuat aplikasi',
                     message:
-                        'The list of installed apps is unavailable right now.',
+                        'Daftar aplikasi yang terpasang belum tersedia.',
                   );
                 }
                 if (view == null) {
@@ -83,11 +84,13 @@ class AppPickerScreen extends ConsumerWidget {
                   return const AppEmptyState(
                     compact: true,
                     icon: Icons.search_off_rounded,
-                    title: 'No apps match',
-                    message: 'Try a different name.',
+                    title: 'Aplikasi tidak ditemukan',
+                    message: 'Coba kata pencarian lain.',
                   );
                 }
                 final app = view.visible[i];
+                // ListView.builder already places each child in a repaint
+                // boundary by default; avoid nesting a second layer per row.
                 return GroupedRowItem(
                   isFirst: i == 0,
                   isLast: i == view.visible.length - 1,
@@ -107,43 +110,79 @@ class AppPickerScreen extends ConsumerWidget {
     );
   }
 
-  static const _headerCount = 5;
+  static const _headerCount = 3;
 
   Widget _header(
     BuildContext context,
     WidgetRef ref,
     int index, {
-    required LockConfig config,
-    required int? total,
     required int? lockedCount,
+    required int? total,
   }) {
     switch (index) {
       case 0:
-        return const ScreenHeader(eyebrow: 'Protection', title: 'OpenLock');
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const ScreenHeader(
+              eyebrow: 'KENDALI AKSES',
+              title: 'Aplikasi terlindungi',
+            ),
+            Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).colorScheme.secondary.withValues(alpha: .16),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .35),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(
+                      Icons.shield_outlined,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'Pilih aplikasi yang ingin kamu jauhkan sementara.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: SuiteColors.of(context).textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
       case 1:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!kStoreBuild) const _UpdateBannerCard(),
-            _ProtectionHero(
-              config: config,
-              lockedCount: lockedCount,
-              total: total,
+            const SectionLead(
+              'Aplikasi terkunci',
+              subtitle: 'Pilih aplikasi yang ingin kamu batasi aksesnya.',
             ),
-          ],
-        );
-      case 2:
-        return Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.smd),
-          child: _LockNewAppsTile(config: config),
-        );
-      case 3:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SectionLead('Apps'),
             AppSearchField(
-              hint: 'Search apps',
+              hint: 'Cari nama aplikasi',
               onChanged: (value) =>
                   ref.read(appSearchQueryProvider.notifier).state = value,
             ),
@@ -157,124 +196,36 @@ class AppPickerScreen extends ConsumerWidget {
             AppSpacing.xs,
             AppSpacing.sm,
           ),
-          child: Text(
-            lockedCount == null ? '' : '$lockedCount locked',
-            style: AppTextStyles.label.copyWith(
-              color: SuiteColors.of(context).textSecondary,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lockedCount == null
+                          ? 'Menghitung aplikasi terpasang'
+                          : '$lockedCount aplikasi dikunci',
+                      style: AppTextStyles.label.copyWith(
+                        color: SuiteColors.of(context).textSecondary,
+                      ),
+                    ),
+                    if (total != null)
+                      Text(
+                        'dari $total aplikasi terpasang',
+                        style: AppTextStyles.caption.copyWith(
+                          color: SuiteColors.of(context).textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Icon(Icons.tune_rounded,
+                  size: 17, color: SuiteColors.of(context).textSecondary),
+            ],
           ),
         );
     }
-  }
-}
-
-/// The dashboard hero: how many apps are guarded, with schedules, intruder
-/// events and the relock rule that explain the protection beneath it.
-class _ProtectionHero extends ConsumerWidget {
-  const _ProtectionHero({
-    required this.config,
-    required this.lockedCount,
-    required this.total,
-  });
-
-  final LockConfig config;
-
-  /// Null until the installed apps have loaded.
-  final int? lockedCount;
-  final int? total;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = SuiteColors.of(context);
-    final intruders = ref.watch(intruderControllerProvider).valueOrNull;
-    final activeSchedules = config.schedules.where((s) => s.enabled).length;
-    // Until the app list arrives, the configured set is the best answer.
-    final guarded = (lockedCount ?? config.lockedPackages.length) > 0;
-    return HeroMetricCard(
-      label: 'Protected apps',
-      trailing: _GuardPill(guarded: guarded),
-      value: ValueText(
-        lockedCount == null ? '-' : '$lockedCount',
-        style: AppTextStyles.hero.copyWith(color: c.textPrimary),
-      ),
-      deltaCaption: total == null
-          ? 'Counting installed apps'
-          : 'of $total installed apps',
-      footer: [
-        StatTile(label: 'Schedules', value: '$activeSchedules on'),
-        StatTile(
-          label: 'Intruders',
-          value: intruders == null ? '-' : '${intruders.length}',
-          valueColor: (intruders?.isNotEmpty ?? false) ? c.negative : null,
-        ),
-        StatTile(
-          label: 'Relock',
-          value: switch (config.relock.mode) {
-            RelockMode.immediately => 'On exit',
-            RelockMode.onScreenOff => 'Screen off',
-            RelockMode.afterTimeout => '${config.relock.timeout.inMinutes} min',
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _GuardPill extends StatelessWidget {
-  const _GuardPill({required this.guarded});
-  final bool guarded;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = SuiteColors.of(context);
-    final color = guarded ? c.positive : c.textSecondary;
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: guarded ? c.positiveContainer : c.surfaceAlt,
-        shape: const StadiumBorder(),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              guarded ? Icons.lock_rounded : Icons.lock_open_rounded,
-              size: 16,
-              color: color,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              guarded ? 'Guarding' : 'Nothing locked',
-              style: AppTextStyles.labelStrong.copyWith(color: color),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LockNewAppsTile extends ConsumerWidget {
-  const _LockNewAppsTile({required this.config});
-
-  final LockConfig config;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    void set(bool value) =>
-        ref.read(configControllerProvider.notifier).setLockNewApps(value);
-    return RowGroup(
-      children: [
-        AppListRow(
-          leading: const IconBadge(icon: Icons.new_releases_outlined),
-          title: 'Lock newly installed apps',
-          subtitle: 'Guard apps you install later',
-          trailing: Switch(value: config.lockNewApps, onChanged: set),
-          onTap: () => set(!config.lockNewApps),
-        ),
-      ],
-    );
   }
 }
 
@@ -292,16 +243,20 @@ class _AppTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = SuiteColors.of(context);
+    final frozen = config.strictModeActiveAt(DateTime.now());
     final locked = config.lockedPackages.contains(app.packageName);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppListRow(
-          onTap: onToggle,
+          onTap: frozen ? null : onToggle,
           leading: _AppIcon(app: app),
           title: app.label,
           subtitle: app.packageName,
-          trailing: Switch(value: locked, onChanged: (_) => onToggle()),
+          trailing: Switch(
+            value: locked,
+            onChanged: frozen ? null : (_) => onToggle(),
+          ),
         ),
         // Per-app notification-hiding override, only meaningful once the app is
         // locked. Reflects the effective choice (override, else the global
@@ -327,7 +282,7 @@ class _AppTile extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Hide notifications',
+                    'Sembunyikan notifikasi',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: c.textSecondary,
                     ),
@@ -336,9 +291,11 @@ class _AppTile extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.smd),
                 Switch(
                   value: config.hidesNotificationsFor(app.packageName),
-                  onChanged: (value) => ref
-                      .read(configControllerProvider.notifier)
-                      .setNotificationOverride(app.packageName, value),
+                  onChanged: frozen
+                      ? null
+                      : (value) => ref
+                          .read(configControllerProvider.notifier)
+                          .setNotificationOverride(app.packageName, value),
                 ),
               ],
             ),
@@ -438,22 +395,3 @@ class _IconPlaceholder extends StatelessWidget {
 
 /// "Update available" card, shown when a newer GitHub release exists and the
 /// user hasn't dismissed it this session.
-class _UpdateBannerCard extends ConsumerWidget {
-  const _UpdateBannerCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final info = ref.watch(updateCheckProvider).valueOrNull;
-    final dismissed = ref.watch(updateDismissedProvider);
-    if (info == null || dismissed) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.smd),
-      child: UpdateBanner(
-        info: info,
-        onUpdate: () => ref.read(updateServiceProvider).openDownload(info),
-        onDismiss: () =>
-            ref.read(updateDismissedProvider.notifier).state = true,
-      ),
-    );
-  }
-}
