@@ -105,7 +105,7 @@ class _Dial extends CustomPainter {
    var index=0;
    while(index<stops.length-2 && t>stops[index+1]){index++;}
    final span=stops[index+1]-stops[index];
-   final local=span==0?0:(t-stops[index])/span;
+   final double local=span==0?0.0:(t-stops[index])/span;
    return Color.lerp(colors[index],colors[index+1],local)!.withValues(alpha:opacity);
   }
   void drawRing({required double width,required double opacity,required double blur}){
@@ -123,7 +123,7 @@ class _Dial extends CustomPainter {
   drawRing(width:30+8*wave,opacity:.18+.16*wave,blur:12+5*wave);
   drawRing(width:17+3*wave,opacity:.30+.14*wave,blur:3.5+2*wave);
   drawRing(width:11,opacity:1,blur:0);
-  canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color:Colors.white.withValues(alpha:.055));
+  canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
  }
  @override bool shouldRepaint(covariant _Dial old)=>old.phase!=phase;
 }
