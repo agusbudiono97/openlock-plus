@@ -39,7 +39,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
  @override void initState(){super.initState();_timer=Timer.periodic(const Duration(seconds:1),(_){if(mounted)setState(()=>_now=DateTime.now());});}
  @override void dispose(){_timer?.cancel();super.dispose();}
  @override Widget build(BuildContext context){
-  final isDark=Theme.of(context).brightness==Brightness.dark;\n  _HomePalette.apply(isDark);\n  final config=ref.watch(configControllerProvider).valueOrNull??LockConfig.empty;
+  final isDark=Theme.of(context).brightness==Brightness.dark;
+  _HomePalette.apply(isDark);
+  final config=ref.watch(configControllerProvider).valueOrNull??LockConfig.empty;
   final apps=ref.watch(installedAppsProvider).valueOrNull??const [];
   final events=ref.watch(intruderControllerProvider).valueOrNull??const [];
   final schedules=config.schedules.where((s)=>s.enabled).toList();
