@@ -11,8 +11,22 @@ import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
 
-const _bg=Color(0xFF0C0D14), _panel=Color(0xFF171927), _high=Color(0xFF292D43);
-const _ink=Color(0xFFF1F0F7), _muted=Color(0xFF9D9BB3), _amber=Color(0xFFFF9E42), _amber2=Color(0xFFFFB259), _indigo=Color(0xFF8B5CF6);
+class _HomePalette {
+ static Color bg=Color(0xFF0C0D14), panel=const Color(0xFF171927), high=const Color(0xFF292D43);
+ static Color ink=const Color(0xFFF1F0F7), muted=const Color(0xFF9D9BB3), amber=const Color(0xFFFF9E42), amber2=const Color(0xFFFFB259), indigo=const Color(0xFF8B5CF6);
+ static void apply(bool dark) {
+  bg=dark?const Color(0xFF0C0D14):const Color(0xFFF5F7FA);
+  panel=dark?const Color(0xFF171927):const Color(0xFFFFFFFF);
+  high=dark?const Color(0xFF292D43):const Color(0xFFE8EDF4);
+  ink=dark?const Color(0xFFF1F0F7):const Color(0xFF202938);
+  muted=dark?const Color(0xFF9D9BB3):const Color(0xFF687386);
+  amber=dark?const Color(0xFFFF9E42):const Color(0xFFB96B20);
+  amber2=dark?const Color(0xFFFFB259):const Color(0xFF9D5817);
+  indigo=dark?const Color(0xFF8B5CF6):const Color(0xFF7054C8);
+ }
+}
+Color get _bg=>_HomePalette.bg; Color get _panel=>_HomePalette.panel; Color get _high=>_HomePalette.high;
+Color get _ink=>_HomePalette.ink; Color get _muted=>_HomePalette.muted; Color get _amber=>_HomePalette.amber; Color get _amber2=>_HomePalette.amber2; Color get _indigo=>_HomePalette.indigo;
 
 class HomeDashboardScreen extends ConsumerStatefulWidget {
  const HomeDashboardScreen({super.key});
@@ -23,7 +37,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
  @override void initState(){super.initState();_timer=Timer.periodic(const Duration(seconds:1),(_){if(mounted)setState(()=>_now=DateTime.now());});}
  @override void dispose(){_timer?.cancel();super.dispose();}
  @override Widget build(BuildContext context){
-  final config=ref.watch(configControllerProvider).valueOrNull??LockConfig.empty;
+  final isDark=Theme.of(context).brightness==Brightness.dark;\n  _HomePalette.apply(isDark);\n  final config=ref.watch(configControllerProvider).valueOrNull??LockConfig.empty;
   final apps=ref.watch(installedAppsProvider).valueOrNull??const [];
   final events=ref.watch(intruderControllerProvider).valueOrNull??const [];
   final schedules=config.schedules.where((s)=>s.enabled).toList();
