@@ -37,7 +37,7 @@ class HomeDashboardScreen extends ConsumerStatefulWidget {
 class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> with SingleTickerProviderStateMixin{
  Timer? _timer; DateTime _now=DateTime.now();
  late final AnimationController _glowController;
- @override void initState(){super.initState();_glowController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600))..repeat();_timer=Timer.periodic(const Duration(seconds:1),(_){if(mounted)setState(()=>_now=DateTime.now());});}
+ @override void initState(){super.initState();_glowController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600));_timer=Timer.periodic(const Duration(seconds:1),(_){if(mounted)setState(()=>_now=DateTime.now());});}
  @override void dispose(){_timer?.cancel();_glowController.dispose();super.dispose();}
  @override Widget build(BuildContext context){
   final isDark=Theme.of(context).brightness==Brightness.dark;
@@ -48,6 +48,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> with 
   final schedules=config.schedules.where((s)=>s.enabled).toList();
   final locked=apps.where((a)=>config.lockedPackages.contains(a.packageName)).toList();
   final active=config.strictModeActiveAt(_now), end=config.strictModeEndsAtMillis;
+  if(active){if(!_glowController.isAnimating)_glowController.repeat();}else if(_glowController.isAnimating){_glowController.stop();_glowController.value=0;}
   final started=config.strictModeStartedAtMillis;
   final left=active&&end!=null?math.max(0,((end-_now.millisecondsSinceEpoch)/1000).floor()):0;
   final timer=end==null?'∞':_fmtDuration(left);
@@ -87,7 +88,6 @@ class _Dial extends CustomPainter {
  @override void paint(Canvas canvas, Size size) {
   final center=Offset(size.width/2,size.height/2), radius=size.width*.405;
   final rect=Rect.fromCircle(center:center,radius:radius);
-  // Faint outer halo and dotted technical orbit remain unchanged.
   canvas.drawCircle(center,radius+17,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.035));
   final orbit=Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=const Color(0xFF777B9A).withValues(alpha:.22);
   for(var i=0;i<72;i++){
@@ -98,16 +98,32 @@ class _Dial extends CustomPainter {
   }
   final colors=[_amber2,Color(0xFFFFB65F),Color(0xFFFFB260),Color(0xFFFFAE60),Color(0xFFFFAA5F),Color(0xFFFFA65E),Color(0xFFFFA15D),Color(0xFFFF9C5D),Color(0xFFFF975E),Color(0xFFFF9262),Color(0xFFFF8D68),Color(0xFFF98770),Color(0xFFF1817B),Color(0xFFEA7D8A),Color(0xFFE27C9A),Color(0xFFD77BAA),Color(0xFFCA78BE),Color(0xFFBC76D4),Color(0xFFAA6FE6),Color(0xFF9865F0),_indigo,Color(0xFF7770F2),Color(0xFF8A6CF4),Color(0xFF9A70F5),_amber2];
   const stops=<double>[0,.06,.10,.14,.18,.22,.26,.30,.34,.38,.42,.46,.50,.54,.58,.62,.66,.70,.74,.78,.82,.86,.90,.95,1];
-  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:colors,stops:stops);
-  final wave=(.5-.5*math.cos(phase*math.pi*2));
-  // A closed circle (not a partial arc) removes the moving endpoint entirely.
-  // The glow gently expands from the ring's centerline toward its outer edge.
-  final haloGradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:colors.map((c)=>c.withValues(alpha:.13+.13*wave)).toList(),stops:stops);
-  canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=23+5*wave..shader=haloGradient.createShader(rect)..maskFilter=MaskFilter.blur(BlurStyle.normal,8+4*wave));
-  final midGradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:colors.map((c)=>c.withValues(alpha:.28+.12*wave)).toList(),stops:stops);
-  canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=15+3*wave..shader=midGradient.createShader(rect)..maskFilter=MaskFilter.blur(BlurStyle.normal,2.5+1.8*wave));
-  canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=11..shader=gradient.createShader(rect));
-  canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
+  final wave=.5-.5*math.cos(phase*math.pi*2);
+  // Paint the circumference as overlapping micro-arcs. This avoids the
+  // visible start/end seam produced by a sweep shader at the 360° join.
+  Color colorAt(double t,double opacity){
+   var index=0;
+   while(index<stops.length-2 && t>stops[index+1]){index++;}
+   final span=stops[index+1]-stops[index];
+   final local=span==0?0:(t-stops[index])/span;
+   return Color.lerp(colors[index],colors[index+1],local)!.withValues(alpha:opacity);
+  }
+  void drawRing({required double width,required double opacity,required double blur}){
+   final paint=Paint()..style=PaintingStyle.stroke..strokeWidth=width..strokeCap=StrokeCap.butt;
+   if(blur>0)paint.maskFilter=MaskFilter.blur(BlurStyle.normal,blur);
+   const count=360;
+   const step=math.pi*2/count;
+   for(var i=0;i<count;i++){
+    final t=i/count;
+    paint.color=colorAt(t,opacity);
+    canvas.drawArc(rect,-math.pi/2+i*step,step+.006,false,paint);
+   }
+  }
+  // Full ring remains visible; only the soft halo breathes while strict mode is active.
+  drawRing(width:30+8*wave,opacity:.18+.16*wave,blur:12+5*wave);
+  drawRing(width:17+3*wave,opacity:.30+.14*wave,blur:3.5+2*wave);
+  drawRing(width:11,opacity:1,blur:0);
+  canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color:Colors.white.withValues(alpha:.055));
  }
  @override bool shouldRepaint(covariant _Dial old)=>old.phase!=phase;
 }
