@@ -100,13 +100,13 @@ class _Dial extends CustomPainter {
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.round..color=const Color(0xFF1C1F30));
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
   if(!active || progress<=0)return;
-  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFFB05C),Color(0xFFFFA85A),Color(0xFFFFA057),Color(0xFFFF9858),Color(0xFFFF9160),Color(0xFFFF896B),Color(0xFFF18483),Color(0xFFE17CA0),Color(0xFFCA78BE),Color(0xFFB477E8),Color(0xFFA16CEB),_indigo,Color(0xFF7770F2),Color(0xFF9A70F5),_amber2],stops:[0,.08,.14,.20,.25,.30,.35,.40,.45,.50,.56,.62,.68,.78,.90,1]);
+  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFFB65F),Color(0xFFFFB260),Color(0xFFFFAE60),Color(0xFFFFAA5F),Color(0xFFFFA65E),Color(0xFFFFA15D),Color(0xFFFF9C5D),Color(0xFFFF975E),Color(0xFFFF9262),Color(0xFFFF8D68),Color(0xFFF98770),Color(0xFFF1817B),Color(0xFFEA7D8A),Color(0xFFE27C9A),Color(0xFFD77BAA),Color(0xFFCA78BE),Color(0xFFBC76D4),Color(0xFFAA6FE6),Color(0xFF9865F0),_indigo,Color(0xFF7770F2),Color(0xFF8A6CF4),Color(0xFF9A70F5),_amber2],stops:[0,.06,.10,.14,.18,.22,.26,.30,.34,.38,.42,.46,.50,.54,.58,.62,.66,.70,.74,.78,.82,.86,.90,.95,1]);
   final shader=gradient.createShader(rect);
   final sweep=math.pi*2*progress;
   // Two blurred passes create the amber/violet ambient glow from Stitch.
   canvas.drawArc(rect,-math.pi/2,sweep,false,Paint()..style=PaintingStyle.stroke..strokeWidth=22..strokeCap=StrokeCap.round..shader=shader..maskFilter=const MaskFilter.blur(BlurStyle.normal,13));
   canvas.drawArc(rect,-math.pi/2,sweep,false,Paint()..style=PaintingStyle.stroke..strokeWidth=14..strokeCap=StrokeCap.round..shader=shader..maskFilter=const MaskFilter.blur(BlurStyle.normal,3));
-  canvas.drawArc(rect,-math.pi/2,sweep,false,Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.round..shader=shader);
+  canvas.drawArc(rect,-math.pi/2,sweep,false,Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.round..shader=shader..maskFilter=const MaskFilter.blur(BlurStyle.normal,1.1));
   final angle=-math.pi/2+sweep;
   final satellite=Offset(center.dx+math.cos(angle)*radius,center.dy+math.sin(angle)*radius);
   canvas.drawCircle(satellite,8,Paint()..color=_amber.withValues(alpha:.18)..maskFilter=const MaskFilter.blur(BlurStyle.normal,7));
