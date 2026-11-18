@@ -76,16 +76,17 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> with 
 }
 class _Pill extends StatelessWidget{const _Pill({required this.message});final String message;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:11),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white10)),child:Row(children:[Container(width:8,height:8,decoration:BoxDecoration(color:_amber,shape:BoxShape.circle)),SizedBox(width:9),Expanded(child:Text(message,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:_muted,fontSize:10))),SizedBox(width:6),Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:_amber.withValues(alpha:.1),borderRadius:BorderRadius.circular(20),border:Border.all(color:_amber.withValues(alpha:.3))),child:Row(children:[Icon(Icons.verified_rounded,color:_amber,size:12),SizedBox(width:4),Text('AMAN',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800))]))]));}
 class _Hero extends StatelessWidget{const _Hero({required this.active,required this.glowAnimation,required this.timer,required this.target,required this.onTap});final bool active;final Animation<double> glowAnimation;final String timer;final DateTime? target;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:RadialGradient(center:Alignment(0,-.65),radius:1.35,colors:[Color(0xFF30263D),Color(0xFF171927),_bg]),border:Border.all(color:Colors.white12),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha:.35),blurRadius:28,offset:const Offset(0,12)),BoxShadow(color:_amber.withValues(alpha:.045),blurRadius:38,offset:const Offset(-35,-24)),BoxShadow(color:_indigo.withValues(alpha:.10),blurRadius:42,offset:const Offset(35,35))]),child:Column(children:[
- SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[AnimatedBuilder(animation:glowAnimation,builder:(context,_)=>CustomPaint(size:const Size(264,264),painter:_Dial(glowAnimation.value))),Column(mainAxisSize:MainAxisSize.min,children:[
+ SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[RepaintBoundary(child:CustomPaint(size:const Size(264,264),painter:_Dial(glowAnimation))),Column(mainAxisSize:MainAxisSize.min,children:[
  Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),decoration:BoxDecoration(color:_amber.withValues(alpha:.13),borderRadius:BorderRadius.circular(24),border:Border.all(color:_amber.withValues(alpha:.35))),child:Text(active?'MODE KETAT AKTIF':'MODE KETAT NONAKTIF',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1.1))),
  SizedBox(height:12),Text('SISA WAKTU TERKUNCI',style:TextStyle(color:_muted,fontSize:10,letterSpacing:1.8)),SizedBox(height:4),Text(timer,style:TextStyle(color:_ink,fontSize:34,fontWeight:FontWeight.w800,letterSpacing:-1)),SizedBox(height:7),
  Text(target==null?'Target: Tanpa batas waktu':'Target: '+_clock(target!)+' WIB',style:TextStyle(color:_muted,fontSize:10))
  ])])),
  SizedBox(height:8),Material(color:Colors.transparent,child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(19),child:Ink(padding:const EdgeInsets.symmetric(horizontal:14,vertical:13),decoration:BoxDecoration(gradient:LinearGradient(colors:[_high,Color(0xFF38304F)]),borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white12)),child:Row(children:[Icon(Icons.lock_clock_rounded,color:_amber2,size:24),SizedBox(width:11),Expanded(child:Text('KELOLA MODE KETAT',style:TextStyle(color:_ink,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:1.1))),Icon(Icons.tune_rounded,color:_amber,size:20)]))))]));}
 class _Dial extends CustomPainter {
- const _Dial(this.phase);
- final double phase;
+ _Dial(this.animation):super(repaint:animation);
+ final Animation<double> animation;
  @override void paint(Canvas canvas, Size size) {
+  final phase=animation.value;
   final center=Offset(size.width/2,size.height/2), radius=size.width*.405;
   final rect=Rect.fromCircle(center:center,radius:radius);
   canvas.drawCircle(center,radius+17,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.035));
@@ -99,33 +100,37 @@ class _Dial extends CustomPainter {
   final colors=[_amber2,Color(0xFFFFB65F),Color(0xFFFFB260),Color(0xFFFFAE60),Color(0xFFFFAA5F),Color(0xFFFFA65E),Color(0xFFFFA15D),Color(0xFFFF9C5D),Color(0xFFFF975E),Color(0xFFFF9262),Color(0xFFFF8D68),Color(0xFFF98770),Color(0xFFF1817B),Color(0xFFEA7D8A),Color(0xFFE27C9A),Color(0xFFD77BAA),Color(0xFFCA78BE),Color(0xFFBC76D4),Color(0xFFAA6FE6),Color(0xFF9865F0),_indigo,Color(0xFF7770F2),Color(0xFF8A6CF4),Color(0xFF9A70F5),_amber2];
   const stops=<double>[0,.06,.10,.14,.18,.22,.26,.30,.34,.38,.42,.46,.50,.54,.58,.62,.66,.70,.74,.78,.82,.86,.90,.95,1];
   final wave=.5-.5*math.cos(phase*math.pi*2);
-  // Paint the circumference as overlapping micro-arcs. This avoids the
-  // visible start/end seam produced by a sweep shader at the 360° join.
-  Color colorAt(double t,double opacity){
+  // Sweep shader is used only for the soft halo. Matching endpoint colors
+  // keeps the 360-degree join seamless while avoiding hundreds of blurred arcs.
+  final shader=SweepGradient(colors:colors,stops:stops,startAngle:-math.pi/2,endAngle:math.pi*1.5).createShader(rect);
+  void drawHalo({required double width,required double opacity,required double blur}){
+   canvas.drawCircle(center,radius,Paint()
+    ..style=PaintingStyle.stroke
+    ..strokeWidth=width
+    ..shader=shader
+    ..color=Colors.white.withValues(alpha:opacity)
+    ..maskFilter=MaskFilter.blur(BlurStyle.normal,blur));
+  }
+  drawHalo(width:26+6*wave,opacity:.13+.10*wave,blur:9+3*wave);
+  drawHalo(width:15+2*wave,opacity:.22+.10*wave,blur:2.5+1.2*wave);
+  // Crisp colored base ring remains fully visible and retains the seam-free segmented gradient.
+  Color colorAt(double t){
    var index=0;
    while(index<stops.length-2 && t>stops[index+1]){index++;}
    final span=stops[index+1]-stops[index];
    final double local=span==0?0.0:(t-stops[index])/span;
-   return Color.lerp(colors[index],colors[index+1],local)!.withValues(alpha:opacity);
+   return Color.lerp(colors[index],colors[index+1],local)!;
   }
-  void drawRing({required double width,required double opacity,required double blur}){
-   final paint=Paint()..style=PaintingStyle.stroke..strokeWidth=width..strokeCap=StrokeCap.butt;
-   if(blur>0)paint.maskFilter=MaskFilter.blur(BlurStyle.normal,blur);
-   const count=360;
-   const step=math.pi*2/count;
-   for(var i=0;i<count;i++){
-    final t=i/count;
-    paint.color=colorAt(t,opacity);
-    canvas.drawArc(rect,-math.pi/2+i*step,step+.006,false,paint);
-   }
+  final ringPaint=Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.butt;
+  const count=360;
+  const step=math.pi*2/count;
+  for(var i=0;i<count;i++){
+   ringPaint.color=colorAt(i/count);
+   canvas.drawArc(rect,-math.pi/2+i*step,step+.006,false,ringPaint);
   }
-  // Full ring remains visible; only the soft halo breathes while strict mode is active.
-  drawRing(width:30+8*wave,opacity:.18+.16*wave,blur:12+5*wave);
-  drawRing(width:17+3*wave,opacity:.30+.14*wave,blur:3.5+2*wave);
-  drawRing(width:11,opacity:1,blur:0);
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
  }
- @override bool shouldRepaint(covariant _Dial old)=>old.phase!=phase;
+ @override bool shouldRepaint(covariant _Dial old)=>old.animation!=animation;
 }
 class _Bento extends StatelessWidget{const _Bento({required this.title,required this.icon,required this.child});final String title;final IconData icon;final Widget child;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(21),border:Border.all(color:Colors.white10)),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[Expanded(child:Text(title,style:TextStyle(color:_muted,fontSize:10,letterSpacing:1,fontWeight:FontWeight.w700))),Icon(icon,color:_amber,size:18)]),SizedBox(height:18),child]));}
 class _Mini extends StatelessWidget{const _Mini({required this.title,required this.icon,required this.value,required this.suffix,required this.tint});final String title,value,suffix;final IconData icon;final Color tint;@override Widget build(BuildContext c)=>Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Row(children:[Expanded(child:Text(title,style:TextStyle(color:_muted,fontSize:9,fontWeight:FontWeight.w700,letterSpacing:.6))),Icon(icon,color:tint,size:16)]),Row(crossAxisAlignment:CrossAxisAlignment.baseline,textBaseline:TextBaseline.alphabetic,children:[Text(value,style:TextStyle(color:_ink,fontSize:21,fontWeight:FontWeight.w800)),SizedBox(width:5),Flexible(child:Text(suffix,style:TextStyle(color:tint,fontSize:9)))])]));}
