@@ -47,14 +47,16 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
   final schedules=config.schedules.where((s)=>s.enabled).toList();
   final locked=apps.where((a)=>config.lockedPackages.contains(a.packageName)).toList();
   final active=config.strictModeActiveAt(_now), end=config.strictModeEndsAtMillis;
+  final started=config.strictModeStartedAtMillis;
+  final progress=active && end!=null && started!=null && end>started ? ((_now.millisecondsSinceEpoch-started)/(end-started)).clamp(0.0,1.0) : 0.0;
   final left=active&&end!=null?math.max(0,((end-_now.millisecondsSinceEpoch)/1000).floor()):0;
   final timer=end==null?'∞':_fmtDuration(left);
   return Scaffold(backgroundColor:_bg,body:SafeArea(bottom:false,child:LayoutBuilder(builder:(context,constraints)=>Center(child:SizedBox(width:math.min(constraints.maxWidth,560),height:constraints.maxHeight,child:ListView(padding:const EdgeInsets.fromLTRB(18,16,18,28),children:[
-   Row(children:[Container(width:48,height:48,decoration:BoxDecoration(borderRadius:BorderRadius.circular(15),gradient:LinearGradient(colors:[Color(0xFF393047),_high]),border:Border.all(color:Colors.white12)),child:Icon(Icons.shield_rounded,color:_amber,size:27)),SizedBox(width:13),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('OpenLock',style:TextStyle(color:_ink,fontSize:22,fontWeight:FontWeight.w800)),SizedBox(height:2),Text('AURA SENTINEL V2.4',style:TextStyle(color:_amber,fontSize:10,fontWeight:FontWeight.w800,letterSpacing:1.2))])),Material(color:Colors.transparent,child:InkWell(onTap:()=>context.go(AppRoutes.settings),borderRadius:BorderRadius.circular(14),child:Container(width:42,height:42,decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white12)),child:Icon(Icons.person_outline_rounded,color:_muted,size:21))))]),
+   Row(children:[Container(width:48,height:48,decoration:BoxDecoration(borderRadius:BorderRadius.circular(15),gradient:LinearGradient(colors:[Color(0xFF393047),_high]),border:Border.all(color:Colors.white12)),child:Icon(Icons.shield_rounded,color:_amber,size:27)),SizedBox(width:13),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('OpenLock',style:TextStyle(color:_ink,fontSize:22,fontWeight:FontWeight.w800)),SizedBox(height:2),const SizedBox.shrink()])),Material(color:Colors.transparent,child:InkWell(onTap:()=>context.go(AppRoutes.settings),borderRadius:BorderRadius.circular(14),child:Container(width:42,height:42,decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white12)),child:Icon(Icons.person_outline_rounded,color:_muted,size:21))))]),
    SizedBox(height:22),
    _Pill(message:events.isEmpty?'OpenLock siap menjaga fokusmu':_clock(events.first.timestamp)+' WIB • Percobaan akses tercatat'),
    SizedBox(height:18),
-   _Hero(active:active,timer:active?timer:'--:--:--',target:end==null?null:DateTime.fromMillisecondsSinceEpoch(end),onTap:()=>context.push(AppRoutes.strictMode)),
+   _Hero(active:active,progress:progress,timer:active?timer:'--:--:--',target:end==null?null:DateTime.fromMillisecondsSinceEpoch(end),onTap:()=>context.push(AppRoutes.strictMode)),
    SizedBox(height:16),
    Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Expanded(flex:3,child:_Bento(title:'STATUS KUBAH',icon:Icons.verified_user_rounded,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(events.length.toString()+' BLOKIR',style:TextStyle(color:_ink,fontSize:28,fontWeight:FontWeight.w800)),Text('Percobaan aplikasi ditangkal',style:TextStyle(color:_muted,fontSize:11)),SizedBox(height:14),const _Sparkline()]))),
@@ -72,18 +74,19 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
  }
 }
 class _Pill extends StatelessWidget{const _Pill({required this.message});final String message;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:11),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white10)),child:Row(children:[Container(width:8,height:8,decoration:BoxDecoration(color:_amber,shape:BoxShape.circle)),SizedBox(width:9),Expanded(child:Text(message,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:_muted,fontSize:10,fontFamily:'monospace'))),SizedBox(width:6),Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:_amber.withValues(alpha:.1),borderRadius:BorderRadius.circular(20),border:Border.all(color:_amber.withValues(alpha:.3))),child:Row(children:[Icon(Icons.verified_rounded,color:_amber,size:12),SizedBox(width:4),Text('AMAN',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800))]))]));}
-class _Hero extends StatelessWidget{const _Hero({required this.active,required this.timer,required this.target,required this.onTap});final bool active;final String timer;final DateTime? target;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:RadialGradient(center:Alignment(0,-.65),radius:1.35,colors:[Color(0xFF30263D),Color(0xFF171927),_bg]),border:Border.all(color:Colors.white12),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha:.35),blurRadius:28,offset:const Offset(0,12)),BoxShadow(color:_amber.withValues(alpha:.045),blurRadius:38,offset:const Offset(-35,-24)),BoxShadow(color:_indigo.withValues(alpha:.10),blurRadius:42,offset:const Offset(35,35))]),child:Column(children:[
- SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[CustomPaint(size:const Size(238,238),painter:_Dial(active)),Column(mainAxisSize:MainAxisSize.min,children:[
+class _Hero extends StatelessWidget{const _Hero({required this.active,required this.progress,required this.timer,required this.target,required this.onTap});final bool active;final double progress;final String timer;final DateTime? target;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:RadialGradient(center:Alignment(0,-.65),radius:1.35,colors:[Color(0xFF30263D),Color(0xFF171927),_bg]),border:Border.all(color:Colors.white12),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha:.35),blurRadius:28,offset:const Offset(0,12)),BoxShadow(color:_amber.withValues(alpha:.045),blurRadius:38,offset:const Offset(-35,-24)),BoxShadow(color:_indigo.withValues(alpha:.10),blurRadius:42,offset:const Offset(35,35))]),child:Column(children:[
+ SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[CustomPaint(size:const Size(264,264),painter:_Dial(active,progress)),Column(mainAxisSize:MainAxisSize.min,children:[
  Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),decoration:BoxDecoration(color:_amber.withValues(alpha:.13),borderRadius:BorderRadius.circular(24),border:Border.all(color:_amber.withValues(alpha:.35))),child:Text(active?'MODE KETAT AKTIF':'MODE KETAT NONAKTIF',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1.1))),
  SizedBox(height:12),Text('SISA WAKTU TERKUNCI',style:TextStyle(color:_muted,fontSize:10,letterSpacing:1.8,fontFamily:'monospace')),SizedBox(height:4),Text(timer,style:TextStyle(color:_ink,fontSize:34,fontWeight:FontWeight.w800,letterSpacing:-1)),SizedBox(height:7),
  Text(target==null?'Target: Tanpa batas waktu':'Target: '+_clock(target!)+' WIB',style:TextStyle(color:_muted,fontSize:10,fontFamily:'monospace'))
  ])])),
  SizedBox(height:8),Material(color:Colors.transparent,child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(19),child:Ink(padding:const EdgeInsets.symmetric(horizontal:14,vertical:13),decoration:BoxDecoration(gradient:LinearGradient(colors:[_high,Color(0xFF38304F)]),borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white12)),child:Row(children:[Icon(Icons.lock_clock_rounded,color:_amber2,size:24),SizedBox(width:11),Expanded(child:Text('KELOLA MODE KETAT',style:TextStyle(color:_ink,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:1.1))),Icon(Icons.tune_rounded,color:_amber,size:20)]))))]));}
 class _Dial extends CustomPainter {
- const _Dial(this.active);
+ const _Dial(this.active,this.progress);
  final bool active;
+ final double progress;
  @override void paint(Canvas canvas, Size size) {
-  final center=Offset(size.width/2,size.height/2), radius=size.width*.367;
+  final center=Offset(size.width/2,size.height/2), radius=size.width*.405;
   final rect=Rect.fromCircle(center:center,radius:radius);
   // Faint outer halo and dotted technical orbit.
   canvas.drawCircle(center,radius+17,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.035));
@@ -96,20 +99,21 @@ class _Dial extends CustomPainter {
   }
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.round..color=const Color(0xFF1C1F30));
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
-  if(!active)return;
-  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFF7B39),_indigo,Color(0xFF6366F1)]);
+  if(!active || progress<=0)return;
+  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFF7B39),_indigo,Color(0xFF6366F1),_amber2],stops:[0,.25,.52,.78,1]);
   final shader=gradient.createShader(rect);
-  final sweep=math.pi*1.42;
+  final sweep=math.pi*2*progress;
   // Two blurred passes create the amber/violet ambient glow from Stitch.
   canvas.drawArc(rect,-math.pi/2,sweep,false,Paint()..style=PaintingStyle.stroke..strokeWidth=22..strokeCap=StrokeCap.round..shader=shader..maskFilter=const MaskFilter.blur(BlurStyle.normal,13));
   canvas.drawArc(rect,-math.pi/2,sweep,false,Paint()..style=PaintingStyle.stroke..strokeWidth=14..strokeCap=StrokeCap.round..shader=shader..maskFilter=const MaskFilter.blur(BlurStyle.normal,3));
   canvas.drawArc(rect,-math.pi/2,sweep,false,Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.round..shader=shader);
-  final satellite=Offset(center.dx,center.dy-radius);
+  final angle=-math.pi/2+sweep;
+  final satellite=Offset(center.dx+math.cos(angle)*radius,center.dy+math.sin(angle)*radius);
   canvas.drawCircle(satellite,8,Paint()..color=_amber.withValues(alpha:.18)..maskFilter=const MaskFilter.blur(BlurStyle.normal,7));
   canvas.drawCircle(satellite,4.5,Paint()..color=_amber2);
   canvas.drawCircle(satellite,2,Paint()..color=Colors.white);
  }
- @override bool shouldRepaint(covariant _Dial old)=>old.active!=active;
+ @override bool shouldRepaint(covariant _Dial old)=>old.active!=active || old.progress!=progress;
 }
 class _Bento extends StatelessWidget{const _Bento({required this.title,required this.icon,required this.child});final String title;final IconData icon;final Widget child;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(21),border:Border.all(color:Colors.white10)),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[Expanded(child:Text(title,style:TextStyle(color:_muted,fontSize:10,letterSpacing:1,fontWeight:FontWeight.w700))),Icon(icon,color:_amber,size:18)]),SizedBox(height:18),child]));}
 class _Mini extends StatelessWidget{const _Mini({required this.title,required this.icon,required this.value,required this.suffix,required this.tint});final String title,value,suffix;final IconData icon;final Color tint;@override Widget build(BuildContext c)=>Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Row(children:[Expanded(child:Text(title,style:TextStyle(color:_muted,fontSize:9,fontWeight:FontWeight.w700,letterSpacing:.6))),Icon(icon,color:tint,size:16)]),Row(crossAxisAlignment:CrossAxisAlignment.baseline,textBaseline:TextBaseline.alphabetic,children:[Text(value,style:TextStyle(color:_ink,fontSize:21,fontWeight:FontWeight.w800)),SizedBox(width:5),Flexible(child:Text(suffix,style:TextStyle(color:tint,fontSize:9)))])]));}
