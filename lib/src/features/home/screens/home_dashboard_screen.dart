@@ -100,7 +100,7 @@ class _Dial extends CustomPainter {
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.round..color=const Color(0xFF1C1F30));
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
   if(!active || progress<=0)return;
-  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFFAC55),Color(0xFFFF985A),Color(0xFFFF8B68),Color(0xFFE27B9A),Color(0xFFB477E8),_indigo,Color(0xFF7770F2),Color(0xFF9A70F5),_amber2],stops:[0,.12,.22,.30,.39,.48,.58,.72,.86,1]);
+  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFFB05C),Color(0xFFFFA85A),Color(0xFFFFA057),Color(0xFFFF9858),Color(0xFFFF9160),Color(0xFFFF896B),Color(0xFFF18483),Color(0xFFE17CA0),Color(0xFFCA78BE),Color(0xFFB477E8),Color(0xFFA16CEB),_indigo,Color(0xFF7770F2),Color(0xFF9A70F5),_amber2],stops:[0,.08,.14,.20,.25,.30,.35,.40,.45,.50,.56,.62,.68,.78,.90,1]);
   final shader=gradient.createShader(rect);
   final sweep=math.pi*2*progress;
   // Two blurred passes create the amber/violet ambient glow from Stitch.
