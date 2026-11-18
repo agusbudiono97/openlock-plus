@@ -21,6 +21,7 @@ final class LockConfig {
     this.strictModeEnabled = false,
     this.strictModePackages = const {},
     this.strictModeEndsAtMillis,
+    this.strictModeStartedAtMillis,
     this.dnsGuardEnabled = false,
     this.dnsGuardEndsAtMillis,
     this.strictScreenTitle = 'WAKTUNYA BERHENTI',
@@ -71,6 +72,8 @@ final class LockConfig {
   final bool strictModeEnabled;
   final Set<String> strictModePackages;
   final int? strictModeEndsAtMillis;
+  /// UI timeline anchor for drawing Strict Mode elapsed-time progress.
+  final int? strictModeStartedAtMillis;
 
   /// Independent DNS settings guard commitment. Null deadline means indefinite.
   final bool dnsGuardEnabled;
@@ -118,6 +121,8 @@ final class LockConfig {
     Set<String>? strictModePackages,
     int? strictModeEndsAtMillis,
     bool clearStrictModeEndsAtMillis = false,
+    int? strictModeStartedAtMillis,
+    bool clearStrictModeStartedAtMillis = false,
     bool? dnsGuardEnabled,
     int? dnsGuardEndsAtMillis,
     bool clearDnsGuardEndsAtMillis = false,
@@ -145,6 +150,9 @@ final class LockConfig {
         strictModeEndsAtMillis: clearStrictModeEndsAtMillis
             ? null
             : strictModeEndsAtMillis ?? this.strictModeEndsAtMillis,
+        strictModeStartedAtMillis: clearStrictModeStartedAtMillis
+            ? null
+            : strictModeStartedAtMillis ?? this.strictModeStartedAtMillis,
         dnsGuardEnabled: dnsGuardEnabled ?? this.dnsGuardEnabled,
         dnsGuardEndsAtMillis: clearDnsGuardEndsAtMillis
             ? null
@@ -170,6 +178,7 @@ final class LockConfig {
         'strictModeEnabled': strictModeEnabled,
         'strictModePackages': strictModePackages.toList()..sort(),
         'strictModeEndsAtMillis': strictModeEndsAtMillis,
+        'strictModeStartedAtMillis': strictModeStartedAtMillis,
         'dnsGuardEnabled': dnsGuardEnabled,
         'dnsGuardEndsAtMillis': dnsGuardEndsAtMillis,
         'strictScreenTitle': strictScreenTitle,
@@ -207,6 +216,8 @@ final class LockConfig {
                 .toSet(),
         strictModeEndsAtMillis:
             (json['strictModeEndsAtMillis'] as num?)?.toInt(),
+        strictModeStartedAtMillis:
+            (json['strictModeStartedAtMillis'] as num?)?.toInt(),
         dnsGuardEnabled: json['dnsGuardEnabled'] as bool? ?? false,
         dnsGuardEndsAtMillis:
             (json['dnsGuardEndsAtMillis'] as num?)?.toInt(),
