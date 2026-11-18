@@ -56,7 +56,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
    SizedBox(height:18),
    _Hero(active:active,timer:active?timer:'--:--:--',target:end==null?null:DateTime.fromMillisecondsSinceEpoch(end),onTap:()=>context.push(AppRoutes.strictMode)),
    SizedBox(height:16),
-   Row(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+   Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Expanded(flex:3,child:_Bento(title:'STATUS KUBAH',icon:Icons.verified_user_rounded,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(events.length.toString()+' BLOKIR',style:TextStyle(color:_ink,fontSize:28,fontWeight:FontWeight.w800)),Text('Percobaan aplikasi ditangkal',style:TextStyle(color:_muted,fontSize:11)),SizedBox(height:14),const _Sparkline()]))),
     SizedBox(width:10),
     Expanded(flex:2,child:Column(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[_Mini(title:'TERKUNCI',icon:Icons.lock_rounded,value:config.lockedPackages.length.toString(),suffix:'Aplikasi',tint:_amber2),SizedBox(height:10),_Mini(title:'JADWAL',icon:Icons.alarm_on_rounded,value:schedules.length.toString(),suffix:'Aktif',tint:_indigo)])),
