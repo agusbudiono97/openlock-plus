@@ -48,7 +48,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
   final locked=apps.where((a)=>config.lockedPackages.contains(a.packageName)).toList();
   final active=config.strictModeActiveAt(_now), end=config.strictModeEndsAtMillis;
   final started=config.strictModeStartedAtMillis;
-  final progress=active && end!=null && started!=null && end>started ? ((_now.millisecondsSinceEpoch-started)/(end-started)).clamp(0.0,1.0) : 0.0;
+  final progress=active && end!=null && started!=null && end>started ? ((_now.millisecondsSinceEpoch-started)/(end-started)).clamp(0.0,1.0).toDouble() : 0.0;
   final left=active&&end!=null?math.max(0,((end-_now.millisecondsSinceEpoch)/1000).floor()):0;
   final timer=end==null?'∞':_fmtDuration(left);
   return Scaffold(backgroundColor:_bg,body:SafeArea(bottom:false,child:LayoutBuilder(builder:(context,constraints)=>Center(child:SizedBox(width:math.min(constraints.maxWidth,560),height:constraints.maxHeight,child:ListView(padding:const EdgeInsets.fromLTRB(18,16,18,28),children:[
