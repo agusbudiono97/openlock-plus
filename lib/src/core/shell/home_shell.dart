@@ -2,76 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openlock/src/core/router/app_router.dart';
 
-/// Five primary destinations: overview, DNS Guard, schedules, activity and profile.
+/// Four compact primary destinations; profile remains available from the
+/// home header, while DNS Guard remains reachable from its existing route.
 class HomeShell extends StatelessWidget {
   const HomeShell({required this.shell, super.key});
-
   final StatefulNavigationShell shell;
 
   static const _destinations = <_Destination>[
-    _Destination(Icons.grid_view_outlined, Icons.grid_view_rounded, 'Beranda'),
-    _Destination(Icons.shield_outlined, Icons.shield_rounded, 'DNS Guard'),
-    _Destination(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'Jadwal'),
-    _Destination(Icons.insights_outlined, Icons.insights_rounded, 'Statistik'),
-    _Destination(Icons.person_outline_rounded, Icons.person_rounded, 'Profil'),
+    _Destination(Icons.grid_view_outlined, Icons.grid_view_rounded, 'Beranda', 0),
+    _Destination(Icons.apps_outlined, Icons.apps_rounded, 'Aplikasi', 1),
+    _Destination(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'Jadwal', 2),
+    _Destination(Icons.insights_outlined, Icons.insights_rounded, 'Aktivitas', 3),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final activeIndex = shell.currentIndex.clamp(0, _destinations.length - 1);
-    final isDnsGuardRoute = GoRouterState.of(context).uri.path == AppRoutes.dnsGuard;
-    final colors = Theme.of(context).colorScheme;
-
+    final current = shell.currentIndex;
     return Scaffold(
-      // Keep the indexed branch stack out of a full-screen opacity/transform
-      // animation. Compositing the entire subtree on every tab change can
-      // cause frame drops on devices with many live list rows and icons.
-      // The destination item retains its lightweight local selection motion.
       body: shell,
       bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: colors.shadow.withValues(alpha: .10),
-              blurRadius: 22,
-              offset: const Offset(0, -6),
-            ),
-          ],
-          border: Border(
-            top: BorderSide(
-              color: colors.outlineVariant.withValues(alpha: .28),
-              width: .6,
-            ),
-          ),
+        decoration: const BoxDecoration(
+          color: Color(0xFF0C0D14),
+          border: Border(top: BorderSide(color: Color(0x18FFFFFF), width: .7)),
+          boxShadow: [BoxShadow(color: Color(0x44000000), blurRadius: 22, offset: Offset(0, -6))],
         ),
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(9, 8, 9, 6),
-            child: Row(
-              children: List.generate(_destinations.length, (index) {
-                final selected = index == 1
-                    ? isDnsGuardRoute
-                    : index == activeIndex;
-                return Expanded(
-                  child: _NavigationItem(
-                    destination: _destinations[index],
-                    selected: selected,
-                    onTap: () {
-                      if (index == 1) {
-                        context.push(AppRoutes.dnsGuard);
-                      } else {
-                        shell.goBranch(
-                          index,
-                          initialLocation: index == shell.currentIndex,
-                        );
-                      }
-                    },
+            padding: const EdgeInsets.fromLTRB(10, 7, 10, 6),
+            child: Row(children: [
+              for (final destination in _destinations)
+                Expanded(child: _NavigationItem(
+                  destination: destination,
+                  selected: current == destination.branch,
+                  onTap: () => shell.goBranch(
+                    destination.branch,
+                    initialLocation: destination.branch == current,
                   ),
-                );
-              }),
-            ),
+                )),
+            ]),
           ),
         ),
       ),
@@ -80,76 +49,46 @@ class HomeShell extends StatelessWidget {
 }
 
 class _Destination {
-  const _Destination(this.icon, this.selectedIcon, this.label);
-  final IconData icon;
-  final IconData selectedIcon;
+  const _Destination(this.icon, this.selectedIcon, this.label, this.branch);
+  final IconData icon, selectedIcon;
   final String label;
+  final int branch;
 }
 
 class _NavigationItem extends StatelessWidget {
-  const _NavigationItem({
-    required this.destination,
-    required this.selected,
-    required this.onTap,
-  });
-
+  const _NavigationItem({required this.destination, required this.selected, required this.onTap});
   final _Destination destination;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final foreground = selected ? colors.secondary : colors.onSurfaceVariant;
-
+    final color = selected ? const Color(0xFFFFB259) : const Color(0xFF777B91);
     return Semantics(
-      button: true,
-      selected: selected,
-      label: destination.label,
+      button: true, selected: selected, label: destination.label,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(15),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            padding: const EdgeInsets.symmetric(vertical: 7),
+            padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: selected
-                  ? colors.secondary.withValues(alpha: .13)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(18),
+              color: selected ? const Color(0x1AFF9E42) : Colors.transparent,
+              borderRadius: BorderRadius.circular(15),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
-                  transitionBuilder: (child, animation) => ScaleTransition(
-                    scale: animation,
-                    child: FadeTransition(opacity: animation, child: child),
-                  ),
-                  child: Icon(
-                    selected ? destination.selectedIcon : destination.icon,
-                    key: ValueKey(selected),
-                    size: 22,
-                    color: foreground,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 180),
-                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                    color: foreground,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                  ),
-                  child: Text(destination.label, maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: FadeTransition(opacity: animation, child: child)),
+                child: Icon(selected ? destination.selectedIcon : destination.icon, key: ValueKey(selected), color: color, size: 21),
+              ),
+              const SizedBox(height: 3),
+              Text(destination.label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: color, fontSize: 9, fontWeight: selected ? FontWeight.w800 : FontWeight.w500)),
+            ]),
           ),
         ),
       ),
