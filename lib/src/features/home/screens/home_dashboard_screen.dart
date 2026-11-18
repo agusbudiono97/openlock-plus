@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,346 +8,66 @@ import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/features/intruder/providers/intruder_providers.dart';
-import 'package:openlock/src/features/schedules/widgets/schedule_format.dart';
 
-/// Main overview. This screen is presentation-only: it reads the existing
-/// protection state and routes to the existing feature screens.
-class HomeDashboardScreen extends ConsumerWidget {
-  const HomeDashboardScreen({super.key});
+const _bg=Color(0xFF0C0D14), _panel=Color(0xFF171927), _high=Color(0xFF292D43);
+const _ink=Color(0xFFF1F0F7), _muted=Color(0xFF9D9BB3), _amber=Color(0xFFFF9E42), _amber2=Color(0xFFFFB259), _indigo=Color(0xFF8B5CF6);
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final config = ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
-    final apps = ref.watch(appListProvider).valueOrNull;
-    final events = ref.watch(intruderControllerProvider).valueOrNull ?? const [];
-    final activeSchedules = config.schedules.where((s) => s.enabled).toList();
-    final strictActive = config.strictModeActiveAt(DateTime.now());
-    final scheme = Theme.of(context).colorScheme;
-    final lockedCount = apps?.lockedCount ?? config.lockedPackages.length;
-
-    return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680),
-            child: ListView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 112),
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Halo, Fokus! 👋', style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: scheme.onSurface, fontWeight: FontWeight.w800,
-                          )),
-                          const SizedBox(height: 4),
-                          Text(strictActive ? 'Komitmenmu sedang berjalan' : 'Kamu sedang terlindungi',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            )),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 46, height: 46,
-                      decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: scheme.outlineVariant.withValues(alpha: .45)),
-                      ),
-                      child: Icon(Icons.shield_rounded, color: scheme.primary, size: 25),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                _ProtectionCard(
-                  active: strictActive,
-                  lockedCount: lockedCount,
-                  scheduleCount: activeSchedules.length,
-                  onTap: () => context.push(AppRoutes.strictMode),
-                ),
-                const SizedBox(height: 22),
-                Row(
-                  children: [
-                    Expanded(child: _MetricCard(
-                      icon: Icons.apps_rounded,
-                      label: 'Aplikasi terkunci',
-                      value: '$lockedCount',
-                      tint: scheme.primary,
-                    )),
-                    const SizedBox(width: 9),
-                    Expanded(child: _MetricCard(
-                      icon: Icons.shield_outlined,
-                      label: 'Percobaan diblokir',
-                      value: '${events.length}',
-                      tint: const Color(0xFFFF766D),
-                    )),
-                    const SizedBox(width: 9),
-                    Expanded(child: _MetricCard(
-                      icon: Icons.calendar_month_rounded,
-                      label: 'Jadwal aktif',
-                      value: '${activeSchedules.length}',
-                      tint: const Color(0xFFFFC15B),
-                    )),
-                  ],
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => context.go(AppRoutes.apps),
-                    icon: const Icon(Icons.tune_rounded, size: 18),
-                    label: const Text('Kelola aplikasi terkunci'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _SectionHeading(
-                  title: 'Jadwal perlindungan',
-                  action: 'Semua jadwal',
-                  onAction: () => context.go(AppRoutes.schedules),
-                ),
-                const SizedBox(height: 12),
-                if (activeSchedules.isEmpty)
-                  _EmptyPanel(
-                    icon: Icons.calendar_today_rounded,
-                    title: 'Belum ada jadwal aktif',
-                    subtitle: 'Buat rutinitas agar aplikasi terkunci otomatis.',
-                    action: 'Buat jadwal',
-                    onTap: () => context.push(AppRoutes.newSchedule),
-                  )
-                else
-                  ...activeSchedules.take(3).map((schedule) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _SchedulePreview(
-                      name: schedule.name,
-                      time: ScheduleFormat.summary(schedule),
-                      appCount: schedule.packages.length,
-                    ),
-                  )),
-                const SizedBox(height: 16),
-                _SectionHeading(
-                  title: 'Aktivitas terbaru',
-                  action: 'Lihat statistik',
-                  onAction: () => context.go(AppRoutes.intruder),
-                ),
-                const SizedBox(height: 12),
-                if (events.isEmpty)
-                  const _EmptyPanel(
-                    icon: Icons.verified_user_rounded,
-                    title: 'Belum ada percobaan tercatat',
-                    subtitle: 'Aktivitas keamanan akan muncul di sini.',
-                  )
-                else
-                  ...events.take(3).map((event) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _ActivityPreview(
-                      title: event.packageName,
-                      subtitle: event.timestamp.toLocal().toString().substring(0, 16),
-                    ),
-                  )),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+class HomeDashboardScreen extends ConsumerStatefulWidget {
+ const HomeDashboardScreen({super.key});
+ @override ConsumerState<HomeDashboardScreen> createState()=>_HomeDashboardScreenState();
 }
-
-class _ProtectionCard extends StatelessWidget {
-  const _ProtectionCard({
-    required this.active, required this.lockedCount,
-    required this.scheduleCount, required this.onTap,
-  });
-  final bool active;
-  final int lockedCount;
-  final int scheduleCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      borderRadius: BorderRadius.circular(30),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Ink(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft, end: Alignment.bottomRight,
-              colors: [Color(0xFF087E82), Color(0xFF07516A), Color(0xFF59418F)],
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Container(
-                    width: 42, height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .14),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.shield_moon_rounded, color: Colors.white, size: 23),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(
-                    active ? 'MODE KETAT AKTIF' : 'PERLINDUNGAN OPENLOCK',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11,
-                      fontWeight: FontWeight.w800, letterSpacing: 1.2),
-                  )),
-                  const Icon(Icons.arrow_forward_rounded, color: Colors.white70),
-                ]),
-                const SizedBox(height: 22),
-                Text(
-                  active ? 'Komitmen sedang berjalan' : 'Jaga fokus, kendalikan akses.',
-                  style: const TextStyle(color: Colors.white, fontSize: 22,
-                    height: 1.15, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$lockedCount aplikasi dipilih  •  $scheduleCount jadwal aktif',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .14),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: .18)),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(active ? Icons.lock_rounded : Icons.lock_clock_rounded,
-                      size: 17, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(active ? 'Lihat status Mode Ketat' : 'Atur Mode Ketat',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                  ]),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
+ Timer? _timer; DateTime _now=DateTime.now();
+ @override void initState(){super.initState();_timer=Timer.periodic(const Duration(seconds:1),(_){if(mounted)setState(()=>_now=DateTime.now());});}
+ @override void dispose(){_timer?.cancel();super.dispose();}
+ @override Widget build(BuildContext context){
+  final config=ref.watch(configControllerProvider).valueOrNull??LockConfig.empty;
+  final apps=ref.watch(installedAppsProvider).valueOrNull??const [];
+  final events=ref.watch(intruderControllerProvider).valueOrNull??const [];
+  final schedules=config.schedules.where((s)=>s.enabled).toList();
+  final locked=apps.where((a)=>config.lockedPackages.contains(a.packageName)).toList();
+  final active=config.strictModeActiveAt(_now), end=config.strictModeEndsAtMillis;
+  final left=active&&end!=null?math.max(0,((end-_now.millisecondsSinceEpoch)/1000).floor()):0;
+  final timer=end==null?'∞':_fmtDuration(left);
+  return Scaffold(backgroundColor:_bg,body:SafeArea(bottom:false,child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:560),child:ListView(padding:const EdgeInsets.fromLTRB(18,16,18,28),children:[
+   Row(children:[Container(width:48,height:48,decoration:BoxDecoration(borderRadius:BorderRadius.circular(15),gradient:const LinearGradient(colors:[Color(0xFF393047),_high]),border:Border.all(color:Colors.white12)),child:const Icon(Icons.shield_lock_rounded,color:_amber,size:27)),const SizedBox(width:13),const Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('OpenLock',style:TextStyle(color:_ink,fontSize:22,fontWeight:FontWeight.w800)),SizedBox(height:2),Text('AURA SENTINEL V2.4',style:TextStyle(color:_amber,fontSize:10,fontWeight:FontWeight.w800,letterSpacing:1.2))])]),
+   const SizedBox(height:22),
+   _Pill(message:events.isEmpty?'OpenLock siap menjaga fokusmu':_clock(events.first.timestamp)+' WIB • Percobaan akses tercatat'),
+   const SizedBox(height:18),
+   _Hero(active:active,timer:active?timer:'--:--:--',target:end==null?null:DateTime.fromMillisecondsSinceEpoch(end),onTap:()=>context.push(AppRoutes.strictMode)),
+   const SizedBox(height:16),
+   Row(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+    Expanded(flex:3,child:_Bento(title:'STATUS KUBAH',icon:Icons.verified_user_rounded,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(events.length.toString()+' BLOKIR',style:const TextStyle(color:_ink,fontSize:28,fontWeight:FontWeight.w800)),const Text('Percobaan aplikasi ditangkal',style:TextStyle(color:_muted,fontSize:11)),const SizedBox(height:14),const _Sparkline()]))),
+    const SizedBox(width:10),
+    Expanded(flex:2,child:Column(children:[Expanded(child:_Mini(title:'TERKUNCI',icon:Icons.lock_rounded,value:config.lockedPackages.length.toString(),suffix:'Aplikasi',tint:_amber2)),const SizedBox(height:10),Expanded(child:_Mini(title:'JADWAL',icon:Icons.alarm_on_rounded,value:schedules.length.toString(),suffix:'Aktif',tint:_indigo))])),
+   ]),
+   const SizedBox(height:16),
+   _ScheduleCard(name:schedules.isEmpty?'Jadwal Jam Kerja Produktif':schedules.first.name,detail:schedules.isEmpty?'Belum ada rutinitas terjadwal':_days(schedules.first.weekdays),time:schedules.isEmpty?'—':_minute(schedules.first.startMinutes)+' – '+_minute(schedules.first.endMinutes),onTap:()=>context.go(AppRoutes.schedules)),
+   const SizedBox(height:16),
+   Row(children:[const Expanded(child:Text('Aplikasi Dibatasi',style:TextStyle(color:_ink,fontSize:16,fontWeight:FontWeight.w700))),TextButton(onPressed:()=>context.go(AppRoutes.apps),child:const Text('SESUAIKAN',style:TextStyle(color:_amber2,fontSize:10,fontWeight:FontWeight.w800)))]),
+   if(locked.isEmpty)const _EmptyApps() else GridView.builder(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),itemCount:math.min(locked.length,4),gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,mainAxisSpacing:10,crossAxisSpacing:10,mainAxisExtent:68),itemBuilder:(_,i)=>_AppTile(name:locked[i].label)),
+   const SizedBox(height:16),
+   Container(padding:const EdgeInsets.all(13),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(17),border:Border.all(color:_amber.withValues(alpha:.15))),child:const Row(children:[Icon(Icons.psychology_rounded,color:_amber2,size:22),SizedBox(width:11),Expanded(child:Text('“Disiplin adalah memilih antara apa yang kamu inginkan sekarang dan apa yang paling kamu inginkan nanti.”',style:TextStyle(color:_muted,fontSize:11,height:1.45,fontStyle:FontStyle.italic)))])),
+  ])))));
+ }
 }
-
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.icon, required this.label, required this.value, required this.tint});
-  final IconData icon; final String label; final String value; final Color tint;
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 118),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: .38)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: tint, size: 21),
-        const SizedBox(height: 13),
-        Text(value, style: TextStyle(color: scheme.onSurface, fontSize: 25, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
-      ]),
-    );
-  }
-}
-
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title, this.action, this.onAction});
-  final String title; final String? action; final VoidCallback? onAction;
-  @override
-  Widget build(BuildContext context) => Row(children: [
-    Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
-    if (action != null) TextButton(onPressed: onAction, child: Text(action!)),
-  ]);
-}
-
-class _SchedulePreview extends StatelessWidget {
-  const _SchedulePreview({required this.name, required this.time, required this.appCount});
-  final String name; final String time; final int appCount;
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: .35)),
-      ),
-      child: Row(children: [
-        Container(width: 42, height: 42,
-          decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .12), borderRadius: BorderRadius.circular(13)),
-          child: Icon(Icons.schedule_rounded, color: scheme.primary)),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 3),
-          Text(time, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-        ])),
-        Text('$appCount app', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
-      ]),
-    );
-  }
-}
-
-class _EmptyPanel extends StatelessWidget {
-  const _EmptyPanel({required this.icon, required this.title, required this.subtitle, this.action, this.onTap});
-  final IconData icon; final String title; final String subtitle; final String? action; final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(19),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: .35)),
-      ),
-      child: Row(children: [
-        Icon(icon, color: scheme.primary, size: 25),
-        const SizedBox(width: 13),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 3),
-          Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-          if (action != null) TextButton(onPressed: onTap, child: Text(action!)),
-        ])),
-      ]),
-    );
-  }
-}
-
-class _ActivityPreview extends StatelessWidget {
-  const _ActivityPreview({required this.title, required this.subtitle});
-  final String title; final String subtitle;
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(children: [
-        Icon(Icons.shield_outlined, color: scheme.primary),
-        const SizedBox(width: 12),
-        Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600))),
-        Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10)),
-      ]),
-    );
-  }
-}
+class _Pill extends StatelessWidget{const _Pill({required this.message});final String message;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:11),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white10)),child:Row(children:[Container(width:8,height:8,decoration:const BoxDecoration(color:_amber,shape:BoxShape.circle)),const SizedBox(width:9),Expanded(child:Text(message,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:_muted,fontSize:10,fontFamily:'monospace'))),const SizedBox(width:6),Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:_amber.withValues(alpha:.1),borderRadius:BorderRadius.circular(20),border:Border.all(color:_amber.withValues(alpha:.3))),child:const Row(children:[Icon(Icons.verified_rounded,color:_amber,size:12),SizedBox(width:4),Text('AMAN',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800))]))]));}
+class _Hero extends StatelessWidget{const _Hero({required this.active,required this.timer,required this.target,required this.onTap});final bool active;final String timer;final DateTime? target;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:const RadialGradient(center:Alignment(0,-.65),radius:1.35,colors:[Color(0xFF30263D),Color(0xFF171927),_bg]),border:Border.all(color:Colors.white12),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha:.35),blurRadius:28,offset:const Offset(0,12))]),child:Column(children:[
+ SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[CustomPaint(size:const Size(238,238),painter:_Dial(active)),Column(mainAxisSize:MainAxisSize.min,children:[
+ Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),decoration:BoxDecoration(color:_amber.withValues(alpha:.13),borderRadius:BorderRadius.circular(24),border:Border.all(color:_amber.withValues(alpha:.35))),child:Text(active?'MODE KETAT AKTIF':'MODE KETAT NONAKTIF',style:const TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1.1))),
+ const SizedBox(height:12),const Text('SISA WAKTU TERKUNCI',style:TextStyle(color:_muted,fontSize:10,letterSpacing:1.8,fontFamily:'monospace')),const SizedBox(height:4),Text(timer,style:const TextStyle(color:_ink,fontSize:34,fontWeight:FontWeight.w800,letterSpacing:-1)),const SizedBox(height:7),
+ Text(target==null?'Target: Tanpa batas waktu':'Target: '+_clock(target!)+' WIB',style:const TextStyle(color:_muted,fontSize:10,fontFamily:'monospace'))
+ ])])),
+ const SizedBox(height:8),Material(color:Colors.transparent,child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(19),child:Ink(padding:const EdgeInsets.symmetric(horizontal:14,vertical:13),decoration:BoxDecoration(gradient:const LinearGradient(colors:[_high,Color(0xFF38304F)]),borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white12)),child:const Row(children:[Icon(Icons.lock_clock_rounded,color:_amber2,size:24),SizedBox(width:11),Expanded(child:Text('KELOLA MODE KETAT',style:TextStyle(color:_ink,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:1.1))),Icon(Icons.tune_rounded,color:_amber,size:20)]))))]));}
+class _Dial extends CustomPainter{const _Dial(this.active);final bool active;@override void paint(Canvas c,Size s){final center=Offset(s.width/2,s.height/2),r=s.width*.37,rect=Rect.fromCircle(center:center,radius:r);c.drawCircle(center,r,Paint()..style=PaintingStyle.stroke..strokeWidth=11..color=const Color(0xFF25283B));c.drawCircle(center,r+14,Paint()..style=PaintingStyle.stroke..color=Colors.white.withValues(alpha:.07));if(active){final p=Paint()..style=PaintingStyle.stroke..strokeWidth=12..strokeCap=StrokeCap.round..shader=const SweepGradient(colors:[_amber2,Color(0xFFFF7B39),_indigo,_amber2]).createShader(rect)..maskFilter=const MaskFilter.blur(BlurStyle.normal,1.5);c.drawArc(rect,-math.pi/2,math.pi*1.48,false,p);c.drawCircle(Offset(center.dx,center.dy-r),5,Paint()..color=_amber2);}}@override bool shouldRepaint(covariant _Dial old)=>old.active!=active;}
+class _Bento extends StatelessWidget{const _Bento({required this.title,required this.icon,required this.child});final String title;final IconData icon;final Widget child;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(21),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[Expanded(child:Text(title,style:const TextStyle(color:_muted,fontSize:10,letterSpacing:1,fontWeight:FontWeight.w700))),Icon(icon,color:_amber,size:18)]),const Spacer(),child]));}
+class _Mini extends StatelessWidget{const _Mini({required this.title,required this.icon,required this.value,required this.suffix,required this.tint});final String title,value,suffix;final IconData icon;final Color tint;@override Widget build(BuildContext c)=>Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Row(children:[Expanded(child:Text(title,style:const TextStyle(color:_muted,fontSize:9,fontWeight:FontWeight.w700,letterSpacing:.6))),Icon(icon,color:tint,size:16)]),Row(crossAxisAlignment:CrossAxisAlignment.baseline,textBaseline:TextBaseline.alphabetic,children:[Text(value,style:const TextStyle(color:_ink,fontSize:21,fontWeight:FontWeight.w800)),const SizedBox(width:5),Flexible(child:Text(suffix,style:TextStyle(color:tint,fontSize:9)))])]));}
+class _Sparkline extends StatelessWidget{const _Sparkline();@override Widget build(BuildContext c)=>SizedBox(height:28,child:CustomPaint(painter:_Spark()));}
+class _Spark extends CustomPainter{@override void paint(Canvas c,Size s){final p=Path()..moveTo(0,s.height*.78)..quadraticBezierTo(s.width*.18,s.height*.45,s.width*.32,s.height*.72)..quadraticBezierTo(s.width*.48,s.height*.94,s.width*.62,s.height*.38)..quadraticBezierTo(s.width*.8,s.height*.65,s.width,s.height*.12);c.drawPath(p,Paint()..color=_amber..style=PaintingStyle.stroke..strokeWidth=2..strokeCap=StrokeCap.round);}@override bool shouldRepaint(covariant CustomPainter old)=>false;}
+class _ScheduleCard extends StatelessWidget{const _ScheduleCard({required this.name,required this.detail,required this.time,required this.onTap});final String name,detail,time;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.all(15),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(21),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(name,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:_ink,fontSize:14,fontWeight:FontWeight.w700)),const SizedBox(height:4),Text(detail,style:const TextStyle(color:_muted,fontSize:10))])),const Icon(Icons.alarm_on_rounded,color:_indigo,size:21)]),const SizedBox(height:17),Center(child:Text(time+' • FOKUS',style:const TextStyle(color:_amber2,fontSize:10,fontWeight:FontWeight.w700,fontFamily:'monospace'))),const SizedBox(height:8),ClipRRect(borderRadius:BorderRadius.circular(20),child:SizedBox(height:9,child:Row(children:[Expanded(flex:2,child:Container(color:_high)),Expanded(flex:5,child:Container(decoration:const BoxDecoration(gradient:LinearGradient(colors:[_amber2,_amber,_indigo])))),Expanded(flex:3,child:Container(color:_high))]))),const SizedBox(height:9),Row(children:[const Icon(Icons.sync_rounded,color:_amber2,size:15),const SizedBox(width:6),const Expanded(child:Text('Sinkron otomatis dengan jadwal',style:TextStyle(color:_muted,fontSize:10))),TextButton(onPressed:onTap,child:const Text('EDIT JADWAL',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800)))])]));}
+class _AppTile extends StatelessWidget{const _AppTile({required this.name});final String name;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.symmetric(horizontal:11,vertical:9),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(17),border:Border.all(color:Colors.white10)),child:Row(children:[Container(width:34,height:34,decoration:BoxDecoration(color:_amber.withValues(alpha:.14),borderRadius:BorderRadius.circular(10)),child:Center(child:Text(name.isEmpty?'?':name.substring(0,1).toUpperCase(),style:const TextStyle(color:_amber,fontWeight:FontWeight.w800,fontSize:16)))),const SizedBox(width:9),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[Text(name,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:_ink,fontSize:11,fontWeight:FontWeight.w700)),const SizedBox(height:3),const Text('TERKUNCI',style:TextStyle(color:_amber,fontSize:9))])),const Icon(Icons.lock_rounded,color:_amber,size:15)]));}
+class _EmptyApps extends StatelessWidget{const _EmptyApps();@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.all(17),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(17),border:Border.all(color:Colors.white10)),child:const Row(children:[Icon(Icons.apps_rounded,color:_amber,size:22),SizedBox(width:11),Expanded(child:Text('Belum ada aplikasi dibatasi. Pilih aplikasi melalui menu Sesuaikan.',style:TextStyle(color:_muted,fontSize:11)))]));}
+String _clock(DateTime d)=>d.hour.toString().padLeft(2,'0')+':'+d.minute.toString().padLeft(2,'0');
+String _minute(int n)=>(n~/60).toString().padLeft(2,'0')+':'+(n%60).toString().padLeft(2,'0');
+String _fmtDuration(int n)=>(n~/3600).toString().padLeft(2,'0')+':'+((n%3600)~/60).toString().padLeft(2,'0')+':'+(n%60).toString().padLeft(2,'0');
+String _days(Set<int> v){const d=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];if(v.length==7)return 'Setiap hari • Rutinitas terjadwal';final s=v.toList()..sort();return s.map((n)=>d[n-1]).join(' • ');}
