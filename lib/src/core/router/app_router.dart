@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openlock/src/core/shell/home_shell.dart';
+import 'package:openlock/src/core/diagnostics/app_diagnostics.dart';
 import 'package:openlock/src/features/apps/screens/app_picker_screen.dart';
 import 'package:openlock/src/features/home/screens/home_dashboard_screen.dart';
 import 'package:openlock/src/features/auth/providers/auth_providers.dart';
@@ -56,6 +57,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.splash,
+    errorBuilder: (context, state) => AppDiagnosticScreen(
+      title: 'Navigasi OpenLock gagal',
+      error: state.error ?? StateError('GoRouter tidak dapat membuka halaman.'),
+    ),
     refreshListenable: refresh,
     redirect: (context, state) {
       final status = ref.read(sessionProvider);
