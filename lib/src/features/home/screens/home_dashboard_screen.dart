@@ -95,7 +95,7 @@ class _Dial extends CustomPainter {
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.round..color=const Color(0xFF1C1F30));
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
   if(!active)return;
-  final gradient=const SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFF7B39),_indigo,Color(0xFF6366F1)]);
+  final gradient=SweepGradient(startAngle:-math.pi/2,endAngle:math.pi*1.5,colors:[_amber2,Color(0xFFFF7B39),_indigo,Color(0xFF6366F1)]);
   final shader=gradient.createShader(rect);
   final sweep=math.pi*1.42;
   // Two blurred passes create the amber/violet ambient glow from Stitch.
