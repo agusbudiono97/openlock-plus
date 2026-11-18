@@ -74,6 +74,17 @@ jobs:
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
           "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-debug.apk
 
+      - name: Create versioned APK filename
+        id: apk_name
+        run: |
+          VERSION="$(sed -n 's/^version: //p' pubspec.yaml | tr -d '\r')"
+          APP_VERSION="${VERSION%%+*}"
+          BUILD_NUMBER="${VERSION##*+}"
+          APK_NAME="OpenLock-v${APP_VERSION}-build${BUILD_NUMBER}.apk"
+          cp build/app/outputs/flutter-apk/app-debug.apk "build/app/outputs/flutter-apk/$APK_NAME"
+          echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=OpenLock-v${APP_VERSION}-build${BUILD_NUMBER}" >> "$GITHUB_OUTPUT"
+
       - name: Remove signing material
         if: always()
         run: rm -f android/key.properties android/app/release.keystore
@@ -81,7 +92,7 @@ jobs:
       - name: Upload installable test APK
         uses: actions/upload-artifact@v4
         with:
-          name: openlock-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: ${{ steps.apk_name.outputs.artifact_name }}
+          path: build/app/outputs/flutter-apk/${{ steps.apk_name.outputs.apk_name }}
           if-no-files-found: error
           retention-days: 14
