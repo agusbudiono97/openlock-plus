@@ -134,7 +134,9 @@ final class ConfigController extends AsyncNotifier<LockConfig> {
       strictModeEnabled: enabled,
       strictModePackages: packages,
       strictModeEndsAtMillis: endsAtMillis,
-      clearStrictModeEndsAtMillis: enabled && endsAtMillis == null,
+      clearStrictModeEndsAtMillis: !enabled || endsAtMillis == null,
+      strictModeStartedAtMillis: enabled ? DateTime.now().millisecondsSinceEpoch : null,
+      clearStrictModeStartedAtMillis: !enabled,
     ));
   }
 
