@@ -541,6 +541,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             RowGroup(
               children: [
                 SettingsTile(
+                  icon: config.dnsGuardActiveAt(DateTime.now())
+                      ? Icons.shield_rounded
+                      : Icons.dns_outlined,
+                  title: 'DNS Guard',
+                  subtitle: config.dnsGuardActiveAt(DateTime.now())
+                      ? 'Aktif — akses DNS Pribadi diblokir'
+                      : 'Lindungi pengaturan DNS dengan durasi mandiri',
+                  onTap: () => context.push(AppRoutes.dnsGuard),
+                ),
+                SettingsTile(
                   icon: Icons.verified_user_outlined,
                   title: 'Izin dan status',
                   subtitle: 'Akses penggunaan, tampil di atas aplikasi, layanan pemantau',

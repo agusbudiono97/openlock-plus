@@ -93,7 +93,15 @@ class HomeDashboardScreen extends ConsumerWidget {
                     )),
                   ],
                 ),
-                const SizedBox(height: 26),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => context.go(AppRoutes.apps),
+                    icon: const Icon(Icons.tune_rounded, size: 18),
+                    label: const Text('Kelola aplikasi terkunci'),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 _SectionHeading(
                   title: 'Jadwal perlindungan',
                   action: 'Semua jadwal',

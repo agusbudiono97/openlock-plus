@@ -21,6 +21,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
     private var windowClass: String? = null
     private var lastBarrierKey: String? = null
     private var lastBarrierAt = 0L
+    private var lastDnsGuardBackAt = 0L
     private lateinit var store: ConfigStore
 
     override fun onServiceConnected() {
@@ -62,7 +63,40 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
         }
 
         val nodes = flatten(root)
-        if (rootPkg != packageName && store.strictModeActive() &&
+
+        // During DNS Guard, put the full-screen commitment barrier over
+        // OpenLock's own Accessibility service detail page. The detail page
+        // must be identified by its service title and switch, not the general
+        // Accessibility list, so other accessibility services remain usable.
+        if ((store.strictModeActive() || store.dnsGuardActive()) &&
+            DnsSettingsGuard.isOpenLockAccessibilitySettings(
+                rootPkg,
+                nodes,
+                applicationInfo.loadLabel(packageManager).toString(),
+            )
+        ) {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastDnsGuardBackAt >= DNS_GUARD_BACK_DEBOUNCE_MS) {
+                lastDnsGuardBackAt = now
+                showStrictBarrier("dns-guard-accessibility-disable", packageName)
+            }
+            return
+        }
+
+        // Independent DNS Guard: return only after the Private DNS row has
+        // opened its mode/hostname screen. The parent connectivity page and
+        // unrelated Settings categories remain usable.
+        if (store.dnsGuardActive() &&
+            DnsSettingsGuard.isPrivateDnsScreen(rootPkg, nodes)
+        ) {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastDnsGuardBackAt >= DNS_GUARD_BACK_DEBOUNCE_MS) {
+                lastDnsGuardBackAt = now
+                showStrictBarrier("dns-guard-private-dns", packageName)
+            }
+            return
+        }
+        if (rootPkg != packageName && (store.strictModeActive() || store.dnsGuardActive()) &&
             RunningAppStopGuard.isStopActionForOwnApp(
                 nodes = nodes,
                 ownLabel = applicationInfo.loadLabel(packageManager).toString(),
@@ -76,7 +110,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
         // Best-effort guard for XOS App Freezer / app-freezing screens.
         // Only react when the same visible window identifies OpenLock AND
         // exposes an explicit freeze action; never block generic freezer UI.
-        if (rootPkg != packageName && store.strictModeActive() &&
+        if (rootPkg != packageName && (store.strictModeActive() || store.dnsGuardActive()) &&
             FreezeGuard.isFreezeActionForOwnApp(
                 nodes = nodes,
                 ownLabel = applicationInfo.loadLabel(packageManager).toString(),
@@ -117,7 +151,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
             GuardedScreen.set(rootPkg)
             // Strict Mode guards our own App info and the Device Admin
             // deactivate screen, not merely the apps selected in the blocklist.
-            if (store.strictModeActive()) {
+            if (store.strictModeActive() || store.dnsGuardActive()) {
                 showStrictBarrier(rootPkg, packageName)
             }
         } else {
@@ -174,6 +208,7 @@ class OpenLockGuardAccessibilityService : AccessibilityService() {
     private companion object {
         const val MAX_NODES = 600
         const val RELAUNCH_GUARD_MS = 1_200L
+        const val DNS_GUARD_BACK_DEBOUNCE_MS = 900L
     }
 }
 

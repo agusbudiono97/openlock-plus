@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/premium-strict-mode
+      - feature/dns-guard
 
 permissions:
   contents: read

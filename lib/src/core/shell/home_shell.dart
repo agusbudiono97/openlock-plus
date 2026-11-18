@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openlock/src/core/router/app_router.dart';
 
-/// Five primary destinations: overview, apps, schedules, activity and profile.
+/// Five primary destinations: overview, DNS Guard, schedules, activity and profile.
 class HomeShell extends StatelessWidget {
   const HomeShell({required this.shell, super.key});
 
@@ -9,7 +10,7 @@ class HomeShell extends StatelessWidget {
 
   static const _destinations = <_Destination>[
     _Destination(Icons.grid_view_outlined, Icons.grid_view_rounded, 'Beranda'),
-    _Destination(Icons.apps_outlined, Icons.apps_rounded, 'Aplikasi'),
+    _Destination(Icons.shield_outlined, Icons.shield_rounded, 'DNS Guard'),
     _Destination(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'Jadwal'),
     _Destination(Icons.insights_outlined, Icons.insights_rounded, 'Statistik'),
     _Destination(Icons.person_outline_rounded, Icons.person_rounded, 'Profil'),
@@ -18,6 +19,7 @@ class HomeShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeIndex = shell.currentIndex.clamp(0, _destinations.length - 1);
+    final isDnsGuardRoute = GoRouterState.of(context).uri.path == AppRoutes.dnsGuard;
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -49,15 +51,23 @@ class HomeShell extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(9, 8, 9, 6),
             child: Row(
               children: List.generate(_destinations.length, (index) {
-                final selected = index == activeIndex;
+                final selected = index == 1
+                    ? isDnsGuardRoute
+                    : index == activeIndex;
                 return Expanded(
                   child: _NavigationItem(
                     destination: _destinations[index],
                     selected: selected,
-                    onTap: () => shell.goBranch(
-                      index,
-                      initialLocation: index == shell.currentIndex,
-                    ),
+                    onTap: () {
+                      if (index == 1) {
+                        context.push(AppRoutes.dnsGuard);
+                      } else {
+                        shell.goBranch(
+                          index,
+                          initialLocation: index == shell.currentIndex,
+                        );
+                      }
+                    },
                   ),
                 );
               }),
