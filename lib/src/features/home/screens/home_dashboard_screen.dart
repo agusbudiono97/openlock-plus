@@ -59,7 +59,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>{
    Row(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
     Expanded(flex:3,child:_Bento(title:'STATUS KUBAH',icon:Icons.verified_user_rounded,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(events.length.toString()+' BLOKIR',style:TextStyle(color:_ink,fontSize:28,fontWeight:FontWeight.w800)),Text('Percobaan aplikasi ditangkal',style:TextStyle(color:_muted,fontSize:11)),SizedBox(height:14),const _Sparkline()]))),
     SizedBox(width:10),
-    Expanded(flex:2,child:Column(children:[Expanded(child:_Mini(title:'TERKUNCI',icon:Icons.lock_rounded,value:config.lockedPackages.length.toString(),suffix:'Aplikasi',tint:_amber2)),SizedBox(height:10),Expanded(child:_Mini(title:'JADWAL',icon:Icons.alarm_on_rounded,value:schedules.length.toString(),suffix:'Aktif',tint:_indigo))])),
+    Expanded(flex:2,child:Column(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[_Mini(title:'TERKUNCI',icon:Icons.lock_rounded,value:config.lockedPackages.length.toString(),suffix:'Aplikasi',tint:_amber2),SizedBox(height:10),_Mini(title:'JADWAL',icon:Icons.alarm_on_rounded,value:schedules.length.toString(),suffix:'Aktif',tint:_indigo)])),
    ]),
    SizedBox(height:16),
    _ScheduleCard(name:schedules.isEmpty?'Jadwal Jam Kerja Produktif':schedules.first.name,detail:schedules.isEmpty?'Belum ada rutinitas terjadwal':_days(schedules.first.weekdays),time:schedules.isEmpty?'—':_minute(schedules.first.startMinutes)+' – '+_minute(schedules.first.endMinutes),onTap:()=>context.go(AppRoutes.schedules)),
