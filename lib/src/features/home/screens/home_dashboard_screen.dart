@@ -13,18 +13,21 @@ import 'package:openlock/src/features/intruder/providers/intruder_providers.dart
 
 class _HomePalette {
  static bool dark=true;
- static Color bg=Color(0xFF0C0D14), panel=const Color(0xFF171927), high=const Color(0xFF292D43);
+ static Color bg=const Color(0xFF0C0D14), panel=const Color(0xFF171927), high=const Color(0xFF292D43);
+ static Color border=const Color(0x1AFFFFFF), borderStrong=const Color(0x22FFFFFF);
  static Color ink=const Color(0xFFF1F0F7), muted=const Color(0xFF9D9BB3), amber=const Color(0xFFFF9E42), amber2=const Color(0xFFFFB259), indigo=const Color(0xFF8B5CF6);
  static void apply(bool value) {
   dark=value;
-  bg=dark?const Color(0xFF0C0D14):const Color(0xFFF5F7FA);
+  bg=dark?const Color(0xFF0C0D14):const Color(0xFFF6F8FC);
   panel=dark?const Color(0xFF171927):const Color(0xFFFFFFFF);
   high=dark?const Color(0xFF292D43):const Color(0xFFE8EDF4);
-  ink=dark?const Color(0xFFF1F0F7):const Color(0xFF202938);
-  muted=dark?const Color(0xFF9D9BB3):const Color(0xFF687386);
-  amber=dark?const Color(0xFFFF9E42):const Color(0xFFB96B20);
-  amber2=dark?const Color(0xFFFFB259):const Color(0xFF9D5817);
-  indigo=dark?const Color(0xFF8B5CF6):const Color(0xFF7054C8);
+  ink=dark?const Color(0xFFF1F0F7):const Color(0xFF1F2937);
+  muted=dark?const Color(0xFF9D9BB3):const Color(0xFF475569);
+  amber=dark?const Color(0xFFFF9E42):const Color(0xFFFF8A3D);
+  amber2=dark?const Color(0xFFFFB259):const Color(0xFFC65F1C);
+  indigo=dark?const Color(0xFF8B5CF6):const Color(0xFF7B61FF);
+  border=dark?const Color(0x1AFFFFFF):const Color(0xFFE2E8F0);
+  borderStrong=dark?const Color(0x22FFFFFF):const Color(0xFFCBD5E1);
  }
 }
 Color get _bg=>_HomePalette.bg; Color get _panel=>_HomePalette.panel; Color get _high=>_HomePalette.high;
@@ -53,7 +56,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> with 
   final left=active&&end!=null?math.max(0,((end-_now.millisecondsSinceEpoch)/1000).floor()):0;
   final timer=end==null?'∞':_fmtDuration(left);
   return Scaffold(backgroundColor:_bg,body:SafeArea(bottom:false,child:LayoutBuilder(builder:(context,constraints)=>Center(child:SizedBox(width:math.min(constraints.maxWidth,560),height:constraints.maxHeight,child:ListView(padding:const EdgeInsets.fromLTRB(18,16,18,28),children:[
-   Row(children:[Container(width:48,height:48,decoration:BoxDecoration(borderRadius:BorderRadius.circular(15),gradient:LinearGradient(colors:[Color(0xFF393047),_high]),border:Border.all(color:Colors.white12)),child:Icon(Icons.shield_rounded,color:_amber,size:27)),SizedBox(width:13),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('OpenLock',style:TextStyle(color:_ink,fontSize:22,fontWeight:FontWeight.w800)),SizedBox(height:2),const SizedBox.shrink()])),Material(color:Colors.transparent,child:InkWell(onTap:()=>context.go(AppRoutes.settings),borderRadius:BorderRadius.circular(14),child:Container(width:42,height:42,decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white12)),child:Icon(Icons.person_outline_rounded,color:_muted,size:21))))]),
+   Row(children:[Container(width:48,height:48,decoration:BoxDecoration(borderRadius:BorderRadius.circular(15),gradient:LinearGradient(colors:[Color(0xFF393047),_high]),border:Border.all(color:_HomePalette.borderStrong)),child:Icon(Icons.shield_rounded,color:_amber,size:27)),SizedBox(width:13),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('OpenLock',style:TextStyle(color:_ink,fontSize:22,fontWeight:FontWeight.w800)),SizedBox(height:2),const SizedBox.shrink()])),Material(color:Colors.transparent,child:InkWell(onTap:()=>context.go(AppRoutes.settings),borderRadius:BorderRadius.circular(14),child:Container(width:42,height:42,decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white12)),child:Icon(Icons.person_outline_rounded,color:_muted,size:21))))]),
    SizedBox(height:22),
    _Pill(message:events.isEmpty?'OpenLock siap menjaga fokusmu':_clock(events.first.timestamp)+' WIB • Percobaan akses tercatat'),
    SizedBox(height:18),
@@ -74,14 +77,14 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> with 
   ]))))));
  }
 }
-class _Pill extends StatelessWidget{const _Pill({required this.message});final String message;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:11),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white10)),child:Row(children:[Container(width:8,height:8,decoration:BoxDecoration(color:_amber,shape:BoxShape.circle)),SizedBox(width:9),Expanded(child:Text(message,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:_muted,fontSize:10))),SizedBox(width:6),Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:_amber.withValues(alpha:.1),borderRadius:BorderRadius.circular(20),border:Border.all(color:_amber.withValues(alpha:.3))),child:Row(children:[Icon(Icons.verified_rounded,color:_amber,size:12),SizedBox(width:4),Text('AMAN',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800))]))]));}
-class _Hero extends StatelessWidget{const _Hero({required this.active,required this.glowAnimation,required this.timer,required this.target,required this.onTap});final bool active;final Animation<double> glowAnimation;final String timer;final DateTime? target;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:RadialGradient(center:Alignment(0,-.65),radius:1.35,colors:[Color(0xFF30263D),Color(0xFF171927),_bg]),border:Border.all(color:Colors.white12),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha:.35),blurRadius:28,offset:const Offset(0,12)),BoxShadow(color:_amber.withValues(alpha:.045),blurRadius:38,offset:const Offset(-35,-24)),BoxShadow(color:_indigo.withValues(alpha:.10),blurRadius:42,offset:const Offset(35,35))]),child:Column(children:[
+class _Pill extends StatelessWidget{const _Pill({required this.message});final String message;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:11),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(30),border:Border.all(color:_HomePalette.border)),child:Row(children:[Container(width:8,height:8,decoration:BoxDecoration(color:_amber,shape:BoxShape.circle)),SizedBox(width:9),Expanded(child:Text(message,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:_muted,fontSize:10))),SizedBox(width:6),Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:_amber.withValues(alpha:.1),borderRadius:BorderRadius.circular(20),border:Border.all(color:_amber.withValues(alpha:.3))),child:Row(children:[Icon(Icons.verified_rounded,color:_amber,size:12),SizedBox(width:4),Text('AMAN',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800))]))]));}
+class _Hero extends StatelessWidget{const _Hero({required this.active,required this.glowAnimation,required this.timer,required this.target,required this.onTap});final bool active;final Animation<double> glowAnimation;final String timer;final DateTime? target;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:RadialGradient(center:Alignment(0,-.65),radius:1.35,colors:_HomePalette.dark?[Color(0xFF30263D),Color(0xFF171927),_bg]:[Color(0xFFFFFFFF),Color(0xFFFFFFFF),_bg]),border:Border.all(color:_HomePalette.borderStrong),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha:_HomePalette.dark?.35:.07),blurRadius:28,offset:const Offset(0,12)),BoxShadow(color:_amber.withValues(alpha:_HomePalette.dark?.045:.035),blurRadius:38,offset:const Offset(-35,-24)),BoxShadow(color:_indigo.withValues(alpha:_HomePalette.dark?.10:.045),blurRadius:42,offset:const Offset(35,35))]),child:Column(children:[
  SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[RepaintBoundary(child:CustomPaint(size:const Size(264,264),painter:_Dial(glowAnimation))),Column(mainAxisSize:MainAxisSize.min,children:[
  Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),decoration:BoxDecoration(color:_amber.withValues(alpha:.13),borderRadius:BorderRadius.circular(24),border:Border.all(color:_amber.withValues(alpha:.35))),child:Text(active?'MODE KETAT AKTIF':'MODE KETAT NONAKTIF',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1.1))),
  SizedBox(height:12),Text('SISA WAKTU TERKUNCI',style:TextStyle(color:_muted,fontSize:10,letterSpacing:1.8)),SizedBox(height:4),Text(timer,style:TextStyle(color:_ink,fontSize:34,fontWeight:FontWeight.w800,letterSpacing:-1)),SizedBox(height:7),
  Text(target==null?'Target: Tanpa batas waktu':'Target: '+_clock(target!)+' WIB',style:TextStyle(color:_muted,fontSize:10))
  ])])),
- SizedBox(height:8),Material(color:Colors.transparent,child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(19),child:Ink(padding:const EdgeInsets.symmetric(horizontal:14,vertical:13),decoration:BoxDecoration(gradient:LinearGradient(colors:[_high,Color(0xFF38304F)]),borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white12)),child:Row(children:[Icon(Icons.lock_clock_rounded,color:_amber2,size:24),SizedBox(width:11),Expanded(child:Text('KELOLA MODE KETAT',style:TextStyle(color:_ink,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:1.1))),Icon(Icons.tune_rounded,color:_amber,size:20)]))))]));}
+ SizedBox(height:8),Material(color:Colors.transparent,child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(19),child:Ink(padding:const EdgeInsets.symmetric(horizontal:14,vertical:13),decoration:BoxDecoration(gradient:LinearGradient(colors:[_high,(_HomePalette.dark?const Color(0xFF38304F):const Color(0xFFE8EDF4))]),borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white12)),child:Row(children:[Icon(Icons.lock_clock_rounded,color:_amber2,size:24),SizedBox(width:11),Expanded(child:Text('KELOLA MODE KETAT',style:TextStyle(color:_ink,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:1.1))),Icon(Icons.tune_rounded,color:_amber,size:20)]))))]));}
 class _Dial extends CustomPainter {
  _Dial(this.animation):super(repaint:animation);
  final Animation<double> animation;
