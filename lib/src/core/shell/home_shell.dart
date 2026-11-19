@@ -23,7 +23,10 @@ class HomeShell extends StatelessWidget {
       bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
           color: Color(0xFF0C0D14),
-          border: Border(top: BorderSide(color: Color(0x18FFFFFF), width: .7)),
+          border: Border(top: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0x18FFFFFF)
+                : const Color(0xFFE2E8F0), width: .7)),
           boxShadow: [BoxShadow(color: Color(0x44000000), blurRadius: 22, offset: Offset(0, -6))],
         ),
         child: SafeArea(
@@ -63,7 +66,10 @@ class _NavigationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFFFFB259) : const Color(0xFF777B91);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = selected
+        ? (isDark ? const Color(0xFFFFB259) : const Color(0xFFC65F1C))
+        : (isDark ? const Color(0xFF777B91) : const Color(0xFF64748B));
     return Semantics(
       button: true, selected: selected, label: destination.label,
       child: Material(
@@ -76,7 +82,9 @@ class _NavigationItem extends StatelessWidget {
             curve: Curves.easeOutCubic,
             padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: selected ? const Color(0x1AFF9E42) : Colors.transparent,
+              color: selected
+                  ? (isDark ? const Color(0x1AFF9E42) : const Color(0x1AFF8A3D))
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(15),
             ),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
