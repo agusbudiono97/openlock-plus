@@ -111,8 +111,8 @@ class _Dial extends CustomPainter {
     ..color=Colors.white.withValues(alpha:opacity)
     ..maskFilter=MaskFilter.blur(BlurStyle.normal,blur));
   }
-  drawHalo(width:26+6*wave,opacity:.13+.10*wave,blur:9+3*wave);
-  drawHalo(width:15+2*wave,opacity:.22+.10*wave,blur:2.5+1.2*wave);
+  drawHalo(width:28+6*wave,opacity:.17+.11*wave,blur:10+3*wave);
+  drawHalo(width:16+2*wave,opacity:.26+.10*wave,blur:3+1.2*wave);
   // Crisp colored base ring remains fully visible and retains the seam-free segmented gradient.
   Color colorAt(double t){
    var index=0;
