@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// separate from PIN, lock configuration, and enforcement storage.
 class ThemePaletteController extends ChangeNotifier {
   static const _storageKey = 'openlock_theme_seed';
-  static const defaultSeed = Color(0xFF007E9C);
+  static const defaultSeed = Color(0xFFFF8A3D);
 
   Color _seed = defaultSeed;
   Color get seed => _seed;
