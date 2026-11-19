@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:io';
@@ -110,22 +111,24 @@ class _Dial extends CustomPainter {
    final double local=span==0?0.0:(t-stops[index])/span;
    return Color.lerp(colors[index],colors[index+1],local)!;
   }
-  // Render the halo as overlapping colored arc segments, matching the
-  // seam-free approach used by the earlier dark-theme ring. Avoid applying
-  // a SweepGradient shader to a blurred circle: its shader boundary can show
-  // as a horizontal cutoff on light surfaces.
+  // Paint the complete multicolor halo into one offscreen layer, then
+  // blur that combined image once. Blurring every tiny arc separately makes
+  // the glow uneven and can create visible wedges/cutoffs at segment joins.
+  // The sharp 360-degree ring is drawn afterward and remains unchanged.
   void drawHalo({required double width,required double opacity,required double blur}){
    const haloSegments=240;
    const haloStep=math.pi*2/haloSegments;
+   final bounds=rect.inflate(width/2+blur*3);
+   canvas.saveLayer(bounds,Paint()..imageFilter=ui.ImageFilter.blur(sigmaX:blur,sigmaY:blur));
    final haloPaint=Paint()
     ..style=PaintingStyle.stroke
     ..strokeWidth=width
-    ..strokeCap=StrokeCap.round
-    ..maskFilter=MaskFilter.blur(BlurStyle.normal,blur);
+    ..strokeCap=StrokeCap.round;
    for(var i=0;i<haloSegments;i++){
     haloPaint.color=colorAt((i+.5)/haloSegments).withValues(alpha:opacity);
     canvas.drawArc(rect,-math.pi/2+i*haloStep,haloStep+.008,false,haloPaint);
    }
+   canvas.restore();
   }
   drawHalo(width:38+8*wave,opacity:.25+.12*wave,blur:13+4*wave);
   drawHalo(width:22+4*wave,opacity:.34+.12*wave,blur:5+2*wave);
