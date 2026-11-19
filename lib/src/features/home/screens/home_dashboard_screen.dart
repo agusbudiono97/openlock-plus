@@ -106,13 +106,23 @@ class _Dial extends CustomPainter {
   // Sweep shader is used only for the soft halo. Matching endpoint colors
   // keeps the 360-degree join seamless while avoiding hundreds of blurred arcs.
   final shader=SweepGradient(colors:colors,stops:stops,startAngle:-math.pi/2,endAngle:math.pi*1.5).createShader(rect);
+  // Build the halo from many translucent concentric strokes instead of
+  // MaskFilter.blur. On some GPU/device combinations the blur mask can leave
+  // a radial shader seam that looks like a horizontal line at 3 o'clock.
+  // Layered strokes keep the same sweep colors and pulse while avoiding that
+  // blur-mask artifact and making the glow denser.
   void drawHalo({required double width,required double opacity,required double blur}){
-   canvas.drawCircle(center,radius,Paint()
-    ..style=PaintingStyle.stroke
-    ..strokeWidth=width
-    ..shader=shader
-    ..color=Colors.white.withValues(alpha:opacity)
-    ..maskFilter=MaskFilter.blur(BlurStyle.normal,blur));
+   const layers=12;
+   for(var i=0;i<layers;i++){
+    final t=i/(layers-1);
+    final layerWidth=width+blur*2.4*(1-t);
+    final layerOpacity=opacity*(.025+.46*t);
+    canvas.drawCircle(center,radius,Paint()
+     ..style=PaintingStyle.stroke
+     ..strokeWidth=layerWidth
+     ..shader=shader
+     ..color=Colors.white.withValues(alpha:layerOpacity));
+   }
   }
   drawHalo(width:38+8*wave,opacity:.25+.12*wave,blur:13+4*wave);
   drawHalo(width:22+4*wave,opacity:.34+.12*wave,blur:5+2*wave);
