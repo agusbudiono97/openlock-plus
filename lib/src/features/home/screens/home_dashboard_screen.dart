@@ -80,15 +80,16 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> with 
 }
 class _Pill extends StatelessWidget{const _Pill({required this.message});final String message;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:11),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(30),border:Border.all(color:_HomePalette.border)),child:Row(children:[Container(width:8,height:8,decoration:BoxDecoration(color:_amber,shape:BoxShape.circle)),SizedBox(width:9),Expanded(child:Text(message,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:_muted,fontSize:10))),SizedBox(width:6),Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:_amber.withValues(alpha:.1),borderRadius:BorderRadius.circular(20),border:Border.all(color:_amber.withValues(alpha:.3))),child:Row(children:[Icon(Icons.verified_rounded,color:_amber,size:12),SizedBox(width:4),Text('AMAN',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800))]))]));}
 class _Hero extends StatelessWidget{const _Hero({required this.active,required this.glowAnimation,required this.timer,required this.target,required this.onTap});final bool active;final Animation<double> glowAnimation;final String timer;final DateTime? target;final VoidCallback onTap;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:_HomePalette.dark?const RadialGradient(center:Alignment(0,-.65),radius:1.35,colors:[Color(0xFF30263D),Color(0xFF171927),Color(0xFF171927)]):null,border:Border.all(color:_HomePalette.borderStrong),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha: _HomePalette.dark ? .35 : .07),blurRadius:28,offset:const Offset(0,12)),BoxShadow(color:_amber.withValues(alpha: _HomePalette.dark ? .045 : .035),blurRadius:38,offset:const Offset(-35,-24)),BoxShadow(color:_indigo.withValues(alpha: _HomePalette.dark ? .10 : .045),blurRadius:42,offset:const Offset(35,35))]),child:Column(children:[
- SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[RepaintBoundary(child:CustomPaint(size:const Size(264,264),painter:_Dial(glowAnimation))),Column(mainAxisSize:MainAxisSize.min,children:[
+ SizedBox(width:264,height:264,child:Stack(alignment:Alignment.center,children:[RepaintBoundary(child:CustomPaint(size:const Size(264,264),painter:_Dial(glowAnimation,glowEnabled:active))),Column(mainAxisSize:MainAxisSize.min,children:[
  Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),decoration:BoxDecoration(color:_amber.withValues(alpha:.13),borderRadius:BorderRadius.circular(24),border:Border.all(color:_amber.withValues(alpha:.35))),child:Text(active?'MODE KETAT AKTIF':'MODE KETAT NONAKTIF',style:TextStyle(color:_amber2,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1.1))),
  SizedBox(height:12),Text('SISA WAKTU TERKUNCI',style:TextStyle(color:_muted,fontSize:10,letterSpacing:1.8)),SizedBox(height:4),Text(timer,style:TextStyle(color:_ink,fontSize:34,fontWeight:FontWeight.w800,letterSpacing:-1)),SizedBox(height:7),
  Text(target==null?'Target: Tanpa batas waktu':'Target: '+_clock(target!)+' WIB',style:TextStyle(color:_muted,fontSize:10))
  ])])),
  SizedBox(height:8),Material(color:Colors.transparent,child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(19),child:Ink(padding:const EdgeInsets.symmetric(horizontal:14,vertical:13),decoration:BoxDecoration(gradient:LinearGradient(colors:[_high,(_HomePalette.dark?const Color(0xFF38304F):const Color(0xFFE8EDF4))]),borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white12)),child:Row(children:[Icon(Icons.lock_clock_rounded,color:_amber2,size:24),SizedBox(width:11),Expanded(child:Text('KELOLA MODE KETAT',style:TextStyle(color:_ink,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:1.1))),Icon(Icons.tune_rounded,color:_amber,size:20)]))))]));}
 class _Dial extends CustomPainter {
- _Dial(this.animation):super(repaint:animation);
+ _Dial(this.animation,{required this.glowEnabled}):super(repaint:animation);
  final Animation<double> animation;
+ final bool glowEnabled;
  @override void paint(Canvas canvas, Size size) {
   final phase=animation.value;
   final center=Offset(size.width/2,size.height/2), radius=size.width*.405;
@@ -130,8 +131,12 @@ class _Dial extends CustomPainter {
    }
    canvas.restore();
   }
-  drawHalo(width:38+8*wave,opacity:.25+.12*wave,blur:13+4*wave);
-  drawHalo(width:22+4*wave,opacity:.34+.12*wave,blur:5+2*wave);
+  // Keep the glow tight to the ring. It is shown only while Strict Mode
+  // is active; inactive mode retains the crisp full-color 360-degree ring.
+  if(glowEnabled){
+   drawHalo(width:23+3*wave,opacity:.19+.07*wave,blur:6+1*wave);
+   drawHalo(width:13+1.5*wave,opacity:.18+.06*wave,blur:2.2+.4*wave);
+  }
   // Crisp colored base ring remains fully visible and retains the seam-free segmented gradient.
   final ringPaint=Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.butt;
   const count=360;
@@ -142,7 +147,7 @@ class _Dial extends CustomPainter {
   }
   canvas.drawCircle(center,radius,Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=Colors.white.withValues(alpha:.055));
  }
- @override bool shouldRepaint(covariant _Dial old)=>old.animation!=animation;
+ @override bool shouldRepaint(covariant _Dial old)=>old.animation!=animation||old.glowEnabled!=glowEnabled;
 }
 class _Bento extends StatelessWidget{const _Bento({required this.title,required this.icon,required this.child});final String title;final IconData icon;final Widget child;@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(21),border:Border.all(color:Colors.white10)),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[Expanded(child:Text(title,style:TextStyle(color:_muted,fontSize:10,letterSpacing:1,fontWeight:FontWeight.w700))),Icon(icon,color:_amber,size:18)]),SizedBox(height:18),child]));}
 class _Mini extends StatelessWidget{const _Mini({required this.title,required this.icon,required this.value,required this.suffix,required this.tint});final String title,value,suffix;final IconData icon;final Color tint;@override Widget build(BuildContext c)=>Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:_panel,borderRadius:BorderRadius.circular(19),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Row(children:[Expanded(child:Text(title,style:TextStyle(color:_muted,fontSize:9,fontWeight:FontWeight.w700,letterSpacing:.6))),Icon(icon,color:tint,size:16)]),Row(crossAxisAlignment:CrossAxisAlignment.baseline,textBaseline:TextBaseline.alphabetic,children:[Text(value,style:TextStyle(color:_ink,fontSize:21,fontWeight:FontWeight.w800)),SizedBox(width:5),Flexible(child:Text(suffix,style:TextStyle(color:tint,fontSize:9)))])]));}
