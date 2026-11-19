@@ -103,22 +103,6 @@ class _Dial extends CustomPainter {
   final colors=[_amber2,Color(0xFFFFB65F),Color(0xFFFFB260),Color(0xFFFFAE60),Color(0xFFFFAA5F),Color(0xFFFFA65E),Color(0xFFFFA15D),Color(0xFFFF9C5D),Color(0xFFFF975E),Color(0xFFFF9262),Color(0xFFFF8D68),Color(0xFFF98770),Color(0xFFF1817B),Color(0xFFEA7D8A),Color(0xFFE27C9A),Color(0xFFD77BAA),Color(0xFFCA78BE),Color(0xFFBC76D4),Color(0xFFAA6FE6),Color(0xFF9865F0),_indigo,Color(0xFF7770F2),Color(0xFF8A6CF4),Color(0xFF9A70F5),_amber2];
   const stops=<double>[0,.06,.10,.14,.18,.22,.26,.30,.34,.38,.42,.46,.50,.54,.58,.62,.66,.70,.74,.78,.82,.86,.90,.95,1];
   final wave=.5-.5*math.cos(phase*math.pi*2);
-  // Sweep shader is used only for the soft halo. Matching endpoint colors
-  // keeps the 360-degree join seamless while avoiding hundreds of blurred arcs.
-  final shader=SweepGradient(colors:colors,stops:stops,startAngle:-math.pi/2,endAngle:math.pi*1.5).createShader(rect);
-  // Keep the original Gaussian halo rendering; only the shader seam will
-  // be addressed separately so the ring's overall appearance stays intact.
-  void drawHalo({required double width,required double opacity,required double blur}){
-   canvas.drawCircle(center,radius,Paint()
-    ..style=PaintingStyle.stroke
-    ..strokeWidth=width
-    ..shader=shader
-    ..color=Colors.white.withValues(alpha:opacity)
-    ..maskFilter=MaskFilter.blur(BlurStyle.normal,blur));
-  }
-  drawHalo(width:38+8*wave,opacity:.25+.12*wave,blur:13+4*wave);
-  drawHalo(width:22+4*wave,opacity:.34+.12*wave,blur:5+2*wave);
-  // Crisp colored base ring remains fully visible and retains the seam-free segmented gradient.
   Color colorAt(double t){
    var index=0;
    while(index<stops.length-2 && t>stops[index+1]){index++;}
@@ -126,6 +110,26 @@ class _Dial extends CustomPainter {
    final double local=span==0?0.0:(t-stops[index])/span;
    return Color.lerp(colors[index],colors[index+1],local)!;
   }
+  // Render the halo as overlapping colored arc segments, matching the
+  // seam-free approach used by the earlier dark-theme ring. Avoid applying
+  // a SweepGradient shader to a blurred circle: its shader boundary can show
+  // as a horizontal cutoff on light surfaces.
+  void drawHalo({required double width,required double opacity,required double blur}){
+   const haloSegments=240;
+   const haloStep=math.pi*2/haloSegments;
+   final haloPaint=Paint()
+    ..style=PaintingStyle.stroke
+    ..strokeWidth=width
+    ..strokeCap=StrokeCap.round
+    ..maskFilter=MaskFilter.blur(BlurStyle.normal,blur);
+   for(var i=0;i<haloSegments;i++){
+    haloPaint.color=colorAt((i+.5)/haloSegments).withValues(alpha:opacity);
+    canvas.drawArc(rect,-math.pi/2+i*haloStep,haloStep+.008,false,haloPaint);
+   }
+  }
+  drawHalo(width:38+8*wave,opacity:.25+.12*wave,blur:13+4*wave);
+  drawHalo(width:22+4*wave,opacity:.34+.12*wave,blur:5+2*wave);
+  // Crisp colored base ring remains fully visible and retains the seam-free segmented gradient.
   final ringPaint=Paint()..style=PaintingStyle.stroke..strokeWidth=11..strokeCap=StrokeCap.butt;
   const count=360;
   const step=math.pi*2/count;
