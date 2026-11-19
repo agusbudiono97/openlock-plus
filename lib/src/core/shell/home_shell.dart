@@ -21,13 +21,15 @@ class HomeShell extends StatelessWidget {
     return Scaffold(
       body: shell,
       bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0C0D14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF0C0D14)
+              : const Color(0xFFFFFFFF),
           border: Border(top: BorderSide(
             color: Theme.of(context).brightness == Brightness.dark
                 ? const Color(0x18FFFFFF)
                 : const Color(0xFFE2E8F0), width: .7)),
-          boxShadow: [BoxShadow(color: Color(0x44000000), blurRadius: 22, offset: Offset(0, -6))],
+          boxShadow: [const BoxShadow(color: Color(0x18000000), blurRadius: 22, offset: Offset(0, -6))],
         ),
         child: SafeArea(
           top: false,
