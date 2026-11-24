@@ -122,7 +122,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     return ((height - 470) / 4).clamp(
       UnlockScreen.minKeyHeight,
       UnlockScreen.maxKeyHeight,
-    );
+    ).toDouble();
   }
 
   @override
@@ -230,7 +230,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                     const SizedBox(height: AppSpacing.mdl),
                   ],
                 ),
-              )
+              ),
             ),
           ),
         ),
