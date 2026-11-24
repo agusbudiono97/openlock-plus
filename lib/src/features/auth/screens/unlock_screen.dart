@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:core_crypto/core_crypto.dart';
 import 'package:core_lock/core_lock.dart'
     show
+        LockLayout,
         LockShake,
         LockTextLink,
         formatLockCountdown;
