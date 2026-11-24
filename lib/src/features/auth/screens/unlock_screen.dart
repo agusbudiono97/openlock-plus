@@ -17,10 +17,9 @@ import 'package:openlock/src/features/auth/services/pin_auth_service.dart';
 import 'package:openlock/src/features/auth/widgets/pin_entry_panel.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 
-/// Unlock gate for opening OpenLock itself, on the suite's [LockLayout]: PIN
-/// dots and keypad, an optional fingerprint button low on the screen, and an
-/// escalating cooldown after repeated wrong attempts. "Forgot PIN?" resets
-/// the PIN with the recovery key under the same cooldown.
+/// Unlock gate for opening OpenLock itself: PIN dots, a numeric keypad with
+/// automatic six-digit submission, fingerprint access, and an escalating
+/// cooldown after repeated wrong attempts. "Lupa PIN?" opens recovery.
 class UnlockScreen extends ConsumerStatefulWidget {
   const UnlockScreen({super.key});
 
@@ -116,8 +115,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     }
   }
 
-  /// The key height that fits the keypad into [height] (the screen without
-  /// system bars) next to everything else [LockLayout] stacks around it.
+  /// Key height for the available screen space; short screens can scroll.
   double _keyHeight(double height) {
     // Reserve room for the brand header, PIN dots, recovery link and footer.
     // Short screens can scroll rather than shrinking keys below a usable size.
@@ -148,78 +146,91 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
               child: IntrinsicHeight(
                 child: Column(
                   children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: c.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: c.hairline),
-                    ),
-                    alignment: Alignment.center,
-                    child: const SuiteAppIcon(app: SuiteApp.openlock, size: 64),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text.rich(
-                    TextSpan(children: [
-                      TextSpan(
-                        text: 'Open',
-                        style: AppTextStyles.h2.copyWith(color: c.textPrimary),
+                    const SizedBox(height: AppSpacing.xl),
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: c.hairline),
                       ),
-                      TextSpan(
-                        text: 'Lock',
-                        style: AppTextStyles.h2.copyWith(color: c.accent),
+                      alignment: Alignment.center,
+                      child: const SuiteAppIcon(
+                        app: SuiteApp.openlock,
+                        size: 64,
                       ),
-                    ]),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    _recovering ? 'Reset your PIN' : 'Masukkan PIN keamanan',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: c.textSecondary,
                     ),
-                  ),
-                  SizedBox(height: _recovering ? AppSpacing.lg : AppSpacing.xl * 2),
-                  if (_recovering)
-                    _RecoveryForm(
-                      enabled: !coolingDown,
-                      error: coolingDown ? error : null,
-                      onCooldown: _syncCooldown,
-                      onBack: () => setState(() => _recovering = false),
-                    )
-                  else
-                    PinEntryPanel(
-                      key: _panelKey,
-                      enabled: !coolingDown,
-                      randomize: randomize,
-                      error: error,
-                      failures: _failures,
-                      keyHeight: _keyHeight(box.maxHeight),
-                      onBiometric: _biometric && !coolingDown
-                          ? _tryBiometric
-                          : null,
-                      onSubmit: _submit,
+                    const SizedBox(height: AppSpacing.lg),
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Open',
+                            style: AppTextStyles.h2.copyWith(
+                              color: c.textPrimary,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'Lock',
+                            style: AppTextStyles.h2.copyWith(color: c.accent),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  if (!_recovering) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    LockTextLink(
-                      label: 'Lupa PIN?',
-                      onPressed: () => setState(() {
-                        _message = null;
-                        _recovering = true;
-                      }),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      _recovering
+                          ? 'Reset your PIN'
+                          : 'Masukkan PIN keamanan',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: c.textSecondary,
+                      ),
                     ),
-                  ],
-                  const SizedBox(height: AppSpacing.xl),
-                  const Spacer(),
-                  const SuiteEndorsement(),
+                    SizedBox(
+                      height: _recovering
+                          ? AppSpacing.lg
+                          : AppSpacing.xl * 2,
+                    ),
+                    if (_recovering)
+                      _RecoveryForm(
+                        enabled: !coolingDown,
+                        error: coolingDown ? error : null,
+                        onCooldown: _syncCooldown,
+                        onBack: () => setState(() => _recovering = false),
+                      )
+                    else
+                      PinEntryPanel(
+                        key: _panelKey,
+                        enabled: !coolingDown,
+                        randomize: randomize,
+                        error: error,
+                        failures: _failures,
+                        keyHeight: _keyHeight(box.maxHeight),
+                        onBiometric: _biometric && !coolingDown
+                            ? _tryBiometric
+                            : null,
+                        onSubmit: _submit,
+                      ),
+                    if (!_recovering) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      LockTextLink(
+                        label: 'Lupa PIN?',
+                        onPressed: () => setState(() {
+                          _message = null;
+                          _recovering = true;
+                        }),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.xl),
+                    const Spacer(),
+                    const SuiteEndorsement(),
                     const SizedBox(height: AppSpacing.mdl),
                   ],
                 ),
-              ),
+              )
             ),
           ),
         ),
