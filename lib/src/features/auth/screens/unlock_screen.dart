@@ -145,8 +145,9 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: box.maxHeight),
-              child: Column(
-                children: [
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
                   const SizedBox(height: AppSpacing.xl),
                   Container(
                     width: 80,
@@ -215,8 +216,9 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                   const SizedBox(height: AppSpacing.xl),
                   const Spacer(),
                   const SuiteEndorsement(),
-                  const SizedBox(height: AppSpacing.mdl),
-                ],
+                    const SizedBox(height: AppSpacing.mdl),
+                  ],
+                ),
               ),
             ),
           ),
