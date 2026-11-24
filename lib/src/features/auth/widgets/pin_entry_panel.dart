@@ -5,8 +5,8 @@ import 'package:core_theme/core_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:openlock/src/features/auth/services/pin_auth_service.dart';
 
-/// PIN dots, a one-line error under them, and a numeric keypad. Collects at
-/// Collects a six-digit PIN and submits it automatically. When [randomize]
+/// PIN dots, a one-line error under them, and a numeric keypad. Collects a
+/// six-digit PIN and submits it automatically. When [randomize]
 /// is on, the digit positions are shuffled to defeat shoulder-surfing.
 ///
 /// The dots shake each time [failures] changes (it stays still under reduced motion).
@@ -63,7 +63,7 @@ class PinEntryPanelState extends State<PinEntryPanel> {
   late List<String> _digits = _buildDigits();
 
   List<String> _buildDigits() {
-    // Phone-keypad order: 1-9 across three rows, 0 beside the check key.
+    // Phone-keypad order: 1-9 across three rows, with 0 in the bottom centre.
     final digits = [for (var i = 1; i <= 10; i++) (i % 10).toString()];
     if (widget.randomize) digits.shuffle(math.Random.secure());
     return digits;
@@ -84,8 +84,11 @@ class PinEntryPanelState extends State<PinEntryPanel> {
   }
 
   void _append(String digit) {
-    if (!widget.enabled || _submitting ||
-        _pin.length >= PinAuthService.minPinLength) return;
+    if (!widget.enabled ||
+        _submitting ||
+        _pin.length >= PinAuthService.minPinLength) {
+      return;
+    }
     final next = _pin + digit;
     setState(() => _pin = next);
     if (next.length == PinAuthService.minPinLength) {
@@ -99,8 +102,11 @@ class PinEntryPanelState extends State<PinEntryPanel> {
   }
 
   void _submit() {
-    if (_submitting || !widget.enabled ||
-        _pin.length != PinAuthService.minPinLength) return;
+    if (_submitting ||
+        !widget.enabled ||
+        _pin.length != PinAuthService.minPinLength) {
+      return;
+    }
     _submitting = true;
     widget.onSubmit(_pin);
   }
@@ -222,9 +228,8 @@ class _PinDots extends StatelessWidget {
   }
 }
 
-/// One keypad key. Digits and backspace are surface tiles with a hairline
-/// edge; the check key is the solid accent. A disabled key fades as a whole
-/// so it keeps its shape in both modes.
+/// One keypad key. Digits and actions are surface tiles with a hairline edge.
+/// A disabled key fades as a whole so it keeps its shape in both modes.
 class _Key extends StatelessWidget {
   const _Key({
     required this.height,
