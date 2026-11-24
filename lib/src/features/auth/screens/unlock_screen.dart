@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:core_crypto/core_crypto.dart';
 import 'package:core_lock/core_lock.dart'
     show
-        LockBiometricButton,
-        LockLayout,
         LockShake,
         LockTextLink,
         formatLockCountdown;
@@ -121,18 +119,9 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
   /// The key height that fits the keypad into [height] (the screen without
   /// system bars) next to everything else [LockLayout] stacks around it.
   double _keyHeight(double height) {
-    const column = AppSpacing.lg * 2 + // LockLayout's vertical padding
-        LockLayout.markSize +
-        AppSpacing.md +
-        28 + // the h2 app name
-        AppSpacing.xl +
-        AppSpacing.tapTarget; // "Forgot PIN?"
-    const endorsement = 20 + AppSpacing.mdl;
-    final biometric =
-        _biometric ? LockBiometricButton.size + AppSpacing.xl : 0.0;
-    final keys =
-        height - column - endorsement - biometric - PinEntryPanel.heightFor(0);
-    return (keys / 4).clamp(
+    // Reserve room for the brand header, PIN dots, recovery link and footer.
+    // Short screens can scroll rather than shrinking keys below a usable size.
+    return ((height - 470) / 4).clamp(
       UnlockScreen.minKeyHeight,
       UnlockScreen.maxKeyHeight,
     );
@@ -147,47 +136,92 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     final error = coolingDown
         ? 'Too many attempts. Try again in ${formatLockCountdown(_cooldown)}.'
         : _message;
-    return LayoutBuilder(
-      builder: (context, box) {
-        final height = box.maxHeight - MediaQuery.paddingOf(context).vertical;
-        return LockLayout(
-          mark: const SuiteAppIcon(app: SuiteApp.openlock, size: 64),
-          title: 'OpenLock',
-          message: _recovering ? 'Reset your PIN' : null,
-          bottom: _biometric
-              ? LockBiometricButton(
-                  onPressed: coolingDown ? null : _tryBiometric,
-                )
-              : null,
-          children: _recovering
-              ? [
-                  _RecoveryForm(
-                    enabled: !coolingDown,
-                    error: coolingDown ? error : null,
-                    onCooldown: _syncCooldown,
-                    onBack: () => setState(() => _recovering = false),
+    final c = SuiteColors.of(context);
+    return Scaffold(
+      backgroundColor: c.background,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, box) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: box.maxHeight),
+              child: Column(
+                children: [
+                  const SizedBox(height: AppSpacing.xl),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: c.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: c.hairline),
+                    ),
+                    alignment: Alignment.center,
+                    child: const SuiteAppIcon(app: SuiteApp.openlock, size: 64),
                   ),
-                ]
-              : [
-                  PinEntryPanel(
-                    key: _panelKey,
-                    enabled: !coolingDown,
-                    randomize: randomize,
-                    error: error,
-                    failures: _failures,
-                    keyHeight: _keyHeight(height),
-                    onSubmit: _submit,
+                  const SizedBox(height: AppSpacing.lg),
+                  Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                        text: 'Open',
+                        style: AppTextStyles.h2.copyWith(color: c.textPrimary),
+                      ),
+                      TextSpan(
+                        text: 'Lock',
+                        style: AppTextStyles.h2.copyWith(color: c.accent),
+                      ),
+                    ]),
+                    textAlign: TextAlign.center,
                   ),
-                  LockTextLink(
-                    label: 'Forgot PIN?',
-                    onPressed: () => setState(() {
-                      _message = null;
-                      _recovering = true;
-                    }),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _recovering ? 'Reset your PIN' : 'Masukkan PIN keamanan',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: c.textSecondary,
+                    ),
                   ),
+                  SizedBox(height: _recovering ? AppSpacing.lg : AppSpacing.xl * 2),
+                  if (_recovering)
+                    _RecoveryForm(
+                      enabled: !coolingDown,
+                      error: coolingDown ? error : null,
+                      onCooldown: _syncCooldown,
+                      onBack: () => setState(() => _recovering = false),
+                    )
+                  else
+                    PinEntryPanel(
+                      key: _panelKey,
+                      enabled: !coolingDown,
+                      randomize: randomize,
+                      error: error,
+                      failures: _failures,
+                      keyHeight: _keyHeight(box.maxHeight),
+                      onBiometric: _biometric && !coolingDown
+                          ? _tryBiometric
+                          : null,
+                      onSubmit: _submit,
+                    ),
+                  if (!_recovering) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    LockTextLink(
+                      label: 'Lupa PIN?',
+                      onPressed: () => setState(() {
+                        _message = null;
+                        _recovering = true;
+                      }),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.xl),
+                  const Spacer(),
+                  const SuiteEndorsement(),
+                  const SizedBox(height: AppSpacing.mdl),
                 ],
-        );
-      },
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
