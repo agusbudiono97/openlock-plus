@@ -236,7 +236,6 @@ class _Key extends StatelessWidget {
     this.label,
     this.icon,
     this.onTap,
-    this.emphasized = false,
     this.iconColor,
   });
 
@@ -244,7 +243,6 @@ class _Key extends StatelessWidget {
   final IconData? icon;
   final double height;
   final VoidCallback? onTap;
-  final bool emphasized;
   final Color? iconColor;
 
   /// Shared with the native overlay's keys (14 dp corners, 24 sp Mona Sans
