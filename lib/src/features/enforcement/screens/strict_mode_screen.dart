@@ -83,6 +83,19 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
 
   String _appFilter = 'Semua';
 
+  String _unitLabel() {
+    switch (_unit) {
+      case 'menit':
+        return 'Menit';
+      case 'hari':
+        return 'Hari';
+      case 'bulan':
+        return 'Bulan';
+      default:
+        return 'Jam';
+    }
+  }
+
   void _setQuickDuration(int minutes) {
     final current = _deadline();
     final base = current != null && current.isAfter(DateTime.now()) ? current : DateTime.now();
@@ -474,138 +487,201 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: const [
-                      CircleAvatar(radius: 3, backgroundColor: amber),
-                      SizedBox(width: 7),
-                      Text('ZONA VAULT OTONOM', style: TextStyle(color: amberLight, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
-                    ],
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? const [Color(0xFF211A32), Color(0xFF30231F)]
+                        : const [Color(0xFFF1EAFB), Color(0xFFFFF1E3)],
                   ),
-                  Row(
-                    children: [
-                      const Icon(Icons.shield_moon_rounded, color: amber, size: 14),
-                      const SizedBox(width: 4),
-                      Text('Perlindungan OpenLock', style: TextStyle(color: textMuted, fontSize: 10.5, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 6,
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: borderColor)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: amber.withOpacity(isDark ? 0.13 : 0.22)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: amber.withOpacity(isDark ? 0.07 : 0.10),
+                      blurRadius: 22,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: const [
+                        CircleAvatar(radius: 3, backgroundColor: amber),
+                        SizedBox(width: 7),
+                        Text(
+                          'ZONA VAULT OTONOM',
+                          style: TextStyle(color: amberLight, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Durasi Kunci', style: TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
-                              const Icon(Icons.timer_outlined, color: amber, size: 17),
-                            ],
+                          Expanded(
+                            flex: 6,
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(color: borderColor),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Durasi Kunci', style: TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                                      const Icon(Icons.timer_outlined, color: amber, size: 17),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Flexible(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            durationLabel,
+                                            style: TextStyle(color: textPrimary, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 0.4),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(_unitLabel(), style: TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    children: [
+                                      Expanded(child: _QuickDurationButton(label: '+30m', onTap: () => _setQuickDuration(30), cardColor: pageBg, textColor: textPrimary, borderColor: borderColor)),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: _QuickDurationButton(label: '+1 Jam', onTap: () => _setQuickDuration(60), cardColor: pageBg, textColor: textPrimary, borderColor: borderColor)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                                    decoration: BoxDecoration(color: pageBg, borderRadius: BorderRadius.circular(9)),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.event_available_rounded, color: amber, size: 14),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            targetLabel,
+                                            style: TextStyle(color: textMuted, fontSize: 10, fontWeight: FontWeight.w600),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(durationLabel, style: TextStyle(color: textPrimary, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 0.4)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 5,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(color: borderColor),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 62,
+                                    height: 62,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [Color(0xFFF59E0B), Color(0xFFFB7185)],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(color: amber.withOpacity(0.28), blurRadius: 17, spreadRadius: 1),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(5),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isDark ? const Color(0xFF211A2B) : const Color(0xFFFFF8EF),
+                                      ),
+                                      child: const Icon(Icons.lock_rounded, color: amber, size: 27),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text('STATUS TARGET', style: TextStyle(color: textMuted, fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    selectedCount == 0 ? 'Pilih Aplikasi' : 'Siap Dikunci',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.w800),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text('Protokol Anti-Bypass', textAlign: TextAlign.center, style: TextStyle(color: textMuted, fontSize: 10)),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(_indefinite ? 'Tanpa batas' : 'Durasi komitmen', style: TextStyle(color: textMuted, fontSize: 10.5)),
-                          const SizedBox(height: 13),
-                          Row(
-                            children: [
-                              Expanded(child: _QuickDurationButton(label: '+30 mnt', onTap: () => _setQuickDuration(30), cardColor: pageBg, textColor: textPrimary, borderColor: borderColor)),
-                              const SizedBox(width: 7),
-                              Expanded(child: _QuickDurationButton(label: '+1 jam', onTap: () => _setQuickDuration(60), cardColor: pageBg, textColor: textPrimary, borderColor: borderColor)),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Row(
+                        children: [
                           Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-                            decoration: BoxDecoration(color: pageBg, borderRadius: BorderRadius.circular(9)),
-                            child: Row(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: amber.withOpacity(0.10), shape: BoxShape.circle),
+                            child: const Icon(Icons.all_inclusive_rounded, color: amberLight, size: 18),
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.event_outlined, color: amber, size: 14),
-                                const SizedBox(width: 6),
-                                Expanded(child: Text(targetLabel, style: TextStyle(color: textMuted, fontSize: 10, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                                Text('Tanpa Batas Waktu', style: TextStyle(color: textPrimary, fontSize: 13.5, fontWeight: FontWeight.w800)),
+                                const SizedBox(height: 2),
+                                Text('Perlindungan tidak berakhir otomatis', style: TextStyle(color: textMuted, fontSize: 10.5)),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 5,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: borderColor)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: amber.withOpacity(isDark ? 0.10 : 0.13),
-                              border: Border.all(color: amber.withOpacity(0.55), width: 1.5),
-                              boxShadow: [BoxShadow(color: amber.withOpacity(0.16), blurRadius: 16, spreadRadius: 2)],
-                            ),
-                            child: const Icon(Icons.lock_rounded, color: amber, size: 26),
+                          Switch.adaptive(
+                            value: _indefinite,
+                            activeColor: amber,
+                            onChanged: (value) => setState(() {
+                              _indefinite = value;
+                              if (value) _exactEnd = null;
+                            }),
                           ),
-                          const SizedBox(height: 10),
-                          Text('STATUS TARGET', style: TextStyle(color: textMuted, fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
-                          const SizedBox(height: 3),
-                          Text(selectedCount == 0 ? 'Siap diatur' : selectedCount.toString() + ' Aplikasi', textAlign: TextAlign.center, style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 4),
-                          Text('Menunggu aktivasi', textAlign: TextAlign.center, style: TextStyle(color: textMuted, fontSize: 10)),
                         ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: borderColor)),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: amber.withOpacity(0.10), shape: BoxShape.circle),
-                      child: const Icon(Icons.all_inclusive_rounded, color: amberLight, size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Tanpa Batas Waktu', style: TextStyle(color: textPrimary, fontSize: 13.5, fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 2),
-                          Text('Perlindungan tidak berakhir otomatis', style: TextStyle(color: textMuted, fontSize: 10.5)),
-                        ],
-                      ),
-                    ),
-                    Switch.adaptive(
-                      value: _indefinite,
-                      activeColor: amber,
-                      onChanged: (value) => setState(() {
-                        _indefinite = value;
-                        if (value) _exactEnd = null;
-                      }),
                     ),
                   ],
                 ),
@@ -770,7 +846,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 textInputAction: TextInputAction.search,
                 style: TextStyle(color: textPrimary, fontSize: 12.5),
                 decoration: InputDecoration(
-                  hintText: 'Cari aplikasi...',
+                  hintText: 'Cari aplikasi atau nama paket...',
                   hintStyle: TextStyle(color: textMuted, fontSize: 12),
                   prefixIcon: Icon(Icons.search_rounded, color: textMuted, size: 19),
                   suffixIcon: _appQuery.isEmpty ? null : IconButton(
