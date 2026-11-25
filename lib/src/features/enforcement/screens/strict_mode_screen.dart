@@ -80,6 +80,18 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     }
   }
 
+
+  String _appFilter = 'Semua';
+
+  void _setQuickDuration(int minutes) {
+    final current = _deadline();
+    final base = current != null && current.isAfter(DateTime.now()) ? current : DateTime.now();
+    setState(() {
+      _indefinite = false;
+      _exactEnd = base.add(Duration(minutes: minutes));
+    });
+  }
+
   Future<void> _pickExactEnd() async {
     final now = DateTime.now();
     final date = await showDatePicker(
@@ -363,26 +375,93 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const amber = Color(0xFFF59E0B);
+    const amberLight = Color(0xFFFBBF24);
+    const danger = Color(0xFFF43F5E);
+    final pageBg = scheme.surface;
+    final cardBg = isDark ? const Color(0xFF1A1C26) : scheme.surfaceContainerLow;
+    final textPrimary = scheme.onSurface;
+    final textMuted = scheme.onSurfaceVariant;
+    final borderColor = scheme.outlineVariant.withOpacity(isDark ? 0.22 : 0.55);
+    final deadline = _deadline();
+    final remaining = deadline?.difference(DateTime.now());
+    final durationLabel = _indefinite
+        ? '∞'
+        : remaining == null
+            ? '—'
+            : remaining.inDays > 0
+                ? remaining.inDays.toString() + 'h ' + (remaining.inHours % 24).toString().padLeft(2, '0') + ':' + (remaining.inMinutes % 60).toString().padLeft(2, '0')
+                : remaining.inHours.toString().padLeft(2, '0') + ':' + (remaining.inMinutes % 60).toString().padLeft(2, '0');
+    final targetLabel = _indefinite
+        ? 'Tidak ada waktu berakhir'
+        : deadline == null
+            ? 'Atur durasi perlindungan'
+            : deadline.day.toString().padLeft(2, '0') + '/' + deadline.month.toString().padLeft(2, '0') + ' • ' + deadline.hour.toString().padLeft(2, '0') + ':' + deadline.minute.toString().padLeft(2, '0');
+    final selectedCount = _selected.length;
+
     return Scaffold(
+      backgroundColor: pageBg,
+      appBar: AppBar(
+        backgroundColor: pageBg,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          tooltip: 'Kembali',
+          icon: Icon(Icons.arrow_back_rounded, color: textPrimary),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mode Ketat', style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text('Bangun kebiasaan lebih baik', style: TextStyle(color: textMuted, fontSize: 11)),
+          ],
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: amber.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: amber.withOpacity(0.42)),
+            ),
+            child: const Row(
+              children: [
+                CircleAvatar(radius: 3, backgroundColor: amber),
+                SizedBox(width: 6),
+                Text('STRICT', style: TextStyle(color: amber, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+              ],
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.gutter,
-            AppSpacing.sm,
-            AppSpacing.gutter,
-            AppSpacing.md,
-          ),
-          child: FilledButton.icon(
-            onPressed: _start,
-            icon: const Icon(Icons.lock_rounded),
-            label: const Text('Aktifkan Mode Ketat'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              backgroundColor: scheme.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(colors: [amber, Color(0xFFFB7185)]),
+              boxShadow: [BoxShadow(color: amber.withOpacity(0.24), blurRadius: 16, offset: const Offset(0, 4))],
+            ),
+            child: SizedBox(
+              height: 54,
+              child: ElevatedButton.icon(
+                onPressed: _start,
+                icon: const Icon(Icons.lock_rounded, size: 20, color: Color(0xFF171717)),
+                label: Text(
+                  'Aktifkan Mode Ketat (' + selectedCount.toString() + ' Aplikasi)',
+                  style: const TextStyle(color: Color(0xFF171717), fontSize: 14.5, fontWeight: FontWeight.w800),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
               ),
             ),
           ),
@@ -390,243 +469,365 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
       ),
       body: SafeArea(
         bottom: false,
-        child: PageList(
-          children: [
-            const ScreenHeader(
-              eyebrow: 'Bangun kebiasaan lebih baik',
-              title: 'Mode Ketat',
-            ),
-            // A prominent one-tap control, kept near the top like the
-            // circular lock control in dedicated app-blocking products.
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [scheme.primaryContainer, scheme.primary, scheme.primary],
-                ),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: scheme.primary.withValues(alpha: 0.22),
-                    blurRadius: 24,
-                    offset: const Offset(0, 10),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      CircleAvatar(radius: 3, backgroundColor: amber),
+                      SizedBox(width: 7),
+                      Text('ZONA VAULT OTONOM', style: TextStyle(color: amberLight, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.shield_moon_rounded, color: amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text('Perlindungan OpenLock', style: TextStyle(color: textMuted, fontSize: 10.5, fontWeight: FontWeight.w600)),
+                    ],
                   ),
                 ],
               ),
-              child: Column(
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Material(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: _start,
-                      child: const SizedBox(
-                        width: 76,
-                        height: 76,
-                        child: Icon(Icons.lock_rounded, color: Colors.white, size: 36),
+                  Expanded(
+                    flex: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: borderColor)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Durasi Kunci', style: TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                              const Icon(Icons.timer_outlined, color: amber, size: 17),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(durationLabel, style: TextStyle(color: textPrimary, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 0.4)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(_indefinite ? 'Tanpa batas' : 'Durasi komitmen', style: TextStyle(color: textMuted, fontSize: 10.5)),
+                          const SizedBox(height: 13),
+                          Row(
+                            children: [
+                              Expanded(child: _QuickDurationButton(label: '+30 mnt', onTap: () => _setQuickDuration(30), cardColor: pageBg, textColor: textPrimary, borderColor: borderColor)),
+                              const SizedBox(width: 7),
+                              Expanded(child: _QuickDurationButton(label: '+1 jam', onTap: () => _setQuickDuration(60), cardColor: pageBg, textColor: textPrimary, borderColor: borderColor)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                            decoration: BoxDecoration(color: pageBg, borderRadius: BorderRadius.circular(9)),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.event_outlined, color: amber, size: 14),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text(targetLabel, style: TextStyle(color: textMuted, fontSize: 10, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Aktifkan Mode Ketat',
-                    style: AppTextStyles.h3.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Ketuk ikon kunci untuk memulai komitmen perlindungan.',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.88),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    '${_selected.length} aplikasi dipilih',
-                    style: AppTextStyles.caption.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: borderColor)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 58,
+                            height: 58,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: amber.withOpacity(isDark ? 0.10 : 0.13),
+                              border: Border.all(color: amber.withOpacity(0.55), width: 1.5),
+                              boxShadow: [BoxShadow(color: amber.withOpacity(0.16), blurRadius: 16, spreadRadius: 2)],
+                            ),
+                            child: const Icon(Icons.lock_rounded, color: amber, size: 26),
+                          ),
+                          const SizedBox(height: 10),
+                          Text('STATUS TARGET', style: TextStyle(color: textMuted, fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                          const SizedBox(height: 3),
+                          Text(selectedCount == 0 ? 'Siap diatur' : selectedCount.toString() + ' Aplikasi', textAlign: TextAlign.center, style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 4),
+                          Text('Menunggu aktivasi', textAlign: TextAlign.center, style: TextStyle(color: textMuted, fontSize: 10)),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            VaultCard(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: borderColor)),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: amber.withOpacity(0.10), shape: BoxShape.circle),
+                      child: const Icon(Icons.all_inclusive_rounded, color: amberLight, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Tanpa Batas Waktu', style: TextStyle(color: textPrimary, fontSize: 13.5, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 2),
+                          Text('Perlindungan tidak berakhir otomatis', style: TextStyle(color: textMuted, fontSize: 10.5)),
+                        ],
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: _indefinite,
+                      activeColor: amber,
+                      onChanged: (value) => setState(() {
+                        _indefinite = value;
+                        if (value) _exactEnd = null;
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (!_indefinite)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: borderColor)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const IconBadge(icon: Icons.shield_outlined),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Text(
-                          'Buat komitmen fokus',
-                          style: AppTextStyles.h3.copyWith(color: colors.textPrimary),
+                      Text('Atur durasi perlindungan', style: TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: TextField(
+                              controller: _amount,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(color: textPrimary, fontWeight: FontWeight.w700),
+                              decoration: InputDecoration(
+                                hintText: 'Durasi',
+                                filled: true,
+                                fillColor: pageBg,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 15),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide.none),
+                              ),
+                              onChanged: (_) => setState(() => _exactEnd = null),
+                            ),
+                          ),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              initialValue: _unit,
+                              style: TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: pageBg,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 15),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide.none),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'menit', child: Text('Menit')),
+                                DropdownMenuItem(value: 'jam', child: Text('Jam')),
+                                DropdownMenuItem(value: 'hari', child: Text('Hari')),
+                                DropdownMenuItem(value: 'bulan', child: Text('Bulan')),
+                              ],
+                              onChanged: (value) => setState(() {
+                                _unit = value ?? 'jam';
+                                _exactEnd = null;
+                              }),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 9),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _pickExactEnd,
+                          icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                          label: Text(
+                            _exactEnd == null
+                                ? 'Pilih tanggal dan jam berakhir'
+                                : 'Berakhir ' + _exactEnd!.day.toString() + '/' + _exactEnd!.month.toString() + '/' + _exactEnd!.year.toString() + ' • ' + _exactEnd!.hour.toString().padLeft(2, '0') + ':' + _exactEnd!.minute.toString().padLeft(2, '0'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: OutlinedButton.styleFrom(foregroundColor: amber, side: BorderSide(color: amber.withOpacity(0.45)), padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Pilih aplikasi yang ingin dibatasi, lalu tentukan berapa lama perlindungan berjalan. Mode Ketat tidak bisa diakhiri lebih awal dari dalam aplikasi.',
-                    style: AppTextStyles.bodySmall.copyWith(color: colors.textSecondary),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Tanpa batas waktu'),
-                    subtitle: const Text('Perlindungan tidak berakhir otomatis'),
-                    value: _indefinite,
-                    onChanged: (value) => setState(() {
-                      _indefinite = value;
-                      if (value) _exactEnd = null;
-                    }),
-                  ),
-                  if (!_indefinite) ...[
-                    Text('Durasi perlindungan', style: AppTextStyles.labelStrong.copyWith(color: colors.textPrimary)),
-                    const SizedBox(height: AppSpacing.sm),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: _amount,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: 'Masukkan durasi',
-                              border: OutlineInputBorder(),
-                            ),
-                            onChanged: (_) => setState(() => _exactEnd = null),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            initialValue: _unit,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: 'menit', child: Text('Menit', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                              DropdownMenuItem(value: 'jam', child: Text('Jam', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                              DropdownMenuItem(value: 'hari', child: Text('Hari', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                              DropdownMenuItem(value: 'bulan', child: Text('Bulan', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                            ],
-                            onChanged: (value) => setState(() {
-                              _unit = value ?? 'jam';
-                              _exactEnd = null;
-                            }),
-                          ),
-                        ),
-                      ],
+                ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF24151B) : const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: danger.withOpacity(0.28)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: danger.withOpacity(0.12), shape: BoxShape.circle),
+                      child: const Icon(Icons.error_outline_rounded, color: danger, size: 18),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    OutlinedButton.icon(
-                      onPressed: _pickExactEnd,
-                      icon: const Icon(Icons.event_outlined),
-                      label: Text(_exactEnd == null ? 'Pilih tanggal dan jam berakhir' : 'Berakhir: ${_exactEnd!.day}/${_exactEnd!.month}/${_exactEnd!.year} • ${_exactEnd!.hour.toString().padLeft(2, '0')}:${_exactEnd!.minute.toString().padLeft(2, '0')}'),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(child: Text('Peringatan Proteksi Keras', style: TextStyle(color: textPrimary, fontSize: 12.5, fontWeight: FontWeight.w800))),
+                              const SizedBox(width: 7),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(color: danger, borderRadius: BorderRadius.circular(6)),
+                                child: const Text('KETAT', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text('Mode Ketat tidak dapat diakhiri lebih awal dari dalam aplikasi. Pastikan aplikasi dan durasi yang dipilih sudah benar sebelum mengaktifkan perlindungan.', style: TextStyle(color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B), fontSize: 10.5, height: 1.4)),
+                        ],
+                      ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text('Aplikasi Terkunci', style: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(color: amber.withOpacity(0.14), borderRadius: BorderRadius.circular(10)),
+                        child: Text(selectedCount.toString() + ' Dipilih', style: const TextStyle(color: amber, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () => apps.whenData((items) => setState(() {
+                      final allSelected = items.isNotEmpty && items.every((app) => _selected.contains(app.packageName));
+                      if (allSelected) {
+                        _selected.clear();
+                      } else {
+                        _selected
+                          ..clear()
+                          ..addAll(items.map((app) => app.packageName));
+                      }
+                    })),
+                    child: const Text('Pilih Semua', style: TextStyle(color: amber, fontSize: 12, fontWeight: FontWeight.w800)),
+                  ),
                 ],
               ),
-            ),
-            Row(
-              children: [
-                const Expanded(
-                  child: SectionLead('Aplikasi yang diblokir'),
-                ),
-                Text('${_selected.length} dipilih', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
-              ],
-            ),
-            TextField(
-              controller: _appSearch,
-              onChanged: (value) => setState(() => _appQuery = value.trim().toLowerCase()),
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: 'Cari nama atau paket aplikasi',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _appQuery.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Hapus pencarian',
-                        onPressed: () {
-                          _appSearch.clear();
-                          setState(() => _appQuery = '');
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: [
+                  _AppFilterChip(label: 'Semua', selected: _appFilter == 'Semua', onTap: () => setState(() => _appFilter = 'Semua'), amber: amber, muted: textMuted, borderColor: borderColor, isDark: isDark),
+                  _AppFilterChip(label: 'Dipilih', selected: _appFilter == 'Dipilih', onTap: () => setState(() => _appFilter = 'Dipilih'), amber: amber, muted: textMuted, borderColor: borderColor, isDark: isDark),
+                  _AppFilterChip(label: 'Belum dipilih', selected: _appFilter == 'Belum dipilih', onTap: () => setState(() => _appFilter = 'Belum dipilih'), amber: amber, muted: textMuted, borderColor: borderColor, isDark: isDark),
+                ],
               ),
-            ),
-            apps.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const AppEmptyState(
-                compact: true,
-                icon: Icons.error_outline_rounded,
-                title: 'Tidak dapat memuat daftar aplikasi',
+              const SizedBox(height: 10),
+              TextField(
+                controller: _appSearch,
+                onChanged: (value) => setState(() => _appQuery = value.trim().toLowerCase()),
+                textInputAction: TextInputAction.search,
+                style: TextStyle(color: textPrimary, fontSize: 12.5),
+                decoration: InputDecoration(
+                  hintText: 'Cari aplikasi...',
+                  hintStyle: TextStyle(color: textMuted, fontSize: 12),
+                  prefixIcon: Icon(Icons.search_rounded, color: textMuted, size: 19),
+                  suffixIcon: _appQuery.isEmpty ? null : IconButton(
+                    tooltip: 'Hapus pencarian',
+                    onPressed: () {
+                      _appSearch.clear();
+                      setState(() => _appQuery = '');
+                    },
+                    icon: Icon(Icons.close_rounded, color: textMuted),
+                  ),
+                  filled: true,
+                  fillColor: cardBg,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: borderColor)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: borderColor)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: const BorderSide(color: amber)),
+                ),
               ),
-              data: (items) {
-                final query = _appQuery;
-                final filtered = query.isEmpty
-                    ? items
-                    : items.where((app) =>
-                        app.label.toLowerCase().contains(query) ||
-                        app.packageName.toLowerCase().contains(query)).toList();
-                if (filtered.isEmpty) {
-                  return const AppEmptyState(
-                    compact: true,
-                    icon: Icons.search_off_rounded,
-                    title: 'Aplikasi tidak ditemukan',
-                    message: 'Coba kata pencarian lain.',
-                  );
-                }
-                return RowGroup(
-                  children: [
-                    for (final app in filtered)
-                      AppListRow(
-                        title: app.label,
-                        subtitle: app.packageName,
-                        leading: _StrictAppIcon(app: app),
-                        onTap: () => setState(() {
-                          if (!_selected.add(app.packageName)) {
-                            _selected.remove(app.packageName);
-                          }
-                        }),
-                        trailing: Checkbox(
-                          value: _selected.contains(app.packageName),
-                          onChanged: (value) => setState(() {
-                            if (value == true) {
-                              _selected.add(app.packageName);
-                            } else {
-                              _selected.remove(app.packageName);
-                            }
+              const SizedBox(height: 12),
+              apps.when(
+                loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
+                error: (_, __) => const AppEmptyState(compact: true, icon: Icons.error_outline_rounded, title: 'Tidak dapat memuat daftar aplikasi'),
+                data: (items) {
+                  final query = _appQuery;
+                  final filtered = items.where((app) {
+                    final matchesSearch = app.label.toLowerCase().contains(query) || app.packageName.toLowerCase().contains(query);
+                    final selected = _selected.contains(app.packageName);
+                    final matchesFilter = _appFilter == 'Semua' || (_appFilter == 'Dipilih' ? selected : !selected);
+                    return matchesSearch && matchesFilter;
+                  }).toList();
+                  if (filtered.isEmpty) {
+                    return AppEmptyState(compact: true, icon: Icons.search_off_rounded, title: query.isEmpty ? 'Tidak ada aplikasi pada filter ini' : 'Aplikasi tidak ditemukan', message: 'Ubah filter atau kata pencarian.');
+                  }
+                  return Column(
+                    children: [
+                      for (final app in filtered)
+                        _BentoAppRow(
+                          app: app,
+                          selected: _selected.contains(app.packageName),
+                          cardColor: cardBg,
+                          textColor: textPrimary,
+                          mutedColor: textMuted,
+                          borderColor: borderColor,
+                          amber: amber,
+                          onTap: () => setState(() {
+                            if (!_selected.add(app.packageName)) _selected.remove(app.packageName);
                           }),
                         ),
-                      ),
-                  ],
-                );
-              },
-            ),
-            Text(
-              'Sebelum aktif, OpenLock akan meminta izin yang diperlukan untuk menjalankan perlindungan.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
-            ),
-          ],
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              Text('Sebelum aktif, OpenLock akan memeriksa izin yang diperlukan untuk menjalankan perlindungan.', textAlign: TextAlign.center, style: TextStyle(color: textMuted, fontSize: 10.5, height: 1.4)),
+              const SizedBox(height: 10),
+            ],
+          ),
         ),
       ),
     );
@@ -714,4 +915,105 @@ class _ActiveMetric extends StatelessWidget {
       ),
     );
   }
+}
+
+
+class _QuickDurationButton extends StatelessWidget {
+  const _QuickDurationButton({required this.label, required this.onTap, required this.cardColor, required this.textColor, required this.borderColor});
+  final String label;
+  final VoidCallback onTap;
+  final Color cardColor;
+  final Color textColor;
+  final Color borderColor;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: borderColor)),
+          child: Center(child: Text(label, style: TextStyle(color: textColor, fontSize: 10.5, fontWeight: FontWeight.w800))),
+        ),
+      ),
+    ),
+  );
+}
+
+class _AppFilterChip extends StatelessWidget {
+  const _AppFilterChip({required this.label, required this.selected, required this.onTap, required this.amber, required this.muted, required this.borderColor, required this.isDark});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color amber;
+  final Color muted;
+  final Color borderColor;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: selected ? amber.withOpacity(0.12) : (isDark ? Colors.white.withOpacity(0.035) : Colors.black.withOpacity(0.025)),
+    borderRadius: BorderRadius.circular(12),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? amber.withOpacity(0.5) : borderColor)),
+        child: Text(label, style: TextStyle(color: selected ? amber : muted, fontSize: 11.5, fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
+      ),
+    ),
+  );
+}
+
+class _BentoAppRow extends StatelessWidget {
+  const _BentoAppRow({required this.app, required this.selected, required this.cardColor, required this.textColor, required this.mutedColor, required this.borderColor, required this.amber, required this.onTap});
+  final InstalledApp app;
+  final bool selected;
+  final Color cardColor;
+  final Color textColor;
+  final Color mutedColor;
+  final Color borderColor;
+  final Color amber;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 8),
+    decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: selected ? amber.withOpacity(0.42) : borderColor)),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        child: Row(
+          children: [
+            SizedBox(width: 42, height: 42, child: _StrictAppIcon(app: app)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(app.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: textColor, fontSize: 13.5, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 3),
+                  Text(app.packageName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: mutedColor, fontSize: 10.5)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 27,
+              height: 27,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? amber : Colors.transparent, border: Border.all(color: selected ? amber : mutedColor.withOpacity(0.45), width: 1.5)),
+              child: Icon(selected ? Icons.check_rounded : Icons.add_rounded, size: 17, color: selected ? const Color(0xFF171717) : mutedColor),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
