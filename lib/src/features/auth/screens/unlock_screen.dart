@@ -147,7 +147,11 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
               child: IntrinsicHeight(
                 child: Column(
                   children: [
-                    const SizedBox(height: AppSpacing.xl),
+                    SizedBox(
+                      height: box.maxHeight < 660
+                          ? AppSpacing.lg
+                          : AppSpacing.xl,
+                    ),
                     Container(
                       width: 80,
                       height: 80,
@@ -210,6 +214,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                         error: error,
                         failures: _failures,
                         keyHeight: _keyHeight(box.maxHeight),
+                        showBiometric: _biometric,
                         onBiometric: _biometric && !coolingDown
                             ? _tryBiometric
                             : null,
