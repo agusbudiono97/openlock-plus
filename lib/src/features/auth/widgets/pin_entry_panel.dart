@@ -257,14 +257,14 @@ class _Key extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = SuiteColors.of(context);
-    final fg = emphasized ? c.onAccent : c.textPrimary;
+    final fg = c.textPrimary;
     return Opacity(
       opacity: onTap == null ? 0.4 : 1,
       child: Material(
-        color: emphasized ? c.accent : c.surface,
+        color: c.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius),
-          side: emphasized ? BorderSide.none : BorderSide(color: c.hairline),
+          side: BorderSide(color: c.hairline),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -281,7 +281,9 @@ class _Key extends StatelessWidget {
                       icon,
                       color: iconColor ?? fg,
                       size: 24,
-                      semanticLabel: emphasized ? 'Unlock' : 'Delete digit',
+                      semanticLabel: icon == Icons.fingerprint_rounded
+                          ? 'Use fingerprint'
+                          : 'Delete digit',
                     ),
             ),
           ),
