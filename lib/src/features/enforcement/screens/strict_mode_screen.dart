@@ -396,7 +396,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     final cardBg = isDark ? const Color(0xFF1A1C26) : scheme.surfaceContainerLow;
     final textPrimary = scheme.onSurface;
     final textMuted = scheme.onSurfaceVariant;
-    final borderColor = scheme.outlineVariant.withOpacity(isDark ? 0.22 : 0.55);
+    final borderColor = scheme.outlineVariant.withValues(alpha: isDark ? 0.22 : 0.55);
     final deadline = _deadline();
     final remaining = deadline?.difference(DateTime.now());
     final durationLabel = _indefinite
@@ -404,13 +404,13 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
         : remaining == null
             ? '—'
             : remaining.inDays > 0
-                ? remaining.inDays.toString() + 'h ' + (remaining.inHours % 24).toString().padLeft(2, '0') + ':' + (remaining.inMinutes % 60).toString().padLeft(2, '0')
-                : remaining.inHours.toString().padLeft(2, '0') + ':' + (remaining.inMinutes % 60).toString().padLeft(2, '0');
+                ? '${remaining.inDays}h ${(remaining.inHours % 24).toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}'
+                : '${remaining.inHours.toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}';
     final targetLabel = _indefinite
         ? 'Tidak ada waktu berakhir'
         : deadline == null
             ? 'Atur durasi perlindungan'
-            : deadline.day.toString().padLeft(2, '0') + '/' + deadline.month.toString().padLeft(2, '0') + ' • ' + deadline.hour.toString().padLeft(2, '0') + ':' + deadline.minute.toString().padLeft(2, '0');
+            : '${deadline.day.toString().padLeft(2, '0')}/${deadline.month.toString().padLeft(2, '0')} • ${deadline.hour.toString().padLeft(2, '0')}:${deadline.minute.toString().padLeft(2, '0')}';
     final selectedCount = _selected.length;
 
     return Scaffold(
@@ -437,9 +437,9 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: amber.withOpacity(0.12),
+              color: amber.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: amber.withOpacity(0.42)),
+              border: Border.all(color: amber.withValues(alpha: 0.42)),
             ),
             child: const Row(
               children: [
@@ -459,7 +459,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: const LinearGradient(colors: [amber, Color(0xFFFB7185)]),
-              boxShadow: [BoxShadow(color: amber.withOpacity(0.24), blurRadius: 16, offset: const Offset(0, 4))],
+              boxShadow: [BoxShadow(color: amber.withValues(alpha: 0.24), blurRadius: 16, offset: const Offset(0, 4))],
             ),
             child: SizedBox(
               height: 54,
@@ -467,7 +467,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 onPressed: _start,
                 icon: const Icon(Icons.lock_rounded, size: 20, color: Color(0xFF171717)),
                 label: Text(
-                  'Aktifkan Mode Ketat (' + selectedCount.toString() + ' Aplikasi)',
+                  'Aktifkan Mode Ketat ($selectedCount Aplikasi)',
                   style: const TextStyle(color: Color(0xFF171717), fontSize: 14.5, fontWeight: FontWeight.w800),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -498,10 +498,10 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                         : const [Color(0xFFF1EAFB), Color(0xFFFFF1E3)],
                   ),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: amber.withOpacity(isDark ? 0.13 : 0.22)),
+                  border: Border.all(color: amber.withValues(alpha: isDark ? 0.13 : 0.22)),
                   boxShadow: [
                     BoxShadow(
-                      color: amber.withOpacity(isDark ? 0.07 : 0.10),
+                      color: amber.withValues(alpha: isDark ? 0.07 : 0.10),
                       blurRadius: 22,
                       offset: const Offset(0, 8),
                     ),
@@ -509,8 +509,8 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 ),
                 child: Column(
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         CircleAvatar(radius: 3, backgroundColor: amber),
                         SizedBox(width: 7),
                         Text(
@@ -617,7 +617,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                                         colors: [Color(0xFFF59E0B), Color(0xFFFB7185)],
                                       ),
                                       boxShadow: [
-                                        BoxShadow(color: amber.withOpacity(0.28), blurRadius: 17, spreadRadius: 1),
+                                        BoxShadow(color: amber.withValues(alpha: 0.28), blurRadius: 17, spreadRadius: 1),
                                       ],
                                     ),
                                     padding: const EdgeInsets.all(5),
@@ -658,7 +658,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: amber.withOpacity(0.10), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: amber.withValues(alpha: 0.10), shape: BoxShape.circle),
                             child: const Icon(Icons.all_inclusive_rounded, color: amberLight, size: 18),
                           ),
                           const SizedBox(width: 11),
@@ -674,7 +674,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                           ),
                           Switch.adaptive(
                             value: _indefinite,
-                            activeColor: amber,
+                            activeThumbColor: amber,
                             onChanged: (value) => setState(() {
                               _indefinite = value;
                               if (value) _exactEnd = null;
@@ -749,11 +749,11 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                           label: Text(
                             _exactEnd == null
                                 ? 'Pilih tanggal dan jam berakhir'
-                                : 'Berakhir ' + _exactEnd!.day.toString() + '/' + _exactEnd!.month.toString() + '/' + _exactEnd!.year.toString() + ' • ' + _exactEnd!.hour.toString().padLeft(2, '0') + ':' + _exactEnd!.minute.toString().padLeft(2, '0'),
+                                : 'Berakhir ${_exactEnd!.day}/${_exactEnd!.month}/${_exactEnd!.year} • ${_exactEnd!.hour.toString().padLeft(2, '0')}:${_exactEnd!.minute.toString().padLeft(2, '0')}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          style: OutlinedButton.styleFrom(foregroundColor: amber, side: BorderSide(color: amber.withOpacity(0.45)), padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+                          style: OutlinedButton.styleFrom(foregroundColor: amber, side: BorderSide(color: amber.withValues(alpha: 0.45)), padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
                         ),
                       ),
                     ],
@@ -765,14 +765,14 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF24151B) : const Color(0xFFFFF1F2),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: danger.withOpacity(0.28)),
+                  border: Border.all(color: danger.withValues(alpha: 0.28)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(color: danger.withOpacity(0.12), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: danger.withValues(alpha: 0.12), shape: BoxShape.circle),
                       child: const Icon(Icons.error_outline_rounded, color: danger, size: 18),
                     ),
                     const SizedBox(width: 11),
@@ -809,7 +809,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: amber.withOpacity(0.14), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: amber.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
                         child: Text(selectedCount.toString() + ' Dipilih', style: const TextStyle(color: amber, fontSize: 10.5, fontWeight: FontWeight.w800)),
                       ),
                     ],
@@ -1030,14 +1030,14 @@ class _AppFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: selected ? amber.withOpacity(0.12) : (isDark ? Colors.white.withOpacity(0.035) : Colors.black.withOpacity(0.025)),
+    color: selected ? amber.withValues(alpha: 0.12) : (isDark ? Colors.white.withValues(alpha: 0.035) : Colors.black.withValues(alpha: 0.025)),
     borderRadius: BorderRadius.circular(12),
     child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? amber.withOpacity(0.5) : borderColor)),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? amber.withValues(alpha: 0.5) : borderColor)),
         child: Text(label, style: TextStyle(color: selected ? amber : muted, fontSize: 11.5, fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
       ),
     ),
@@ -1058,7 +1058,7 @@ class _BentoAppRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: selected ? amber.withOpacity(0.42) : borderColor)),
+    decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: selected ? amber.withValues(alpha: 0.42) : borderColor)),
     child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -1082,7 +1082,7 @@ class _BentoAppRow extends StatelessWidget {
             Container(
               width: 27,
               height: 27,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? amber : Colors.transparent, border: Border.all(color: selected ? amber : mutedColor.withOpacity(0.45), width: 1.5)),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? amber : Colors.transparent, border: Border.all(color: selected ? amber : mutedColor.withValues(alpha: 0.45), width: 1.5)),
               child: Icon(selected ? Icons.check_rounded : Icons.add_rounded, size: 17, color: selected ? const Color(0xFF171717) : mutedColor),
             ),
           ],
