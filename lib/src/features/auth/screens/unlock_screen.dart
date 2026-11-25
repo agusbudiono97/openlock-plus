@@ -233,7 +233,9 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                     const SizedBox(height: AppSpacing.xl),
                     const Spacer(),
                     const SuiteEndorsement(),
-                    const SizedBox(height: AppSpacing.mdl),
+                    SizedBox(
+                      height: box.maxHeight < 660 ? 0 : AppSpacing.mdl,
+                    ),
                   ],
                 ),
               ),
