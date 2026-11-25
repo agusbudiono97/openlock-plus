@@ -27,7 +27,7 @@ class UnlockScreen extends ConsumerStatefulWidget {
   /// Key height bounds. The keypad is sized from the screen height so it fits
   /// a 360 × 640 phone without scrolling; keys never drop below the tap
   /// target.
-  static const double minKeyHeight = AppSpacing.tapTarget;
+  static const double minKeyHeight = 52;
   static const double maxKeyHeight = 64;
 
   @override
