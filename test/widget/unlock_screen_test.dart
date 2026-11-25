@@ -1,4 +1,3 @@
-import 'package:core_lock/core_lock.dart' show LockBiometricButton;
 import 'package:core_theme/core_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,9 +87,10 @@ void main() {
       (tester) async {
     await pump(tester, size: const Size(360, 640), biometric: true);
 
-    expect(find.byType(LockBiometricButton), findsOneWidget);
+    expect(find.byIcon(Icons.fingerprint_rounded), findsOneWidget);
+    expect(find.bySemanticsLabel('Use fingerprint'), findsOneWidget);
     expect(find.text('Use fingerprint'), findsNothing);
-    expect(find.text('Forgot PIN?'), findsOneWidget);
+    expect(find.text('Lupa PIN?'), findsOneWidget);
     final scroll = tester.state<ScrollableState>(find.byType(Scrollable));
     expect(scroll.position.maxScrollExtent, 0);
     final key = tester.getSize(
@@ -102,8 +102,8 @@ void main() {
   testWidgets('without fingerprint there is no fingerprint button',
       (tester) async {
     await pump(tester);
-    expect(find.byType(LockBiometricButton), findsNothing);
-    expect(find.byIcon(Icons.fingerprint), findsNothing);
+    expect(find.byIcon(Icons.fingerprint_rounded), findsNothing);
+    expect(find.bySemanticsLabel('Use fingerprint'), findsNothing);
   });
 
   testWidgets('a cooldown counts down under the dots and disables the keys',
@@ -128,16 +128,16 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('Forgot PIN? opens the reset form', (tester) async {
+  testWidgets('Lupa PIN? opens the reset form', (tester) async {
     await pump(tester);
-    await tester.tap(find.text('Forgot PIN?'));
+    await tester.tap(find.text('Lupa PIN?'));
     await tester.pumpAndSettle();
 
     expect(find.text('Reset your PIN'), findsOneWidget);
     expect(find.text('Back to unlock'), findsOneWidget);
     await tester.tap(find.text('Back to unlock'));
     await tester.pumpAndSettle();
-    expect(find.text('Forgot PIN?'), findsOneWidget);
+    expect(find.text('Lupa PIN?'), findsOneWidget);
   });
 
   testWidgets('the keypad keeps phone order when Randomize keypad is off',
