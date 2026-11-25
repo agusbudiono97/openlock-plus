@@ -18,6 +18,7 @@ class PinEntryPanel extends StatefulWidget {
     this.enabled = true,
     this.randomize = false,
     this.onBiometric,
+    this.showBiometric = false,
     this.error,
     this.failures = 0,
     super.key,
@@ -27,6 +28,7 @@ class PinEntryPanel extends StatefulWidget {
   final bool enabled;
   final bool randomize;
   final VoidCallback? onBiometric;
+  final bool showBiometric;
 
   /// The wrong-PIN or cooldown line under the dots.
   final String? error;
@@ -158,12 +160,15 @@ class PinEntryPanelState extends State<PinEntryPanel> {
           const SizedBox(height: PinEntryPanel.rowGap),
         ],
         _keyRow([
-          _Key(
-            icon: Icons.fingerprint_rounded,
-            height: widget.keyHeight,
-            iconColor: c.accent,
-            onTap: widget.enabled && !_submitting ? widget.onBiometric : null,
-          ),
+          if (widget.showBiometric)
+            _Key(
+              icon: Icons.fingerprint_rounded,
+              height: widget.keyHeight,
+              iconColor: c.accent,
+              onTap: widget.enabled && !_submitting ? widget.onBiometric : null,
+            )
+          else
+            SizedBox(height: widget.keyHeight),
           key(
             label: _digits[9],
             onTap: widget.enabled && !_submitting
