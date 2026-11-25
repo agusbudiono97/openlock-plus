@@ -927,18 +927,16 @@ class _QuickDurationButton extends StatelessWidget {
   final Color borderColor;
 
   @override
-  Widget build(BuildContext context) => Expanded(
-    child: Material(
-      color: cardColor,
+  Widget build(BuildContext context) => Material(
+    color: cardColor,
+    borderRadius: BorderRadius.circular(10),
+    child: InkWell(
+      onTap: onTap,
       borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: borderColor)),
-          child: Center(child: Text(label, style: TextStyle(color: textColor, fontSize: 10.5, fontWeight: FontWeight.w800))),
-        ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: borderColor)),
+        child: Center(child: Text(label, style: TextStyle(color: textColor, fontSize: 10.5, fontWeight: FontWeight.w800))),
       ),
     ),
   );
