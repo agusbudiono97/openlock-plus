@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:openlock/src/core/router/app_router.dart';
 
 /// Four compact primary destinations; profile remains available from the
 /// home header, while DNS Guard remains reachable from its existing route.
@@ -29,7 +28,7 @@ class HomeShell extends StatelessWidget {
             color: Theme.of(context).brightness == Brightness.dark
                 ? const Color(0x18FFFFFF)
                 : const Color(0xFFE2E8F0), width: .7)),
-          boxShadow: [const BoxShadow(color: Color(0x18000000), blurRadius: 22, offset: Offset(0, -6))],
+          boxShadow: const [BoxShadow(color: Color(0x18000000), blurRadius: 22, offset: Offset(0, -6))],
         ),
         child: SafeArea(
           top: false,
