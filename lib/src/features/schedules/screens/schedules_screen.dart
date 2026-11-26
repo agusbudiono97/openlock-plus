@@ -248,7 +248,7 @@ class _SchedulesScreenState extends ConsumerState<SchedulesScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: _FilterRow(
-                      dark: dark, card: card, border: border, muted: muted,
+                      card: card, border: border, muted: muted,
                       selected: _filterIndex,
                       onSelect: (i) => setState(() => _filterIndex = i),
                     ),
@@ -277,7 +277,7 @@ class _SchedulesScreenState extends ConsumerState<SchedulesScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: _SummaryScheduleCard(
-                      dark: dark, card: card, sub: sub, border: border,
+                      card: card, sub: sub, border: border,
                       ink: ink, muted: muted,
                       schedules: daySchedules,
                       changesLocked: changesLocked,
@@ -302,7 +302,7 @@ class _SchedulesScreenState extends ConsumerState<SchedulesScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: _AutomationSummaryCard(
-                      dark: dark, card: card, sub: sub, border: border,
+                      card: card, sub: sub, border: border,
                       ink: ink, muted: muted,
                       total: schedules.length,
                       active: activeCount,
@@ -500,9 +500,8 @@ class _DayTile extends StatelessWidget {
 }
 
 class _FilterRow extends StatelessWidget {
-  const _FilterRow({required this.dark, required this.card, required this.border,
+  const _FilterRow({required this.card, required this.border,
     required this.muted, required this.selected, required this.onSelect});
-  final bool dark;
   final Color card, border, muted;
   final int selected;
   final ValueChanged<int> onSelect;
@@ -678,11 +677,10 @@ class _NextScheduleCard extends StatelessWidget {
 }
 
 class _SummaryScheduleCard extends StatelessWidget {
-  const _SummaryScheduleCard({required this.dark, required this.card,
+  const _SummaryScheduleCard({required this.card,
     required this.sub, required this.border, required this.ink,
     required this.muted, required this.schedules, required this.changesLocked,
     required this.onOpen});
-  final bool dark;
   final Color card, sub, border, ink, muted;
   final List<LockSchedule> schedules;
   final bool changesLocked;
@@ -807,11 +805,10 @@ class _NightScheduleCard extends StatelessWidget {
 }
 
 class _AutomationSummaryCard extends StatelessWidget {
-  const _AutomationSummaryCard({required this.dark, required this.card,
+  const _AutomationSummaryCard({required this.card,
     required this.sub, required this.border, required this.ink,
     required this.muted, required this.total, required this.active,
     required this.today, required this.packages});
-  final bool dark;
   final Color card, sub, border, ink, muted;
   final int total, active, today, packages;
   @override
