@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,8 +18,6 @@ class SchedulesScreen extends ConsumerStatefulWidget {
 
 class _SchedulesScreenState extends ConsumerState<SchedulesScreen> {
   static const _amber = Color(0xFFF59E0B);
-  static const _rose = Color(0xFFFB7185);
-  static const _violet = Color(0xFF8B5CF6);
   static const _darkBg = Color(0xFF11101A);
   static const _darkCard = Color(0xFF1C1A27);
   static const _darkSub = Color(0xFF12111C);
@@ -103,9 +100,6 @@ class _SchedulesScreenState extends ConsumerState<SchedulesScreen> {
         'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
       ][month - 1];
-
-  String _weekdayShort(int weekday) =>
-      const ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'][weekday - 1];
 
   List<DateTime> _weekDates() {
     final monday = _selectedDate.subtract(
@@ -591,7 +585,7 @@ class _NextScheduleCard extends StatelessWidget {
             const SizedBox(width: 4),
             if (schedule != null)
               Switch.adaptive(value: schedule!.enabled, onChanged: onToggle,
-                activeColor: const Color(0xFFF59E0B)),
+                activeThumbColor: const Color(0xFFF59E0B)),
           ]),
           const SizedBox(height: 10),
           Text(schedule?.name ?? 'Belum ada rutinitas terjadwal',
@@ -644,7 +638,7 @@ class _NextScheduleCard extends StatelessWidget {
               style: TextStyle(color: muted, fontSize: 10))
           else
             Wrap(spacing: 7, runSpacing: 7, children: [
-              for (final pkg in schedule!.packages.take(5))
+              for (var i = 0; i < schedule!.packages.length.clamp(0, 5); i++)
                 Container(
                   width: 35, height: 35,
                   decoration: BoxDecoration(color: sub, borderRadius: BorderRadius.circular(9),
