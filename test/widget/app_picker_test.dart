@@ -45,7 +45,7 @@ void main() {
     // Both apps are listed.
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
-    expect(find.text('0 aplikasi dikunci'), findsOneWidget);
+    expect(find.text('0 Terpilih'), findsOneWidget);
 
     // Toggle the first app's switch on.
     expect(find.text('Kunci aplikasi yang baru dipasang'), findsNothing);
@@ -53,7 +53,9 @@ void main() {
     await tester.tap(firstSwitch);
     await tester.pumpAndSettle();
 
-    expect(find.text('1 aplikasi dikunci'), findsOneWidget);
+    expect(find.text('1 Terpilih'), findsOneWidget);
+    await tester.tap(find.text('Terapkan Proteksi'));
+    await tester.pumpAndSettle();
   });
 
   Future<void> pumpPicker(WidgetTester tester, FakeEnforcementBridge bridge) {
@@ -85,8 +87,8 @@ void main() {
     await pumpPicker(tester, bridge);
     await tester.pump();
 
-    expect(find.text('Aplikasi terlindungi'), findsOneWidget);
-    expect(find.text('Menghitung aplikasi terpasang'), findsOneWidget);
+    expect(find.text('Aplikasi Terlindungi'), findsOneWidget);
+    expect(find.textContaining('aplikasi terpasang'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     final skeletonRow = find
         .ancestor(of: find.byType(Skeleton), matching: find.byType(AppListRow))
@@ -96,7 +98,7 @@ void main() {
     bridge.holdApps!.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('dari 1 aplikasi terpasang'), findsOneWidget);
+    expect(find.textContaining('dari 1 aplikasi terpasang'), findsOneWidget);
     final row = find.ancestor(
       of: find.text('Alpha'),
       matching: find.byType(AppListRow),
