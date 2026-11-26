@@ -337,7 +337,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                   }),
                   const SizedBox(height: 18),
                   Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13), decoration: BoxDecoration(color: panelAlt.withValues(alpha: isDark ? 0.48 : 0.8), borderRadius: BorderRadius.circular(17), border: Border.all(color: outline)), child: Row(children: [
-                    Expanded(child: _ActiveMetric(label: 'Aplikasi dikunci', value: '\${config.strictModePackages.length}')),
+                    Expanded(child: const _ActiveMetric(label: 'Aplikasi dikunci', value: '${config.strictModePackages.length}')),
                     Container(width: 1, height: 38, color: outline), const SizedBox(width: 12),
                     Expanded(flex: 2, child: _ActiveMetric(label: 'Berakhir pada', value: endLabel)),
                   ])),
