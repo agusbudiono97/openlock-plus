@@ -134,7 +134,7 @@ class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
                   ),
                   child: Column(children: [
                     Row(crossAxisAlignment: CrossAxisAlignment.start,children: [
-                      Container(width:48,height:48,decoration:BoxDecoration(color:dark?const Color(0xFF171722):const Color(0xFFFFF1C7),borderRadius:BorderRadius.circular(16),border:Border.all(color:amber.withValues(alpha:.8)),boxShadow:[BoxShadow(color:amber.withValues(alpha:dark?.28:.12),blurRadius:17)]),child:const Icon(Icons.shield_rounded,color:amber,size:25)),
+                      Container(width:48,height:48,decoration:BoxDecoration(color:dark?const Color(0xFF171722):const Color(0xFFFFF1C7),borderRadius:BorderRadius.circular(16),border:Border.all(color:amber.withValues(alpha:.8)),boxShadow:[BoxShadow(color:amber.withValues(alpha: dark ? .28 : .12),blurRadius:17)]),child:const Icon(Icons.shield_rounded,color:amber,size:25)),
                       const SizedBox(width:13),
                       Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
                         Text('Isolasi & Disiplin Digital',style:TextStyle(color:ink,fontSize:13,fontWeight:FontWeight.w700)),
