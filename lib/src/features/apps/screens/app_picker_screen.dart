@@ -27,6 +27,7 @@ class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
   String category = 'Semua';
   bool seeded = false;
   bool saving = false;
+  bool onlyLocked = false;
 
   @override
   void dispose() {
@@ -82,13 +83,13 @@ class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
       pending..clear()..addAll(config.lockedPackages);
       seeded = true;
     }
-    final count = pending.length;
+    final count = apps.where((a) => pending.contains(a.packageName)).length;
     final freeCount = (apps.length - count).clamp(0, apps.length);
     final q = search.text.trim().toLowerCase();
     final visible = apps.where((a) {
       final matches = q.isEmpty || a.label.toLowerCase().contains(q) || a.packageName.toLowerCase().contains(q);
       final cat = categoryOf(a);
-      return matches && (category == 'Semua' || cat == category);
+      return matches && (category == 'Semua' || cat == category) && (!onlyLocked || pending.contains(a.packageName));
     }).toList()..sort((a,b) {
       final al = pending.contains(a.packageName), bl = pending.contains(b.packageName);
       if (al != bl) return al ? -1 : 1;
@@ -158,7 +159,16 @@ class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
                   decoration:InputDecoration(
                     hintText:'Cari nama atau paket aplikasi...',hintStyle:TextStyle(color:muted,fontSize:11.5),
                     prefixIcon:Icon(Icons.search_rounded,color:muted,size:18),
-                    suffixIcon:search.text.isEmpty?null:IconButton(onPressed:(){search.clear();setState((){});},icon:Icon(Icons.close,color:muted,size:17)),
+                    suffixIcon: search.text.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.only(right: 9, top: 9, bottom: 9),
+                            child: Container(
+                              width: 29, alignment: Alignment.center,
+                              decoration: BoxDecoration(color: dark ? const Color(0xFF202331) : const Color(0xFFF3F5F9), borderRadius: BorderRadius.circular(6), border: Border.all(color: border)),
+                              child: Text('⌘K', style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w600)),
+                            ),
+                          )
+                        : IconButton(onPressed:(){search.clear();setState((){});},icon:Icon(Icons.close,color:muted,size:17)),
                     filled:true,fillColor:panel2.withValues(alpha:.78),
                     contentPadding:const EdgeInsets.symmetric(horizontal:14,vertical:12),
                     enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(12),borderSide:BorderSide(color:border)),
@@ -182,7 +192,20 @@ class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
                     const SizedBox(height:3),
                     Text('$count aplikasi dipilih dari ${apps.length} aplikasi terpasang',style:TextStyle(color:muted,fontSize:10.5)),
                   ])),
-                  Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),decoration:BoxDecoration(color:panel2,borderRadius:BorderRadius.circular(9),border:Border.all(color:border)),child:Row(children:[const Icon(Icons.filter_list_rounded,color:amber,size:14),const SizedBox(width:5),Text('Filter',style:TextStyle(color:ink,fontSize:10,fontWeight:FontWeight.w600))])),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(9),
+                    onTap: () => _showFilterSheet(context, dark, onlyLocked, (value) => setState(() => onlyLocked = value)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(color: panel2, borderRadius: BorderRadius.circular(9), border: Border.all(color: border)),
+                      child: Row(children: [
+                        const Icon(Icons.filter_list_rounded, color: amber, size: 14),
+                        const SizedBox(width: 5),
+                        Text('Filter', style: TextStyle(color: ink, fontSize: 10, fontWeight: FontWeight.w600)),
+                        if (onlyLocked) ...[const SizedBox(width: 5), const Icon(Icons.circle, color: amber, size: 6)],
+                      ]),
+                    ),
+                  ),
                 ]),
                 const SizedBox(height:11),
                 if(listAsync.isLoading) const _LoadingApps()
@@ -208,7 +231,7 @@ class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
                 onPressed:frozen||!changed||saving?null:()=>apply(config),
                 icon:saving?const SizedBox(width:14,height:14,child:CircularProgressIndicator(strokeWidth:2,color:Color(0xFF17120A))):const Icon(Icons.lock_rounded,size:14),
                 label:Text(frozen?'Proteksi Aktif':saving?'Menyimpan...':'Terapkan Proteksi'),
-                style:FilledButton.styleFrom(backgroundColor:const Color(0xFFF59E0B),foregroundColor:const Color(0xFF17120A),disabledBackgroundColor:const Color(0xFFF59E0B).withValues(alpha:.35),disabledForegroundColor:const Color(0xFF17120A).withValues(alpha:.6),padding:const EdgeInsets.symmetric(horizontal:17,vertical:12),textStyle:const TextStyle(fontSize:11,fontWeight:FontWeight.w800),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12))),
+                style:FilledButton.styleFrom(backgroundColor:const Color(0xFFF59E0B),foregroundColor:const Color(0xFF17120A),disabledBackgroundColor:const Color(0xFFF59E0B).withValues(alpha:.35),disabledForegroundColor:const Color(0xFF17120A).withValues(alpha:.6),padding:const EdgeInsets.symmetric(horizontal:12,vertical:12),textStyle:const TextStyle(fontSize:10.5,fontWeight:FontWeight.w800),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12))),
               ),
             ]),
           ))),
@@ -218,23 +241,93 @@ class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
   }
 }
 
+
+Future<void> _showFilterSheet(BuildContext context, bool dark, bool currentOnlyLocked, ValueChanged<bool> onApply) async {
+  var selected = currentOnlyLocked;
+  final ink = dark ? const Color(0xFFF8FAFC) : const Color(0xFF151923);
+  final muted = dark ? const Color(0xFF9AA3B5) : const Color(0xFF667085);
+  final panel = dark ? const Color(0xFF151722) : Colors.white;
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: panel,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+    builder: (sheetContext) => StatefulBuilder(builder: (context, setSheetState) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: muted.withValues(alpha: .35), borderRadius: BorderRadius.circular(4)))),
+          const SizedBox(height: 18),
+          Text('Filter aplikasi', style: TextStyle(color: ink, fontSize: 17, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text('Atur aplikasi yang ingin ditampilkan.', style: TextStyle(color: muted, fontSize: 12)),
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero, value: selected, activeColor: const Color(0xFFF59E0B), checkColor: const Color(0xFF17120A),
+            title: Text('Hanya tampilkan aplikasi terkunci', style: TextStyle(color: ink, fontSize: 13, fontWeight: FontWeight.w600)),
+            subtitle: Text('Sembunyikan aplikasi yang belum dipilih.', style: TextStyle(color: muted, fontSize: 11)),
+            onChanged: (value) => setSheetState(() => selected = value ?? false),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(width: double.infinity, child: FilledButton(
+            onPressed: () { onApply(selected); Navigator.of(sheetContext).pop(); },
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: const Color(0xFF17120A)),
+            child: const Text('Terapkan Filter', style: TextStyle(fontWeight: FontWeight.w800)),
+          )),
+        ]),
+      ),
+    )),
+  );
+}
+
 class _BackButton extends StatelessWidget {
   const _BackButton({required this.panel,required this.border,required this.ink,required this.onTap});
   final Color panel,border,ink; final VoidCallback onTap;
   @override Widget build(BuildContext context)=>Material(color:panel,borderRadius:BorderRadius.circular(12),child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(12),child:Container(width:40,height:40,decoration:BoxDecoration(borderRadius:BorderRadius.circular(12),border:Border.all(color:border)),child:Icon(Icons.chevron_left_rounded,color:ink,size:23))));
 }
 
-class _PulseDot extends StatefulWidget { const _PulseDot(); @override State<_PulseDot> createState()=>_PulseDotState(); }
-class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
-  late final controller=AnimationController(vsync:this,duration:const Duration(milliseconds:1300))..repeat(reverse:true);
-  @override void dispose(){controller.dispose();super.dispose();}
-  @override Widget build(BuildContext context)=>FadeTransition(opacity:Tween<double>(begin:.4,end:1).animate(controller),child:Container(width:7,height:7,decoration:const BoxDecoration(color:Color(0xFFFFB020),shape:BoxShape.circle)));
+class _PulseDot extends StatelessWidget {
+  const _PulseDot();
+  @override
+  Widget build(BuildContext context) => Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFFFFB020), shape: BoxShape.circle));
 }
 
 class _SummaryDot extends StatelessWidget {
   const _SummaryDot({required this.color,required this.label,required this.textColor});
   final Color color,textColor; final String label;
   @override Widget build(BuildContext context)=>Row(children:[Container(width:7,height:7,decoration:BoxDecoration(color:color,shape:BoxShape.circle)),const SizedBox(width:5),Flexible(child:Text(label,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:textColor,fontSize:9.5,fontWeight:FontWeight.w600)))]);
+}
+
+String _badgeForCard(InstalledApp app) {
+  final v = '${app.label} ${app.packageName}'.toLowerCase();
+  if (v.contains('appblock') || v.contains('mobile.soft')) return 'Alat Fokus';
+  if (v.contains('authenticator') || v.contains('2fa')) return 'Aman';
+  if (['game', 'bussimulator', 'mobile.legends', 'pubg', 'freefire', 'roblox', 'minecraft'].any(v.contains)) return 'Game';
+  if (['instagram', 'facebook', 'whatsapp', 'telegram', 'tiktok', 'twitter', 'snapchat', 'threads', 'messenger'].any(v.contains)) return 'Sosmed';
+  if (['bank', 'wallet', 'finance', 'bitget', 'gopay', 'ovo', 'dana', 'shopeepay', 'bca', 'bri', 'mandiri'].any(v.contains)) return 'Finansial';
+  if (['android', 'system', 'settings', 'permission', 'camera'].any(v.contains)) return 'Sistem';
+  return 'Lainnya';
+}
+
+class _CategoryBadge extends StatelessWidget {
+  const _CategoryBadge({required this.label, required this.dark});
+  final String label;
+  final bool dark;
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (label) {
+      'Alat Fokus' => const Color(0xFFE8A51B),
+      'Aman' => const Color(0xFF34B98A),
+      'Finansial' => const Color(0xFF18B7D0),
+      'Game' => const Color(0xFFEF5570),
+      'Sosmed' => const Color(0xFFEC6686),
+      _ => const Color(0xFF8793A8),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: dark ? .12 : .07), border: Border.all(color: color.withValues(alpha: .6), width: .7), borderRadius: BorderRadius.circular(4)),
+      child: Text(label, maxLines: 1, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w600)),
+    );
+  }
 }
 
 class _ProtectedAppCard extends ConsumerWidget {
@@ -263,7 +356,11 @@ class _ProtectedAppCard extends ConsumerWidget {
         SizedBox(width:44,height:44,child:ClipRRect(borderRadius:BorderRadius.circular(11),child:icon)),
         const SizedBox(width:12),
         Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-          Text(app.label,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:ink,fontSize:13,fontWeight:FontWeight.w700)),
+          Row(children: [
+            Flexible(child: Text(app.label,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:ink,fontSize:13,fontWeight:FontWeight.w700))),
+            const SizedBox(width: 6),
+            _CategoryBadge(label: _badgeForCard(app), dark: Theme.of(context).brightness == Brightness.dark),
+          ]),
           const SizedBox(height:3),
           Text(app.packageName,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:muted,fontSize:10,fontFamily:'monospace')),
         ])),
@@ -284,7 +381,14 @@ class _ProtectedAppCard extends ConsumerWidget {
 
 class _LoadingApps extends StatelessWidget {
   const _LoadingApps();
-  @override Widget build(BuildContext context)=>Column(children:List.generate(6,(_)=>Container(height:68,margin:const EdgeInsets.only(bottom:10),decoration:BoxDecoration(color:const Color(0xFF161824),borderRadius:BorderRadius.circular(17),border:Border.all(color:Colors.white10)))));
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Column(children: List.generate(6, (_) => Container(
+      height: 68, margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(color: dark ? const Color(0xFF161824) : Colors.white, borderRadius: BorderRadius.circular(17), border: Border.all(color: dark ? Colors.white10 : const Color(0xFFE2E5EC))),
+    )));
+  }
 }
 
 class _MessageCard extends StatelessWidget {
