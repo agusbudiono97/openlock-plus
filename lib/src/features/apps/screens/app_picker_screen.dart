@@ -243,11 +243,17 @@ class _ProtectedAppCard extends ConsumerWidget {
   final Color ink,muted,panel,border; final ValueChanged<bool> onChanged;
   @override Widget build(BuildContext context,WidgetRef ref){
     final loader=ref.watch(appIconLoaderProvider);
-    if(!loader.isResolved(app)) loader.pathFor(app);
-    final path=loader.isResolved(app)?loader.resolvedPath(app):null;
-    final icon=path==null
+    Widget iconFor(String? path) => path==null
       ? Container(decoration:BoxDecoration(color:const Color(0xFF334155),borderRadius:BorderRadius.circular(11)),child:const Icon(Icons.android_rounded,color:Color(0xFFE2E8F0),size:24))
       : ClipRRect(borderRadius:BorderRadius.circular(11),child:Image.file(File(path),width:44,height:44,fit:BoxFit.cover,cacheWidth:(44*MediaQuery.devicePixelRatioOf(context)).round(),errorBuilder:(_,__,___)=>const Icon(Icons.android_rounded)));
+    final icon = loader.isResolved(app)
+      ? iconFor(loader.resolvedPath(app))
+      : FutureBuilder<String?>(
+          future: loader.pathFor(app),
+          builder: (_, snapshot) => snapshot.connectionState == ConnectionState.done
+            ? iconFor(snapshot.data)
+            : Container(decoration:BoxDecoration(color:const Color(0xFF334155),borderRadius:BorderRadius.circular(11)),child:const Icon(Icons.apps_rounded,color:Color(0xFFE2E8F0),size:22)),
+        );
     return AnimatedContainer(duration:const Duration(milliseconds:160),padding:const EdgeInsets.all(11),decoration:BoxDecoration(
       color:selected?panel.withValues(alpha:.94):panel.withValues(alpha:.62),borderRadius:BorderRadius.circular(17),
       border:Border.all(color:selected?const Color(0x66F59E0B):border.withValues(alpha:.8)),
