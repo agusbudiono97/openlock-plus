@@ -86,6 +86,9 @@ class _NavigationItem extends StatelessWidget {
               color: selected
                   ? (isDark ? const Color(0x1AFF9E42) : const Color(0x1AFF8A3D))
                   : Colors.transparent,
+              border: selected
+                  ? Border.all(color: isDark ? const Color(0x99FFB259) : const Color(0x99FFC34A), width: .8)
+                  : null,
               borderRadius: BorderRadius.circular(15),
             ),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
