@@ -10,7 +10,6 @@ import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
-import 'package:openlock/src/core/widgets/screen_header.dart';
 
 class StrictModeScreen extends ConsumerStatefulWidget {
   const StrictModeScreen({super.key});
@@ -235,7 +234,6 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
     final active = config.strictModeActiveAt(DateTime.now());
     _syncClock(active);
     final apps = ref.watch(installedAppsProvider);
-    final colors = SuiteColors.of(context);
     final scheme = Theme.of(context).colorScheme;
 
     if (active) {
