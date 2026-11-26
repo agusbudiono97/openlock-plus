@@ -328,8 +328,8 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                         const SizedBox(height: 7),
                         Text(endAt == null ? 'Status' : 'Tanggal berakhir', style: TextStyle(color: secondaryText, fontSize: 10.5)),
                         const SizedBox(height: 2),
-                        Text(endAt == null ? '∞' : '\${endAt.hour.toString().padLeft(2, '0')}:\${endAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(color: amber, fontSize: 23, fontWeight: FontWeight.w800, fontFeatures: [FontFeature.tabularFigures()])),
-                        Text(endAt == null ? 'Tanpa batas' : '\${endAt.day.toString().padLeft(2, '0')}/\${endAt.month.toString().padLeft(2, '0')}/\${endAt.year}', style: TextStyle(color: secondaryText, fontSize: 10)),
+                        Text(endAt == null ? '∞' : "${endAt.hour.toString().padLeft(2, '0')}:${endAt.minute.toString().padLeft(2, '0')}", style: const TextStyle(color: amber, fontSize: 23, fontWeight: FontWeight.w800, fontFeatures: [FontFeature.tabularFigures()])),
+                        Text(endAt == null ? 'Tanpa batas' : "${endAt.day.toString().padLeft(2, '0')}/${endAt.month.toString().padLeft(2, '0')}/${endAt.year}", style: TextStyle(color: secondaryText, fontSize: 10)),
                       ]))),
                     ]);
                     if (constraints.maxWidth < 350) return Column(children: [timer, const SizedBox(height: 20), ring]);
