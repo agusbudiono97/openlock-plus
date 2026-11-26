@@ -1,397 +1,294 @@
 import 'dart:io';
 
-import 'package:core_theme/core_theme.dart';
-import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
-import 'package:openlock/src/core/widgets/screen_header.dart';
+import 'package:openlock/src/core/router/app_router.dart';
 import 'package:openlock/src/features/apps/providers/apps_providers.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 import 'package:openlock/src/features/enforcement/providers/config_providers.dart';
 
-class AppPickerScreen extends ConsumerWidget {
+class AppPickerScreen extends ConsumerStatefulWidget {
   const AppPickerScreen({super.key});
+  @override
+  ConsumerState<AppPickerScreen> createState() => _AppPickerScreenState();
+}
 
-  /// Rows shown while the installed apps load; enough to fill the screen
-  /// below the header.
-  static const _skeletonRows = 8;
+class _AppPickerScreenState extends ConsumerState<AppPickerScreen> {
+  static const amber = Color(0xFFFFB020);
+  static const bg = Color(0xFF090A0F);
+  static const surface = Color(0xFF0D0E15);
+  static const surface2 = Color(0xFF161824);
+  static const borderDark = Color(0xFF252938);
+  static const categories = ['Semua', 'Sosmed', 'Game', 'Finansial', 'Sistem'];
+  final search = TextEditingController();
+  final Set<String> pending = {};
+  String category = 'Semua';
+  bool seeded = false;
+  bool saving = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final list = ref.watch(appListProvider);
-    final config =
-        ref.watch(configControllerProvider).valueOrNull ?? LockConfig.empty;
-    final view = list.valueOrNull;
-    final rowCount = switch (list) {
-      AsyncData(:final value) =>
-        value.visible.isEmpty ? 1 : value.visible.length,
-      AsyncError() => 1,
-      _ => _skeletonRows,
-    };
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
+
+  String categoryOf(InstalledApp app) {
+    final v = '${app.label} ${app.packageName}'.toLowerCase();
+    if (['game', 'bussimulator', 'mobile.legends', 'pubg', 'freefire', 'roblox', 'minecraft'].any(v.contains)) return 'Game';
+    if (['instagram', 'facebook', 'whatsapp', 'telegram', 'tiktok', 'twitter', 'snapchat', 'threads', 'messenger'].any(v.contains)) return 'Sosmed';
+    if (['bank', 'wallet', 'finance', 'bitget', 'gopay', 'ovo', 'dana', 'shopeepay', 'bca', 'bri', 'mandiri'].any(v.contains)) return 'Finansial';
+    if (['android', 'system', 'settings', 'permission', 'authenticator', 'camera'].any(v.contains)) return 'Sistem';
+    return 'Lainnya';
+  }
+
+  Future<void> apply(LockConfig config) async {
+    if (saving || config.strictModeActiveAt(DateTime.now())) return;
+    final additions = pending.difference(config.lockedPackages).toList()..sort();
+    final removals = config.lockedPackages.difference(pending).toList()..sort();
+    if (additions.isEmpty && removals.isEmpty) return;
+    setState(() => saving = true);
+    try {
+      final controller = ref.read(configControllerProvider.notifier);
+      for (final p in additions) { await controller.toggleApp(p); }
+      for (final p in removals) { await controller.toggleApp(p); }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proteksi aplikasi berhasil diperbarui.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Perubahan belum berhasil disimpan: $e')));
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final background = dark ? bg : const Color(0xFFF6F7FA);
+    final panel = dark ? surface : Colors.white;
+    final panel2 = dark ? surface2 : const Color(0xFFF0F1F5);
+    final border = dark ? borderDark : const Color(0xFFE2E5EC);
+    final ink = dark ? const Color(0xFFF8FAFC) : const Color(0xFF151923);
+    final muted = dark ? const Color(0xFF9AA3B5) : const Color(0xFF667085);
+    final listAsync = ref.watch(installedAppsProvider);
+    final configAsync = ref.watch(configControllerProvider);
+    final config = configAsync.valueOrNull ?? LockConfig.empty;
+    final apps = listAsync.valueOrNull ?? <InstalledApp>[];
+    final frozen = config.strictModeActiveAt(DateTime.now());
+
+    if (configAsync.hasValue && !seeded) {
+      pending..clear()..addAll(config.lockedPackages);
+      seeded = true;
+    }
+    final count = pending.length;
+    final freeCount = (apps.length - count).clamp(0, apps.length);
+    final q = search.text.trim().toLowerCase();
+    final visible = apps.where((a) {
+      final matches = q.isEmpty || a.label.toLowerCase().contains(q) || a.packageName.toLowerCase().contains(q);
+      final cat = categoryOf(a);
+      return matches && (category == 'Semua' || cat == category);
+    }).toList()..sort((a,b) {
+      final al = pending.contains(a.packageName), bl = pending.contains(b.packageName);
+      if (al != bl) return al ? -1 : 1;
+      return a.label.toLowerCase().compareTo(b.label.toLowerCase());
+    });
+    final counts = {for (final c in categories) c: c == 'Semua' ? apps.length : apps.where((a) => categoryOf(a) == c).length};
+    final changed = pending.length != config.lockedPackages.length || !pending.containsAll(config.lockedPackages) || !config.lockedPackages.containsAll(pending);
 
     return Scaffold(
+      backgroundColor: background,
       body: SafeArea(
         bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.gutter,
-                AppSpacing.md,
-                AppSpacing.gutter,
-                AppSpacing.xl,
-              ),
-              // Header blocks first, then one lazily built row per app. The
-              // header never waits for the app list; only the rows do.
-              itemCount: _headerCount + rowCount,
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              // Keep prefetch close to the viewport. A large cache extent builds
-              // many off-screen rows and requests their launcher icons early.
-              cacheExtent: 250,
-              itemBuilder: (context, index) {
-                if (index < _headerCount) {
-                  return _header(
-                    context,
-                    ref,
-                    index,
-                    lockedCount: view?.lockedCount,
-                    total: view?.total,
-                  );
-                }
-                final i = index - _headerCount;
-                if (list.hasError) {
-                  return const AppEmptyState(
-                    compact: true,
-                    icon: Icons.error_outline_rounded,
-                    title: 'Gagal memuat aplikasi',
-                    message:
-                        'Daftar aplikasi yang terpasang belum tersedia.',
-                  );
-                }
-                if (view == null) {
-                  return GroupedRowItem(
-                    isFirst: i == 0,
-                    isLast: i == rowCount - 1,
-                    child: const _AppTileSkeleton(),
-                  );
-                }
-                if (view.visible.isEmpty) {
-                  return const AppEmptyState(
-                    compact: true,
-                    icon: Icons.search_off_rounded,
-                    title: 'Aplikasi tidak ditemukan',
-                    message: 'Coba kata pencarian lain.',
-                  );
-                }
-                final app = view.visible[i];
-                // ListView.builder already places each child in a repaint
-                // boundary by default; avoid nesting a second layer per row.
-                return GroupedRowItem(
-                  isFirst: i == 0,
-                  isLast: i == view.visible.length - 1,
-                  child: _AppTile(
-                    app: app,
-                    config: config,
-                    onToggle: () => ref
-                        .read(configControllerProvider.notifier)
-                        .toggleApp(app.packageName),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static const _headerCount = 3;
-
-  Widget _header(
-    BuildContext context,
-    WidgetRef ref,
-    int index, {
-    required int? lockedCount,
-    required int? total,
-  }) {
-    switch (index) {
-      case 0:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const ScreenHeader(
-              eyebrow: 'KENDALI AKSES',
-              title: 'Aplikasi terlindungi',
-            ),
-            Container(
-              margin: const EdgeInsets.only(bottom: AppSpacing.md),
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Theme.of(context).colorScheme.secondary.withValues(alpha: .16),
-                    Theme.of(context).colorScheme.primary.withValues(alpha: .08),
-                  ],
+        child: Stack(children: [
+          Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+              child: Row(children: [
+                _BackButton(panel: panel2, border: border, ink: ink, onTap: () => context.go(AppRoutes.home)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('KENDALI AKSES', style: TextStyle(color: amber, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
+                  Text('Aplikasi Terlindungi', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: ink, fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -.55)),
+                ])),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                  decoration: BoxDecoration(color: amber.withValues(alpha: .09), borderRadius: BorderRadius.circular(24), border: Border.all(color: amber.withValues(alpha: .32))),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [_PulseDot(), SizedBox(width: 7), Text('Vault Siaga', style: TextStyle(color: amber, fontSize: 11, fontWeight: FontWeight.w700))]),
                 ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .35),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: .14),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Icon(
-                      Icons.shield_outlined,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Text(
-                      'Pilih aplikasi yang ingin kamu jauhkan sementara.',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: SuiteColors.of(context).textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              ]),
             ),
-          ],
-        );
-      case 1:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SectionLead(
-              'Aplikasi terkunci',
-              subtitle: 'Pilih aplikasi yang ingin kamu batasi aksesnya.',
-            ),
-            AppSearchField(
-              hint: 'Cari nama aplikasi',
-              onChanged: (value) =>
-                  ref.read(appSearchQueryProvider.notifier).state = value,
-            ),
-          ],
-        );
-      default:
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xs,
-            AppSpacing.md,
-            AppSpacing.xs,
-            AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      lockedCount == null
-                          ? 'Menghitung aplikasi terpasang'
-                          : '$lockedCount aplikasi dikunci',
-                      style: AppTextStyles.label.copyWith(
-                        color: SuiteColors.of(context).textSecondary,
-                      ),
-                    ),
-                    if (total != null)
-                      Text(
-                        'dari $total aplikasi terpasang',
-                        style: AppTextStyles.caption.copyWith(
-                          color: SuiteColors.of(context).textSecondary,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Icon(Icons.tune_rounded,
-                  size: 17, color: SuiteColors.of(context).textSecondary),
-            ],
-          ),
-        );
-    }
-  }
-}
-
-class _AppTile extends ConsumerWidget {
-  const _AppTile({
-    required this.app,
-    required this.config,
-    required this.onToggle,
-  });
-
-  final InstalledApp app;
-  final LockConfig config;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = SuiteColors.of(context);
-    final frozen = config.strictModeActiveAt(DateTime.now());
-    final locked = config.lockedPackages.contains(app.packageName);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppListRow(
-          onTap: frozen ? null : onToggle,
-          leading: _AppIcon(app: app),
-          title: app.label,
-          subtitle: app.packageName,
-          trailing: Switch(
-            value: locked,
-            onChanged: frozen ? null : (_) => onToggle(),
-          ),
-        ),
-        // Per-app notification-hiding override, only meaningful once the app is
-        // locked. Reflects the effective choice (override, else the global
-        // default) and writes an explicit per-app override. Inset like
-        // AppListRow, so it starts under the app's name, its switch lines up
-        // under the lock switch, and the label wraps rather than pushing the
-        // switch out of the card.
-        if (locked)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md + _iconSize + AppSpacing.smd + 2,
-              0,
-              AppSpacing.md,
-              AppSpacing.sm,
-            ),
-            child: Row(
+            Expanded(child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 3, 20, 112),
+              physics: const BouncingScrollPhysics(),
               children: [
-                Icon(
-                  Icons.notifications_off_outlined,
-                  size: 18,
-                  color: c.textSecondary,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16,16,16,13),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: LinearGradient(begin: Alignment.topLeft,end: Alignment.bottomRight,colors: dark ? const [Color(0xFF20202B),Color(0xFF15151F),Color(0xFF211B25)] : const [Colors.white,Color(0xFFF8F4EC),Color(0xFFF7F0F3)]),
+                    border: Border.all(color: dark ? Colors.white.withValues(alpha:.11) : const Color(0xFFE5D9C9)),
+                    boxShadow: [BoxShadow(color: amber.withValues(alpha: dark ? .08 : .04),blurRadius:26,offset:const Offset(0,8))],
+                  ),
+                  child: Column(children: [
+                    Row(crossAxisAlignment: CrossAxisAlignment.start,children: [
+                      Container(width:48,height:48,decoration:BoxDecoration(color:const Color(0xFF171722),borderRadius:BorderRadius.circular(16),border:Border.all(color:amber.withValues(alpha:.8)),boxShadow:[BoxShadow(color:amber.withValues(alpha:.28),blurRadius:17)]),child:const Icon(Icons.shield_rounded,color:amber,size:25)),
+                      const SizedBox(width:13),
+                      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                        Text('Isolasi & Disiplin Digital',style:TextStyle(color:ink,fontSize:13,fontWeight:FontWeight.w700)),
+                        const SizedBox(height:5),
+                        Text('Pilih aplikasi yang ingin kamu jauhkan sementara dari jangkauan refleks untuk menjaga fokus optimal.',style:TextStyle(color:muted,fontSize:11.5,height:1.55)),
+                      ])),
+                    ]),
+                    Padding(padding:const EdgeInsets.only(top:13),child:Divider(height:1,color:dark?Colors.white.withValues(alpha:.07):border)),
+                    const SizedBox(height:11),
+                    Row(children:[
+                      Expanded(child:_SummaryDot(color:const Color(0xFF34D399),label:'$freeCount Aplikasi Bebas',textColor:muted)),
+                      Expanded(child:_SummaryDot(color:amber,label:'$count Terkunci Aktif',textColor:amber)),
+                      Text('Kapasitas: ',style:TextStyle(color:muted,fontSize:9.5)),
+                      Text('Tinggi',style:TextStyle(color:ink,fontSize:9.5,fontWeight:FontWeight.w700)),
+                    ]),
+                  ]),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    'Sembunyikan notifikasi',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: c.textSecondary,
-                    ),
+                const SizedBox(height:18),
+                TextField(
+                  controller:search,onChanged:(_)=>setState((){}),
+                  style:TextStyle(color:ink,fontSize:12),cursorColor:amber,
+                  decoration:InputDecoration(
+                    hintText:'Cari nama atau paket aplikasi...',hintStyle:TextStyle(color:muted,fontSize:11.5),
+                    prefixIcon:Icon(Icons.search_rounded,color:muted,size:18),
+                    suffixIcon:search.text.isEmpty?null:IconButton(onPressed:(){search.clear();setState((){});},icon:Icon(Icons.close,color:muted,size:17)),
+                    filled:true,fillColor:panel2.withValues(alpha:.78),
+                    contentPadding:const EdgeInsets.symmetric(horizontal:14,vertical:12),
+                    enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(12),borderSide:BorderSide(color:border)),
+                    focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(12),borderSide:BorderSide(color:amber.withValues(alpha:.7))),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.smd),
-                Switch(
-                  value: config.hidesNotificationsFor(app.packageName),
-                  onChanged: frozen
-                      ? null
-                      : (value) => ref
-                          .read(configControllerProvider.notifier)
-                          .setNotificationOverride(app.packageName, value),
+                const SizedBox(height:11),
+                SizedBox(height:31,child:ListView.separated(scrollDirection:Axis.horizontal,itemCount:categories.length,separatorBuilder:(_,__)=>const SizedBox(width:8),itemBuilder:(context,i){
+                  final c=categories[i], selected=category==c;
+                  return ChoiceChip(
+                    label:Text('$c (${counts[c]??0})'),selected:selected,onSelected:(_)=>setState(()=>category=c),showCheckmark:false,
+                    labelStyle:TextStyle(color:selected?const Color(0xFF17120A):ink,fontSize:10.5,fontWeight:selected?FontWeight.w800:FontWeight.w500),
+                    backgroundColor:panel2,selectedColor:const Color(0xFFF59E0B),side:BorderSide(color:selected?const Color(0xFFF59E0B):border),
+                    shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(9)),padding:const EdgeInsets.symmetric(horizontal:1),
+                  );
+                })),
+                const SizedBox(height:17),
+                Row(children:[
+                  Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                    Text('Aplikasi terkunci',style:TextStyle(color:ink,fontSize:12,fontWeight:FontWeight.w800)),
+                    const SizedBox(height:3),
+                    Text('$count aplikasi dipilih dari ${apps.length} aplikasi terpasang',style:TextStyle(color:muted,fontSize:10.5)),
+                  ])),
+                  Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),decoration:BoxDecoration(color:panel2,borderRadius:BorderRadius.circular(9),border:Border.all(color:border)),child:Row(children:[const Icon(Icons.filter_list_rounded,color:amber,size:14),const SizedBox(width:5),Text('Filter',style:TextStyle(color:ink,fontSize:10,fontWeight:FontWeight.w600))])),
+                ]),
+                const SizedBox(height:11),
+                if(listAsync.isLoading) const _LoadingApps()
+                else if(listAsync.hasError) _MessageCard(icon:Icons.error_outline_rounded,title:'Gagal memuat aplikasi',message:'Daftar aplikasi yang terpasang belum tersedia.',ink:ink,muted:muted,panel:panel,border:border)
+                else if(visible.isEmpty) _MessageCard(icon:Icons.search_off_rounded,title:'Aplikasi tidak ditemukan',message:'Coba kata pencarian atau kategori lain.',ink:ink,muted:muted,panel:panel,border:border)
+                else for(final app in visible) Padding(
+                  padding:const EdgeInsets.only(bottom:10),
+                  child:_ProtectedAppCard(
+                    app:app,selected:pending.contains(app.packageName),frozen:frozen,config:config,ink:ink,muted:muted,panel:panel,border:border,
+                    onChanged:(v){if(frozen)return;setState(()=>v?pending.add(app.packageName):pending.remove(app.packageName));},
+                  ),
                 ),
               ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// An [_AppTile] while the installed apps load: built from the same row so
-/// it has exactly the same height, with the text left blank.
-class _AppTileSkeleton extends StatelessWidget {
-  const _AppTileSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppListRow(
-      leading: Skeleton(width: _iconSize, height: _iconSize, radius: 12),
-      title: '',
-      subtitle: '',
-      trailing: Visibility(
-        visible: false,
-        maintainSize: true,
-        maintainAnimation: true,
-        maintainState: true,
-        child: Switch(value: false, onChanged: null),
+            )),
+          ]),
+          Positioned(left:20,right:20,bottom:7,child:SafeArea(top:false,child:Container(
+            padding:const EdgeInsets.all(5),
+            decoration:BoxDecoration(color:panel.withValues(alpha:.94),borderRadius:BorderRadius.circular(17),border:Border.all(color:border),boxShadow:[BoxShadow(color:Colors.black.withValues(alpha:.3),blurRadius:22,offset:const Offset(0,7))]),
+            child:Row(children:[
+              const SizedBox(width:9),Container(width:9,height:9,decoration:const BoxDecoration(color:amber,shape:BoxShape.circle)),const SizedBox(width:8),
+              Expanded(child:Text('$count Terpilih',style:TextStyle(color:ink,fontSize:11,fontWeight:FontWeight.w700))),
+              FilledButton.icon(
+                onPressed:frozen||!changed||saving?null:()=>apply(config),
+                icon:saving?const SizedBox(width:14,height:14,child:CircularProgressIndicator(strokeWidth:2,color:Color(0xFF17120A))):const Icon(Icons.lock_rounded,size:14),
+                label:Text(frozen?'Proteksi Aktif':saving?'Menyimpan...':'Terapkan Proteksi'),
+                style:FilledButton.styleFrom(backgroundColor:const Color(0xFFF59E0B),foregroundColor:const Color(0xFF17120A),disabledBackgroundColor:const Color(0xFFF59E0B).withValues(alpha:.35),disabledForegroundColor:const Color(0xFF17120A).withValues(alpha:.6),padding:const EdgeInsets.symmetric(horizontal:17,vertical:12),textStyle:const TextStyle(fontSize:11,fontWeight:FontWeight.w800),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12))),
+              ),
+            ]),
+          ))),
+        ]),
       ),
     );
   }
 }
 
-const double _iconSize = 40;
-
-/// A row's launcher icon, loaded from native's disk cache once the row is
-/// built. A same-size placeholder holds the space until it is decoded.
-class _AppIcon extends ConsumerWidget {
-  const _AppIcon({required this.app});
-
-  final InstalledApp app;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final loader = ref.watch(appIconLoaderProvider);
-    if (loader.isResolved(app)) return _icon(context, loader.resolvedPath(app));
-    return FutureBuilder<String?>(
-      future: loader.pathFor(app),
-      builder: (context, snapshot) => switch (snapshot) {
-        AsyncSnapshot(hasError: true) => _icon(context, null),
-        AsyncSnapshot(connectionState: ConnectionState.done) =>
-          _icon(context, snapshot.data),
-        _ => const _IconPlaceholder(),
-      },
-    );
-  }
-
-  Widget _icon(BuildContext context, String? path) {
-    if (path == null) {
-      return SizedBox.square(
-        dimension: _iconSize,
-        child:
-            Icon(Icons.android, color: SuiteColors.of(context).textSecondary),
-      );
-    }
-    // Decode straight to the drawn size; decoding runs off the UI thread.
-    final px = (_iconSize * MediaQuery.devicePixelRatioOf(context)).round();
-    return Image.file(
-      File(path),
-      width: _iconSize,
-      height: _iconSize,
-      cacheWidth: px,
-      cacheHeight: px,
-      gaplessPlayback: true,
-      frameBuilder: (context, child, frame, sync) =>
-          sync || frame != null ? child : const _IconPlaceholder(),
-      // The OS may clear the cache directory while the app is running.
-      errorBuilder: (context, _, __) => _icon(context, null),
-    );
-  }
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.panel,required this.border,required this.ink,required this.onTap});
+  final Color panel,border,ink; final VoidCallback onTap;
+  @override Widget build(BuildContext context)=>Material(color:panel,borderRadius:BorderRadius.circular(12),child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(12),child:Container(width:40,height:40,decoration:BoxDecoration(borderRadius:BorderRadius.circular(12),border:Border.all(color:border)),child:Icon(Icons.chevron_left_rounded,color:ink,size:23))));
 }
 
-class _IconPlaceholder extends StatelessWidget {
-  const _IconPlaceholder();
+class _PulseDot extends StatefulWidget { const _PulseDot(); @override State<_PulseDot> createState()=>_PulseDotState(); }
+class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+  late final controller=AnimationController(vsync:this,duration:const Duration(milliseconds:1300))..repeat(reverse:true);
+  @override void dispose(){controller.dispose();super.dispose();}
+  @override Widget build(BuildContext context)=>FadeTransition(opacity:Tween<double>(begin:.4,end:1).animate(controller),child:Container(width:7,height:7,decoration:const BoxDecoration(color:Color(0xFFFFB020),shape:BoxShape.circle)));
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: _iconSize,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: SuiteColors.of(context).surfaceAlt,
-          borderRadius: BorderRadius.circular(12),
-        ),
+class _SummaryDot extends StatelessWidget {
+  const _SummaryDot({required this.color,required this.label,required this.textColor});
+  final Color color,textColor; final String label;
+  @override Widget build(BuildContext context)=>Row(children:[Container(width:7,height:7,decoration:BoxDecoration(color:color,shape:BoxShape.circle)),const SizedBox(width:5),Flexible(child:Text(label,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:textColor,fontSize:9.5,fontWeight:FontWeight.w600)))]);
+}
+
+class _ProtectedAppCard extends ConsumerWidget {
+  const _ProtectedAppCard({required this.app,required this.selected,required this.frozen,required this.config,required this.ink,required this.muted,required this.panel,required this.border,required this.onChanged});
+  final InstalledApp app; final bool selected,frozen; final LockConfig config;
+  final Color ink,muted,panel,border; final ValueChanged<bool> onChanged;
+  @override Widget build(BuildContext context,WidgetRef ref){
+    final loader=ref.watch(appIconLoaderProvider);
+    if(!loader.isResolved(app)) loader.pathFor(app);
+    final path=loader.isResolved(app)?loader.resolvedPath(app):null;
+    final icon=path==null
+      ? Container(decoration:BoxDecoration(color:const Color(0xFF334155),borderRadius:BorderRadius.circular(11)),child:const Icon(Icons.android_rounded,color:Color(0xFFE2E8F0),size:24))
+      : ClipRRect(borderRadius:BorderRadius.circular(11),child:Image.file(File(path),width:44,height:44,fit:BoxFit.cover,cacheWidth:(44*MediaQuery.devicePixelRatioOf(context)).round(),errorBuilder:(_,__,___)=>const Icon(Icons.android_rounded)));
+    return AnimatedContainer(duration:const Duration(milliseconds:160),padding:const EdgeInsets.all(11),decoration:BoxDecoration(
+      color:selected?panel.withValues(alpha:.94):panel.withValues(alpha:.62),borderRadius:BorderRadius.circular(17),
+      border:Border.all(color:selected?const Color(0x66F59E0B):border.withValues(alpha:.8)),
+      boxShadow:selected?[BoxShadow(color:const Color(0xFFF59E0B).withValues(alpha:.09),blurRadius:17,spreadRadius:1)]:null,
+    ),child:Column(children:[
+      Row(children:[
+        SizedBox(width:44,height:44,child:ClipRRect(borderRadius:BorderRadius.circular(11),child:icon)),
+        const SizedBox(width:12),
+        Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text(app.label,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:ink,fontSize:13,fontWeight:FontWeight.w700)),
+          const SizedBox(height:3),
+          Text(app.packageName,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:muted,fontSize:10,fontFamily:'monospace')),
+        ])),
+        const SizedBox(width:8),
+        Switch(value:selected,onChanged:frozen?null:onChanged,activeThumbColor:Colors.white,activeTrackColor:const Color(0xFFF59E0B),inactiveThumbColor:const Color(0xFFCBD5E1),inactiveTrackColor:const Color(0xFF263244),materialTapTargetSize:MaterialTapTargetSize.shrinkWrap),
+      ]),
+      if(config.lockedPackages.contains(app.packageName)) Padding(
+        padding:const EdgeInsets.only(left:56,top:7),
+        child:Row(children:[
+          Icon(Icons.notifications_off_outlined,size:16,color:muted),const SizedBox(width:7),
+          Expanded(child:Text('Sembunyikan notifikasi',style:TextStyle(color:muted,fontSize:10.5))),
+          Switch(value:config.hidesNotificationsFor(app.packageName),onChanged:frozen?null:(v)=>ref.read(configControllerProvider.notifier).setNotificationOverride(app.packageName,v),activeThumbColor:Colors.white,activeTrackColor:const Color(0xFFF59E0B),materialTapTargetSize:MaterialTapTargetSize.shrinkWrap),
+        ]),
       ),
-    );
+    ]));
   }
 }
 
-/// "Update available" card, shown when a newer GitHub release exists and the
-/// user hasn't dismissed it this session.
+class _LoadingApps extends StatelessWidget {
+  const _LoadingApps();
+  @override Widget build(BuildContext context)=>Column(children:List.generate(6,(_)=>Container(height:68,margin:const EdgeInsets.only(bottom:10),decoration:BoxDecoration(color:const Color(0xFF161824),borderRadius:BorderRadius.circular(17),border:Border.all(color:Colors.white10)))));
+}
+
+class _MessageCard extends StatelessWidget {
+  const _MessageCard({required this.icon,required this.title,required this.message,required this.ink,required this.muted,required this.panel,required this.border});
+  final IconData icon; final String title,message; final Color ink,muted,panel,border;
+  @override Widget build(BuildContext context)=>Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(color:panel,borderRadius:BorderRadius.circular(16),border:Border.all(color:border)),child:Row(children:[
+    Icon(icon,color:const Color(0xFFFFB020),size:23),const SizedBox(width:12),
+    Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Text(title,style:TextStyle(color:ink,fontSize:12,fontWeight:FontWeight.w700)),const SizedBox(height:4),
+      Text(message,style:TextStyle(color:muted,fontSize:10.5)),
+    ])),
+  ]));
+}
