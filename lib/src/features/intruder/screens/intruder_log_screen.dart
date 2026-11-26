@@ -267,9 +267,10 @@ class _TopBar extends StatelessWidget {
 }
 
 class _PageHeading extends StatelessWidget {
-  const _PageHeading({required this.colors});
+  const _PageHeading({required this.colors, required this.onRefresh});
 
   final _ActivityColors colors;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -320,12 +321,7 @@ class _PageHeading extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Memuat ulang data aktivitas...'),
-                duration: Duration(seconds: 1),
-              ),
-            ),
+            onTap: onRefresh,
             child: Container(
               padding: const EdgeInsets.all(11),
               decoration: BoxDecoration(
