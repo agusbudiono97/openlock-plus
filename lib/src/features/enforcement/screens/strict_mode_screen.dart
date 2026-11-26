@@ -256,133 +256,136 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                   ? '${remaining.inDays}h ${(remaining.inHours % 24).toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}'
                   : '${remaining.inHours.toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}';
 
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      const violet = Color(0xFF9B5CFF), pink = Color(0xFFFF6B9D), amber = Color(0xFFFFA726);
+      final background = isDark ? const Color(0xFF070611) : const Color(0xFFF7F4FC);
+      final panel = isDark ? const Color(0xFF0D0B1B) : Colors.white;
+      final panelAlt = isDark ? const Color(0xFF151126) : const Color(0xFFF0EAF9);
+      final primaryText = isDark ? const Color(0xFFF7F4FF) : const Color(0xFF211A30);
+      final secondaryText = isDark ? const Color(0xFFADB0C8) : const Color(0xFF716B82);
+      final outline = isDark ? const Color(0xFF30264B) : const Color(0xFFE4D9F2);
+
       return Scaffold(
+        backgroundColor: background,
+        appBar: AppBar(
+          backgroundColor: background, surfaceTintColor: Colors.transparent, elevation: 0,
+          leading: IconButton(tooltip: 'Kembali', icon: Icon(Icons.arrow_back_rounded, color: primaryText), onPressed: () => Navigator.of(context).maybePop()),
+          titleSpacing: 0,
+          title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Mode Ketat', style: TextStyle(color: primaryText, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text('Komitmen dan fokus', style: TextStyle(color: secondaryText, fontSize: 11.5)),
+          ]),
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 16, top: 9, bottom: 9), padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+              decoration: BoxDecoration(color: amber.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(18), border: Border.all(color: amber.withValues(alpha: 0.7)), boxShadow: [BoxShadow(color: amber.withValues(alpha: 0.12), blurRadius: 12)]),
+              child: const Row(children: [CircleAvatar(radius: 3, backgroundColor: amber), SizedBox(width: 7), Text('STRICT', style: TextStyle(color: amber, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8))]),
+            ),
+          ],
+        ),
         body: SafeArea(
           bottom: false,
-          child: PageList(
-            children: [
-              const ScreenHeader(
-                eyebrow: 'Komitmen dan fokus',
-                title: 'Mode Ketat',
-              ),
-              VaultCard(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: colors.surfaceAlt,
-                            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                          ),
-                          child: Icon(Icons.shield_rounded, color: colors.textPrimary, size: 26),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('PERLINDUNGAN AKTIF', style: AppTextStyles.caption.copyWith(color: colors.textSecondary, letterSpacing: 1)),
-                              const SizedBox(height: 3),
-                              Text('Kamu sedang dalam Mode Ketat', style: AppTextStyles.labelStrong.copyWith(color: colors.textPrimary)),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.check_circle_rounded, color: colors.textPrimary),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    Center(
-                      child: Text(
-                        countdown,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.numberMedium.copyWith(
-                          color: colors.textPrimary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Center(
-                      child: Text(
-                        endAt == null ? 'TANPA BATAS WAKTU' : 'WAKTU TERSISA',
-                        style: AppTextStyles.caption.copyWith(color: colors.textSecondary, letterSpacing: 1.2),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Divider(color: colors.hairline),
-                    Row(
-                      children: [
-                        Expanded(child: _ActiveMetric(label: 'Aplikasi dikunci', value: '${config.strictModePackages.length}')),
-                        Expanded(child: _ActiveMetric(label: 'Berakhir', value: endLabel)),
-                      ],
-                    ),
-                  ],
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: violet.withValues(alpha: isDark ? 0.42 : 0.28)),
+                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: isDark
+                    ? const [Color(0xFF100C20), Color(0xFF090817), Color(0xFF171020)]
+                    : const [Colors.white, Color(0xFFF8F1FF), Color(0xFFFFF5F0)]),
+                  boxShadow: [BoxShadow(color: violet.withValues(alpha: isDark ? 0.10 : 0.08), blurRadius: 28), BoxShadow(color: amber.withValues(alpha: 0.05), blurRadius: 24, offset: const Offset(8, 10))],
                 ),
+                child: Column(children: [
+                  Row(children: [
+                    Container(width: 58, height: 58, decoration: BoxDecoration(borderRadius: BorderRadius.circular(19), gradient: const LinearGradient(colors: [Color(0xFF5C3B9E), Color(0xFF251A42)]), border: Border.all(color: amber.withValues(alpha: 0.5)), boxShadow: [BoxShadow(color: amber.withValues(alpha: 0.2), blurRadius: 18)]), child: const Icon(Icons.verified_user_rounded, color: amber, size: 32)),
+                    const SizedBox(width: 13),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('PERLINDUNGAN AKTIF', style: TextStyle(color: amber, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.9)),
+                      const SizedBox(height: 5),
+                      Text('Kamu sedang dalam Mode Ketat', style: TextStyle(color: primaryText, fontSize: 14.5, fontWeight: FontWeight.w700)),
+                    ])),
+                    Container(width: 42, height: 42, decoration: BoxDecoration(color: amber.withValues(alpha: 0.14), shape: BoxShape.circle, boxShadow: [BoxShadow(color: amber.withValues(alpha: 0.22), blurRadius: 16)]), child: const Icon(Icons.check_rounded, color: amber, size: 27)),
+                  ]),
+                  const SizedBox(height: 24),
+                  LayoutBuilder(builder: (context, constraints) {
+                    final timer = Container(
+                      padding: const EdgeInsets.fromLTRB(14, 17, 14, 14),
+                      decoration: BoxDecoration(color: panelAlt.withValues(alpha: isDark ? 0.42 : 0.78), borderRadius: BorderRadius.circular(20), border: Border.all(color: violet.withValues(alpha: 0.22))),
+                      child: Column(children: [
+                        Text(endAt == null ? 'PERLINDUNGAN PERMANEN' : 'WAKTU TERSISA', style: const TextStyle(color: violet, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                        const SizedBox(height: 13),
+                        FittedBox(fit: BoxFit.scaleDown, child: ShaderMask(shaderCallback: (bounds) => const LinearGradient(colors: [violet, Color(0xFFFF83B8), amber]).createShader(bounds), child: Text(countdown, style: const TextStyle(color: Colors.white, fontSize: 39, fontWeight: FontWeight.w800, letterSpacing: -1.1, fontFeatures: [FontFeature.tabularFigures()])))),
+                        const SizedBox(height: 14),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(13), border: Border.all(color: outline)), child: const Row(children: [Icon(Icons.hourglass_bottom_rounded, color: amber, size: 18), SizedBox(width: 8), Expanded(child: Text('Tetap fokus, raih versi terbaik.', style: TextStyle(color: Color(0xFFADB0C8), fontSize: 10.5, fontWeight: FontWeight.w600)))])),
+                      ]),
+                    );
+                    final ring = Column(children: [
+                      Text('KOMITMEN BERAKHIR', style: TextStyle(color: secondaryText, fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                      const SizedBox(height: 10),
+                      Container(width: 148, height: 148, padding: const EdgeInsets.all(7), decoration: BoxDecoration(shape: BoxShape.circle, gradient: const SweepGradient(colors: [violet, pink, amber, violet]), boxShadow: [BoxShadow(color: violet.withValues(alpha: 0.25), blurRadius: 22), BoxShadow(color: pink.withValues(alpha: 0.13), blurRadius: 30, offset: const Offset(0, 7))]), child: Container(decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? const Color(0xFF100C20) : const Color(0xFFFFFAFF), border: Border.all(color: outline)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Container(width: 34, height: 34, decoration: BoxDecoration(color: amber.withValues(alpha: 0.12), shape: BoxShape.circle), child: const Icon(Icons.event_available_rounded, color: amber, size: 19)),
+                        const SizedBox(height: 7),
+                        Text(endAt == null ? 'Status' : 'Tanggal berakhir', style: TextStyle(color: secondaryText, fontSize: 10.5)),
+                        const SizedBox(height: 2),
+                        Text(endAt == null ? '∞' : '\${endAt.hour.toString().padLeft(2, '0')}:\${endAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(color: amber, fontSize: 23, fontWeight: FontWeight.w800, fontFeatures: [FontFeature.tabularFigures()])),
+                        Text(endAt == null ? 'Tanpa batas' : '\${endAt.day.toString().padLeft(2, '0')}/\${endAt.month.toString().padLeft(2, '0')}/\${endAt.year}', style: TextStyle(color: secondaryText, fontSize: 10)),
+                      ]))),
+                    ]);
+                    if (constraints.maxWidth < 350) return Column(children: [timer, const SizedBox(height: 20), ring]);
+                    return Row(children: [Expanded(flex: 11, child: timer), const SizedBox(width: 12), Expanded(flex: 9, child: ring)]);
+                  }),
+                  const SizedBox(height: 18),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13), decoration: BoxDecoration(color: panelAlt.withValues(alpha: isDark ? 0.48 : 0.8), borderRadius: BorderRadius.circular(17), border: Border.all(color: outline)), child: Row(children: [
+                    Expanded(child: _ActiveMetric(label: 'Aplikasi dikunci', value: '\${config.strictModePackages.length}')),
+                    Container(width: 1, height: 38, color: outline), const SizedBox(width: 12),
+                    Expanded(flex: 2, child: _ActiveMetric(label: 'Berakhir pada', value: endLabel)),
+                  ])),
+                ]),
               ),
-              const SectionLead('Aplikasi yang dilindungi'),
+              const SizedBox(height: 26),
+              Text('Aplikasi yang dilindungi', style: TextStyle(color: primaryText, fontSize: 19, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 12),
               apps.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const AppEmptyState(
-                  compact: true,
-                  icon: Icons.error_outline_rounded,
-                  title: 'Daftar aplikasi tidak dapat dimuat',
-                ),
+                loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
+                error: (_, __) => const AppEmptyState(compact: true, icon: Icons.error_outline_rounded, title: 'Daftar aplikasi tidak dapat dimuat'),
                 data: (items) {
                   final selected = items.where((app) => config.strictModePackages.contains(app.packageName)).toList();
-                  if (selected.isEmpty) {
-                    return const AppEmptyState(
-                      compact: true,
-                      icon: Icons.apps_rounded,
-                      title: 'Tidak ada aplikasi terdaftar',
-                    );
-                  }
-                  return RowGroup(
-                    children: [
-                      for (final app in selected)
-                        AppListRow(
-                          title: app.label,
-                          subtitle: 'Dikunci sampai komitmen berakhir',
-                          leading: _StrictAppIcon(app: app),
-                          trailing: Icon(Icons.check_circle_rounded, color: scheme.primary),
-                        ),
-                    ],
-                  );
+                  if (selected.isEmpty) return const AppEmptyState(compact: true, icon: Icons.apps_rounded, title: 'Tidak ada aplikasi terdaftar');
+                  return Column(children: [for (final app in selected) Container(
+                    margin: const EdgeInsets.only(bottom: 9), padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+                    decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(19), border: Border.all(color: outline), boxShadow: [BoxShadow(color: violet.withValues(alpha: isDark ? 0.07 : 0.035), blurRadius: 16)]),
+                    child: Row(children: [
+                      SizedBox(width: 48, height: 48, child: _StrictAppIcon(app: app)), const SizedBox(width: 13),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(app.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: primaryText, fontSize: 15, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4), Text('Dikunci sampai komitmen berakhir', style: TextStyle(color: secondaryText, fontSize: 11.5)),
+                      ])),
+                      const SizedBox(width: 8),
+                      Container(width: 34, height: 34, decoration: BoxDecoration(color: violet.withValues(alpha: 0.18), shape: BoxShape.circle, boxShadow: [BoxShadow(color: violet.withValues(alpha: 0.12), blurRadius: 12)]), child: const Icon(Icons.check_rounded, color: violet, size: 22)),
+                    ]),
+                  )]);
                 },
               ),
-              VaultCard(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.lock_outline_rounded, color: colors.textSecondary),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Pengaturan sedang dikunci', style: AppTextStyles.labelStrong.copyWith(color: colors.textPrimary)),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            'Daftar aplikasi dan pengaturan perlindungan tidak dapat diubah sampai komitmen berakhir.',
-                            style: AppTextStyles.label.copyWith(color: colors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                'Android tetap memiliki kendali sistem yang tidak dapat dikunci mutlak oleh aplikasi biasa.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
-              ),
-            ],
+              const SizedBox(height: 8),
+              Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(22), border: Border.all(color: violet.withValues(alpha: 0.25)), boxShadow: [BoxShadow(color: violet.withValues(alpha: 0.07), blurRadius: 18)]), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(width: 54, height: 54, decoration: BoxDecoration(shape: BoxShape.circle, gradient: const LinearGradient(colors: [Color(0xFF5A3B9A), Color(0xFF24183D)]), boxShadow: [BoxShadow(color: violet.withValues(alpha: 0.2), blurRadius: 16)]), child: const Icon(Icons.lock_rounded, color: Color(0xFFC59BFF), size: 27)),
+                const SizedBox(width: 13),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Pengaturan sedang dikunci', style: TextStyle(color: primaryText, fontSize: 14, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 7),
+                  Text('Daftar aplikasi dan pengaturan perlindungan tidak dapat diubah sampai komitmen berakhir.', style: TextStyle(color: secondaryText, fontSize: 12, height: 1.5)),
+                ])),
+              ])),
+              const SizedBox(height: 12),
+              Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(22), border: Border.all(color: outline)), child: Row(children: [
+                Container(width: 56, height: 56, decoration: BoxDecoration(shape: BoxShape.circle, color: violet.withValues(alpha: 0.14), border: Border.all(color: violet.withValues(alpha: 0.24))), child: const Icon(Icons.shield_moon_rounded, color: violet, size: 30)),
+                const SizedBox(width: 13),
+                Expanded(child: Text('Android tetap memiliki kendali sistem yang tidak dapat dikunci mutlak oleh aplikasi biasa.', style: TextStyle(color: isDark ? const Color(0xFFC4A4FF) : const Color(0xFF7650A8), fontSize: 12, height: 1.5, fontWeight: FontWeight.w600))),
+              ])),
+            ]),
           ),
         ),
       );
