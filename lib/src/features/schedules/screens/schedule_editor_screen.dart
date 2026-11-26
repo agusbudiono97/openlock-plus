@@ -154,7 +154,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                 ),
                 const SizedBox(width: 8),
                 const CircleAvatar(backgroundColor: _amber, radius: 17,
-                  child: const Icon(Icons.person_outline_rounded, color: Color(0xFF392000), size: 19)),
+                  child: Icon(Icons.person_outline_rounded, color: Color(0xFF392000), size: 19)),
               ]),
             ),
             Expanded(
