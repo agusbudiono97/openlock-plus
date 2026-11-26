@@ -79,7 +79,7 @@ class _IntruderLogScreenState extends ConsumerState<IntruderLogScreen> {
                       ),
                       padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
                       children: [
-                        _PageHeading(colors: colors),
+                        _PageHeading(\n                          colors: colors,\n                          onRefresh: () => ref\n                              .read(intruderControllerProvider.notifier)\n                              .refresh(),\n                        ),
                         const SizedBox(height: 16),
                         _DetectionBanner(colors: colors),
                         const SizedBox(height: 16),
@@ -965,7 +965,7 @@ class _IntruderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final path = record.photoPath;
     final hasPhoto = path != null && File(path).existsSync();
-    final when = DateFormat('dd MMM yyyy • HH:mm', 'id_ID').format(record.timestamp);
+    final when = DateFormat('dd MMM yyyy • HH:mm').format(record.timestamp);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
