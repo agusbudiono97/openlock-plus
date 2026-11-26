@@ -153,7 +153,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                   label: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.w800)),
                 ),
                 const SizedBox(width: 8),
-                CircleAvatar(backgroundColor: _amber, radius: 17,
+                const CircleAvatar(backgroundColor: _amber, radius: 17,
                   child: const Icon(Icons.person_outline_rounded, color: Color(0xFF392000), size: 19)),
               ]),
             ),
@@ -272,8 +272,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                       data: (apps) {
                         final visible = apps.where((a) => a.labelKey.contains(_query.toLowerCase()) || a.packageKey.contains(_query.toLowerCase())).toList()
                           ..sort((a,b) => a.labelKey.compareTo(b.labelKey));
-                        if (visible.isEmpty) return Padding(padding: const EdgeInsets.all(18),
-                          child: Text('Aplikasi tidak ditemukan', style: TextStyle(color: muted, fontSize: 12)));
+                        if (visible.isEmpty) {
+                          return Padding(padding: const EdgeInsets.all(18),
+                            child: Text('Aplikasi tidak ditemukan', style: TextStyle(color: muted, fontSize: 12)));
+                        }
                         return Column(children: [
                           for (var i = 0; i < visible.length; i++) ...[
                             _AppRow(app: visible[i], selected: _packages.contains(visible[i].packageName),
