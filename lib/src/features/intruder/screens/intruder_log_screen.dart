@@ -79,7 +79,12 @@ class _IntruderLogScreenState extends ConsumerState<IntruderLogScreen> {
                       ),
                       padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
                       children: [
-                        _PageHeading(\n                          colors: colors,\n                          onRefresh: () => ref\n                              .read(intruderControllerProvider.notifier)\n                              .refresh(),\n                        ),
+                        _PageHeading(
+                          colors: colors,
+                          onRefresh: () => ref
+                              .read(intruderControllerProvider.notifier)
+                              .refresh(),
+                        ),
                         const SizedBox(height: 16),
                         _DetectionBanner(colors: colors),
                         const SizedBox(height: 16),
