@@ -206,7 +206,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                     ])
                       Padding(padding: const EdgeInsets.only(left: 5),
                         child: _quickChip(action.$1, _weekdays.length == action.$2.length && _weekdays.containsAll(action.$2),
-                          dark, card, border, ink, () => setState(() => _weekdays = Set<int>.of(action.$2)))),
+                          card, border, ink, () => setState(() => _weekdays = Set<int>.of(action.$2)))),
                   ]),
                   const SizedBox(height: 12),
                   Row(children: [
@@ -225,9 +225,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                   ]),
                   const SizedBox(height: 10),
                   Row(children: [
-                    Expanded(child: _timeCard('Mulai', _start, Icons.schedule_rounded, dark, card, border, ink, muted, !strictActive, () => _pickTime(true))),
+                    Expanded(child: _timeCard('Mulai', _start, Icons.schedule_rounded, card, border, ink, muted, !strictActive, () => _pickTime(true))),
                     const SizedBox(width: 10),
-                    Expanded(child: _timeCard('Selesai', _end, Icons.alarm_on_rounded, dark, card, border, ink, muted, !strictActive, () => _pickTime(false))),
+                    Expanded(child: _timeCard('Selesai', _end, Icons.alarm_on_rounded, card, border, ink, muted, !strictActive, () => _pickTime(false))),
                   ]),
                   const SizedBox(height: 22),
                   Row(children: [
@@ -277,7 +277,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                         return Column(children: [
                           for (var i = 0; i < visible.length; i++) ...[
                             _AppRow(app: visible[i], selected: _packages.contains(visible[i].packageName),
-                              dark: dark, sub: sub, ink: ink, muted: muted,
+                              sub: sub, ink: ink, muted: muted,
                               onTap: strictActive ? null : () => setState(() {
                                 final p = visible[i].packageName;
                                 if (!_packages.add(p)) _packages.remove(p);
@@ -343,7 +343,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         Text(subtitle, style: TextStyle(color: muted, fontSize: 10)),
       ]);
 
-  Widget _quickChip(String label, bool selected, bool dark, Color card, Color border, Color ink, VoidCallback onTap) =>
+  Widget _quickChip(String label, bool selected, Color card, Color border, Color ink, VoidCallback onTap) =>
       InkWell(onTap: onTap, borderRadius: BorderRadius.circular(20),
         child: Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
           decoration: BoxDecoration(color: selected ? _amber.withValues(alpha: .16) : card,
@@ -371,7 +371,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     );
   }
 
-  Widget _timeCard(String label, int minutes, IconData icon, bool dark, Color card, Color border,
+  Widget _timeCard(String label, int minutes, IconData icon, Color card, Color border,
       Color ink, Color muted, bool enabled, VoidCallback onTap) =>
       InkWell(onTap: enabled ? onTap : null, borderRadius: BorderRadius.circular(13),
         child: Container(padding: const EdgeInsets.all(15),
@@ -384,14 +384,13 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             Text(label == 'Mulai' ? 'Format 24 jam (WIB)' : 'Proteksi berakhir', style: TextStyle(color: muted, fontSize: 10)),
           ])));
 
-  Future<void> _unused() async {}
 }
 
 class _AppRow extends StatelessWidget {
-  const _AppRow({required this.app, required this.selected, required this.dark,
+  const _AppRow({required this.app, required this.selected,
     required this.sub, required this.ink, required this.muted, required this.onTap});
   final InstalledApp app;
-  final bool selected, dark;
+  final bool selected;
   final Color sub, ink, muted;
   final VoidCallback? onTap;
   @override
