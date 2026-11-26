@@ -118,8 +118,10 @@ class AppDiagnosticScreen extends StatelessWidget {
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
                         await Clipboard.setData(ClipboardData(text: report));
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        if (!messenger.mounted) return;
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('Laporan disalin')),
                         );
                       },

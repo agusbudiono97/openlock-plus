@@ -5,10 +5,9 @@ import 'package:core_theme/core_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:openlock/src/features/auth/services/pin_auth_service.dart';
 
-/// PIN dots, a one-line error under them, and a numeric keypad. Collects at
-/// least [PinAuthService.minPinLength] digits and calls [onSubmit] when the
-/// check key is tapped. When [randomize] is on, the digit positions are
-/// shuffled to defeat shoulder-surfing.
+/// PIN dots, a one-line error under them, and a numeric keypad. Collects a
+/// six-digit PIN and submits it automatically. When [randomize]
+/// is on, the digit positions are shuffled to defeat shoulder-surfing.
 ///
 /// The dots shake each time [failures] changes (it stays still under reduced motion).
 /// The native lock overlay (`LockActivity.kt`) draws the same dots and keys.
@@ -18,6 +17,8 @@ class PinEntryPanel extends StatefulWidget {
     required this.keyHeight,
     this.enabled = true,
     this.randomize = false,
+    this.onBiometric,
+    this.showBiometric = false,
     this.error,
     this.failures = 0,
     super.key,
@@ -26,6 +27,8 @@ class PinEntryPanel extends StatefulWidget {
   final ValueChanged<String> onSubmit;
   final bool enabled;
   final bool randomize;
+  final VoidCallback? onBiometric;
+  final bool showBiometric;
 
   /// The wrong-PIN or cooldown line under the dots.
   final String? error;
@@ -58,10 +61,11 @@ class PinEntryPanel extends StatefulWidget {
 
 class PinEntryPanelState extends State<PinEntryPanel> {
   String _pin = '';
+  bool _submitting = false;
   late List<String> _digits = _buildDigits();
 
   List<String> _buildDigits() {
-    // Phone-keypad order: 1-9 across three rows, 0 beside the check key.
+    // Phone-keypad order: 1-9 across three rows, with 0 in the bottom centre.
     final digits = [for (var i = 1; i <= 10; i++) (i % 10).toString()];
     if (widget.randomize) digits.shuffle(math.Random.secure());
     return digits;
@@ -69,6 +73,7 @@ class PinEntryPanelState extends State<PinEntryPanel> {
 
   void clear() => setState(() {
         _pin = '';
+        _submitting = false;
         _digits = _buildDigits();
       });
 
@@ -81,25 +86,36 @@ class PinEntryPanelState extends State<PinEntryPanel> {
   }
 
   void _append(String digit) {
-    if (!widget.enabled || _pin.length >= 12) return;
-    setState(() => _pin += digit);
+    if (!widget.enabled ||
+        _submitting ||
+        _pin.length >= PinAuthService.minPinLength) {
+      return;
+    }
+    final next = _pin + digit;
+    setState(() => _pin = next);
+    if (next.length == PinAuthService.minPinLength) {
+      _submit();
+    }
   }
 
   void _backspace() {
-    if (_pin.isEmpty) return;
+    if (_pin.isEmpty || _submitting) return;
     setState(() => _pin = _pin.substring(0, _pin.length - 1));
   }
 
   void _submit() {
-    if (_pin.length < PinAuthService.minPinLength) return;
+    if (_submitting ||
+        !widget.enabled ||
+        _pin.length != PinAuthService.minPinLength) {
+      return;
+    }
+    _submitting = true;
     widget.onSubmit(_pin);
   }
 
   @override
   Widget build(BuildContext context) {
     final c = SuiteColors.of(context);
-    final canSubmit =
-        widget.enabled && _pin.length >= PinAuthService.minPinLength;
     final error = widget.error;
     Widget key({String? label, IconData? icon, VoidCallback? onTap}) => _Key(
           label: label,
@@ -144,19 +160,26 @@ class PinEntryPanelState extends State<PinEntryPanel> {
           const SizedBox(height: PinEntryPanel.rowGap),
         ],
         _keyRow([
-          key(
-            icon: Icons.backspace_outlined,
-            onTap: widget.enabled && _pin.isNotEmpty ? _backspace : null,
-          ),
+          if (widget.showBiometric)
+            _Key(
+              icon: Icons.fingerprint_rounded,
+              height: widget.keyHeight,
+              iconColor: c.accent,
+              onTap: widget.enabled && !_submitting ? widget.onBiometric : null,
+            )
+          else
+            SizedBox(height: widget.keyHeight),
           key(
             label: _digits[9],
-            onTap: widget.enabled ? () => _append(_digits[9]) : null,
+            onTap: widget.enabled && !_submitting
+                ? () => _append(_digits[9])
+                : null,
           ),
-          _Key(
-            icon: Icons.check_rounded,
-            height: widget.keyHeight,
-            emphasized: true,
-            onTap: canSubmit ? _submit : null,
+          key(
+            icon: Icons.backspace_outlined,
+            onTap: widget.enabled && _pin.isNotEmpty && !_submitting
+                ? _backspace
+                : null,
           ),
         ]),
       ],
@@ -210,23 +233,22 @@ class _PinDots extends StatelessWidget {
   }
 }
 
-/// One keypad key. Digits and backspace are surface tiles with a hairline
-/// edge; the check key is the solid accent. A disabled key fades as a whole
-/// so it keeps its shape in both modes.
+/// One keypad key. Digits and actions are surface tiles with a hairline edge.
+/// A disabled key fades as a whole so it keeps its shape in both modes.
 class _Key extends StatelessWidget {
   const _Key({
     required this.height,
     this.label,
     this.icon,
     this.onTap,
-    this.emphasized = false,
+    this.iconColor,
   });
 
   final String? label;
   final IconData? icon;
   final double height;
   final VoidCallback? onTap;
-  final bool emphasized;
+  final Color? iconColor;
 
   /// Shared with the native overlay's keys (14 dp corners, 24 sp Mona Sans
   /// Medium digits).
@@ -240,14 +262,14 @@ class _Key extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = SuiteColors.of(context);
-    final fg = emphasized ? c.onAccent : c.textPrimary;
+    final fg = c.textPrimary;
     return Opacity(
       opacity: onTap == null ? 0.4 : 1,
       child: Material(
-        color: emphasized ? c.accent : c.surface,
+        color: c.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius),
-          side: emphasized ? BorderSide.none : BorderSide(color: c.hairline),
+          side: BorderSide(color: c.hairline),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -262,9 +284,11 @@ class _Key extends StatelessWidget {
                     )
                   : Icon(
                       icon,
-                      color: fg,
+                      color: iconColor ?? fg,
                       size: 24,
-                      semanticLabel: emphasized ? 'Unlock' : 'Delete digit',
+                      semanticLabel: icon == Icons.fingerprint_rounded
+                          ? 'Use fingerprint'
+                          : 'Delete digit',
                     ),
             ),
           ),

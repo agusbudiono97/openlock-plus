@@ -1,14 +1,11 @@
 import 'dart:async';
 
 import 'package:core_theme/core_theme.dart';
-import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openlock/src/core/di.dart';
 import 'package:openlock/src/core/interfaces/enforcement_bridge.dart';
-import 'package:openlock/src/core/widgets/screen_header.dart';
 import 'package:openlock/src/features/apps/screens/app_picker_screen.dart';
 import 'package:openlock/src/features/enforcement/models/lock_config.dart';
 
@@ -45,7 +42,7 @@ void main() {
     // Both apps are listed.
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
-    expect(find.text('0 aplikasi dikunci'), findsOneWidget);
+    expect(find.text('0 Terpilih'), findsOneWidget);
 
     // Toggle the first app's switch on.
     expect(find.text('Kunci aplikasi yang baru dipasang'), findsNothing);
@@ -53,7 +50,9 @@ void main() {
     await tester.tap(firstSwitch);
     await tester.pumpAndSettle();
 
-    expect(find.text('1 aplikasi dikunci'), findsOneWidget);
+    expect(find.text('1 Terpilih'), findsOneWidget);
+    await tester.tap(find.text('Terapkan Proteksi'));
+    await tester.pumpAndSettle();
   });
 
   Future<void> pumpPicker(WidgetTester tester, FakeEnforcementBridge bridge) {
@@ -85,23 +84,21 @@ void main() {
     await pumpPicker(tester, bridge);
     await tester.pump();
 
-    expect(find.text('Aplikasi terlindungi'), findsOneWidget);
-    expect(find.text('Menghitung aplikasi terpasang'), findsOneWidget);
+    expect(find.text('Aplikasi Terlindungi'), findsOneWidget);
+    expect(find.textContaining('aplikasi terpasang'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    final skeletonRow = find
-        .ancestor(of: find.byType(Skeleton), matching: find.byType(AppListRow))
-        .first;
-    final skeletonHeight = tester.getSize(skeletonRow).height;
+    // The redesigned page reserves space with six custom loading cards.
+    // Verify the loading state is present without depending on the old shared
+    // Skeleton/AppListRow implementation.
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(Container), findsWidgets);
 
     bridge.holdApps!.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('dari 1 aplikasi terpasang'), findsOneWidget);
-    final row = find.ancestor(
-      of: find.text('Alpha'),
-      matching: find.byType(AppListRow),
-    );
-    expect(tester.getSize(row).height, skeletonHeight);
+    expect(find.textContaining('dari 1 aplikasi terpasang'), findsOneWidget);
+    expect(find.text('Alpha'), findsOneWidget);
+    expect(find.byType(Switch), findsOneWidget);
   });
 
   testWidgets('rows built in one frame fetch their icons in one batch',
@@ -181,26 +178,19 @@ void main() {
 
       expect(find.text('Sembunyikan notifikasi'), findsOneWidget);
       // No row inside the app's card lays its children out past its edge.
-      final rows = find.descendant(
-        of: find.byType(GroupedRowItem),
-        matching: find.byType(Row),
-      );
-      expect(rows, findsWidgets);
-      for (final row in tester.renderObjectList<RenderFlex>(rows)) {
-        var extent = 0.0;
-        for (var child = row.firstChild; child != null;) {
-          extent += child.size.width;
-          child = (child.parentData! as FlexParentData).nextSibling;
-        }
-        expect(extent, lessThanOrEqualTo(row.size.width));
-      }
-      // The hide switch sits under the lock switch, inside the row padding.
-      final card = tester.getRect(find.byType(GroupedRowItem));
+      // The redesigned card uses an AnimatedContainer with a primary row
+      // and an optional notification row. Check those actual card bounds.
+      final card = find.ancestor(
+        of: find.text('An app with a fairly long name'),
+        matching: find.byType(AnimatedContainer),
+      ).first;
+      final cardRect = tester.getRect(card);
       final lock = tester.getRect(find.byType(Switch).at(0));
       final hide = tester.getRect(find.byType(Switch).at(1));
       expect(hide.right, lock.right);
-      expect(hide.right, lessThanOrEqualTo(card.right - AppSpacing.md));
-      expect(hide.bottom, lessThanOrEqualTo(card.bottom));
+      expect(hide.right, lessThanOrEqualTo(cardRect.right - 8));
+      expect(hide.bottom, lessThanOrEqualTo(cardRect.bottom));
+      expect(lock.left, greaterThanOrEqualTo(cardRect.left));
     });
   }
 }

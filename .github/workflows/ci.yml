@@ -3,7 +3,7 @@ name: CI
 # Trigger a fresh run after enabling GitHub Actions on this fork.
 on:
   push:
-    branches: [main, feature/premium-strict-mode]
+    branches: [main, feature/premium-strict-mode, feature/pin-screen-redesign]
   pull_request:
 
 concurrency:
@@ -35,3 +35,27 @@ jobs:
       - name: Kotlin unit tests
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest
+
+  pin-validation:
+    name: PIN screen targeted validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.3
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Analyze PIN screen files
+        run: >-
+          dart analyze
+          lib/src/features/auth/widgets/pin_entry_panel.dart
+          lib/src/features/auth/screens/unlock_screen.dart
+      - name: Run Flutter tests
+        run: flutter test
