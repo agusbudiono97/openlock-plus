@@ -810,7 +810,7 @@ class _StrictModeScreenState extends ConsumerState<StrictModeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(color: amber.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
-                        child: Text(selectedCount.toString() + ' Dipilih', style: const TextStyle(color: amber, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                        child: Text('$selectedCount Dipilih', style: const TextStyle(color: amber, fontSize: 10.5, fontWeight: FontWeight.w800)),
                       ),
                     ],
                   ),
